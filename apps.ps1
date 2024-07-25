@@ -1,110 +1,124 @@
 # Here's some sets of apps
 # Categorized
-# The names must match a possible default local filename to be used if the chocolatey link fails
-# We use a Function that acts as an Object constructor, letting us access selectedByDefault, useLocal, and the name
+# The Names must match a possible Default Local fileName to be used if the chocolatey link fails
+# We use a Function that acts as an Object constructor, letting us access selectedByDefault, useLocal, and the Name
 
 # Define an Application
-# If default is set to true, the dropdown list will have it selected initially.
-# If local is set to true, the app will use a local .exe or .msi installer
+# If Default is set to True, the dropdown list will have it selected initially.
+# If Local is set to True, the app will use a Local .exe or .msi installer
+# function App {
+#     param (
+#         [string]$Name,
+#         [bool]$Default,
+#         [bool]$Local
+#     )
+#     $app = New-Object PSObject
+#     $app | Add-Member -MemberType NoteProperty -Name "Name" -Value $Name
+#     $app | Add-Member -MemberType NoteProperty -Name "Default" -Value $Default
+#     $app | Add-Member -MemberType NoteProperty -Name "Local" -Value $Local
+#     return $app
+# }
+# Create a custom object with specified properties
 function App {
     param (
-        [string]$name,
-        [bool]$default,
-        [bool]$local
+        [string]$Name,
+        [bool]$Default,
+        [bool]$Local
     )
-    $app = New-Object PSObject
-    $app | Add-Member -MemberType NoteProperty -Name "name" -Value $name
-    $app | Add-Member -MemberType NoteProperty -Name "default" -Value $default
-    $app | Add-Member -MemberType NoteProperty -Name "local" -Value $local
+    $app = [PSCustomObject]@{
+        Name = $Name
+        Default = $Default
+        Local = $Local
+    }
     return $app
 }
 
 # All our apps, categorized. 
-# The name should match the choco repo names, when fetching from choco it will lowercase it
+# The Name should match the choco repo Names, when fetching from choco it will lowercase it
 
 # Web Browsers
 $browsers = @(
-    App -name "GoogleChrome" -default $true -local $false,
-    App -name "Firefox" -default $false -local $false,
-    App -name "Brave" -default $false -local $false
+    App -Name "GoogleChrome" -Default $True -Local $False,
+    App -Name "Firefox" -Default $False -Local $False,
+    App -Name "Brave" -Default $False -Local $False
 )
 
 # Utility Programs
 $utils = @(
-    App -name "7zip" -default $true -local $false,
-    App -name "Bleachbit" -default $true -local $false,
-    App -name "Handbrake" -default $false -local $false,
-    App -name "Filezilla" -default $false -local $false,
-    App -name "QBittorrent" -default $false -local $false,
-    App -name "f.lux" -default $false -local $false
+    App -Name "7zip" -Default $True -Local $False,
+    App -Name "Bleachbit" -Default $True -Local $False,
+    App -Name "Handbrake" -Default $False -Local $False,
+    App -Name "Filezilla" -Default $False -Local $False,
+    App -Name "QBittorrent" -Default $False -Local $False,
+    App -Name "f.lux" -Default $False -Local $False
 )
 
 # Documents and Stuff
 $work = @(
-    App -name "NotepadPlusPlus" -default $false -local $false,
-    App -name "SumatraPDF" -default $false -local $false,
-    App -name "LibreOffice-Fresh" -default $false -local $false
+    App -Name "NotepadPlusPlus" -Default $False -Local $False,
+    App -Name "SumatraPDF" -Default $False -Local $False,
+    App -Name "LibreOffice-Fresh" -Default $False -Local $False
 )
 
 # Makin Stuff
 $code = @(
-    App -name "VSCode" -default $true -local $false,
-    App -name "Git" -default $false -local $false,
-    App -name "GitHub-Desktop" -default $false -local $false,
-    App -name "IntelliJIdea-Community" -default $false -local $false,
-    App -name "AndroidStudio" -default $false -local $false,
-    App -name "NodeJS" -default $false -local $false,
-    App -name "Postman" -default $false -local $false,
-    App -name "Meld" -default $false -local $false
+    App -Name "VSCode" -Default $True -Local $False,
+    App -Name "Git" -Default $False -Local $False,
+    App -Name "GitHub-Desktop" -Default $False -Local $False,
+    App -Name "IntelliJIdea-Community" -Default $False -Local $False,
+    App -Name "AndroidStudio" -Default $False -Local $False,
+    App -Name "NodeJS" -Default $False -Local $False,
+    App -Name "Postman" -Default $False -Local $False,
+    App -Name "Meld" -Default $False -Local $False
 )
 
 # Jaba
 $java = @(
-    App -name "OpenJDK" -default $false -local $false,
-    App -name "jdk-7" -default $false -local $true,
-    App -name "jdk-8" -default $false -local $true,
-    App -name "jdk-11" -default $false -local $true,
-    App -name "jdk-12" -default $false -local $true,
-    App -name "jdk-17" -default $false -local $true,
-    App -name "jdk-21" -default $false -local $true,
-    App -name "jdk-22" -default $false -local $true
+    App -Name "OpenJDK" -Default $False -Local $False,
+    App -Name "jdk-7" -Default $False -Local $True,
+    App -Name "jdk-8" -Default $False -Local $True,
+    App -Name "jdk-11" -Default $False -Local $True,
+    App -Name "jdk-12" -Default $False -Local $True,
+    App -Name "jdk-17" -Default $False -Local $True,
+    App -Name "jdk-21" -Default $False -Local $True,
+    App -Name "jdk-22" -Default $False -Local $True
 )
 
 # Multimedia
 $media = @(
-    App -name "Spotify" -default $true -local $false,
-    App -name "Ableton" -default $false -local $true,
-    App -name "Audacity" -default $false -local $false,
-    App -name "MuseHub" -default $false -local $true,
-    App -name "MuseScore" -default $false -local $false,
-    App -name "DaVinci-Resolve" -default $false -local $true,
-    App -name "GIMP" -default $false -local $false,
-    App -name "OBS-Studio" -default $false -local $false,
-    App -name "Streamlabs-OBS" -default $false -local $false,
-    App -name "Kodi" -default $false -local $false,
-    App -name "mpc-hc" -default $false -local $false
+    App -Name "Spotify" -Default $True -Local $False,
+    App -Name "Ableton" -Default $False -Local $True,
+    App -Name "Audacity" -Default $False -Local $False,
+    App -Name "MuseHub" -Default $False -Local $True,
+    App -Name "MuseScore" -Default $False -Local $False,
+    App -Name "DaVinci-Resolve" -Default $False -Local $True,
+    App -Name "GIMP" -Default $False -Local $False,
+    App -Name "OBS-Studio" -Default $False -Local $False,
+    App -Name "Streamlabs-OBS" -Default $False -Local $False,
+    App -Name "Kodi" -Default $False -Local $False,
+    App -Name "mpc-hc" -Default $False -Local $False
 )
 
 # Society
 $social = @(
-    App -name "Discord" -default $true -local $false,
-    App -name "em-client" -default $true -local $false
+    App -Name "Discord" -Default $True -Local $False,
+    App -Name "em-client" -Default $True -Local $False
 )
 
 # Vidya Games
 $gaming = @(
-    App -name "Steam" -default $true -local $false,
-    App -name "PCSX2" -default $false -local $false,
-    App -name "DS4Windows" -default $false -local $false,
-    App -name "Dolphin" -default $false -local $false,
-    App -name "ppsspp" -default $false -local $false,
-    App -name "SNES9x" -default $false -local $false,
-    App -name "Mupen64plus" -default $false -local $false
+    App -Name "Steam" -Default $True -Local $False,
+    App -Name "PCSX2" -Default $False -Local $False,
+    App -Name "DS4Windows" -Default $False -Local $False,
+    App -Name "Dolphin" -Default $False -Local $False,
+    App -Name "ppsspp" -Default $False -Local $False,
+    App -Name "SNES9x" -Default $False -Local $False,
+    App -Name "Mupen64plus" -Default $False -Local $False
 )
 
 $apps = $browsers + $utils + $work + $code + $java + $media + $social + $gaming
 
 # Output the properties of each object in the array
 foreach ($app in $apps) {
-    Write-Output "name: $($app.name), default: $($app.default), local: $($app.local)"
+    Write-Output "Name: $($app.Name), Default: $($app.Default), Local: $($app.Local)"
 }
