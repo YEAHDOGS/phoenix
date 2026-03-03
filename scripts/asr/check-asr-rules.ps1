@@ -7,7 +7,7 @@ Write-Host "`n--- Microsoft ASR Rule Configuration Report ---" -ForegroundColor 
 . ./fetch-asr-rules.ps1
 
 foreach ($Rule in $ActiveRules) {
-    $MatchedRule = $ruleset | Where-Object { $_.GUID -eq $Rule.GUID }
+    $MatchedRule = $OnlineRules | Where-Object { $_.GUID -eq $Rule.GUID }
 
     if ($MatchedRule) {
         # If found, assign the description from the master list

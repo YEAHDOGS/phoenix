@@ -20,7 +20,7 @@ if ($args.Count -lt 2 -or $args[0] -notin $ValidActions) {
     
     Write-Host
     Write-Host "Example:" -ForegroundColor Yellow
-    Write-Host "  .\manage-asr.ps1 r 56a863a9-875e-4185-98a7-b882c64b5ce5"
+    Write-Host "  .\remove-asr-rule.ps1 r 56a863a9-875e-4185-98a7-b882c64b5ce5"
     Write-Host "-------------------------------`n"
     
     exit 1
@@ -35,13 +35,13 @@ foreach ($guid in ($args | Select-Object -Skip 1)) {
     $MatchedRule = $ActiveRules | Where-Object { $_.GUID -eq $guid }
 
     if ($MatchedRule) {
-        Write-Host "✅ Matching GUID Found: $($MatchedRule.GUID) Current Status: $($MatchedRule.Status)" -ForegroundColor Green
+        Write-Host "❌ Matching GUID Found: $($MatchedRule.GUID) Current Status: $($MatchedRule.Status)" -ForegroundColor Red
         if($RemovalType -in @('d', 'disable')) {
             Add-MpPreference -AttackSurfaceReductionRules_Ids $guid -AttackSurfaceReductionRules_Actions Disabled
-            Write-Host "✅ Disabled Rule $($MatchedRule.GUID)" -ForegroundColor Green
+            Write-Host "  Disabled Rule $($MatchedRule.GUID)" -ForegroundColor Red
         } else {
             Remove-MpPreference -AttackSurfaceReductionRules_Ids $guid
-            Write-Host "✅ Removed Rule $($MatchedRule.GUID)" -ForegroundColor Green
+            Write-Host "  Removed Rule $($MatchedRule.GUID)" -ForegroundColor Red
         }
     } 
     else {

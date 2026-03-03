@@ -14,7 +14,7 @@ try {
     # This regex looks for: | Description | GUID |
     $regex = '\|(?<Description>.*?)\|(?<GUID>[0-9a-fA-F-]{36})\|'
     
-    $ruleset = [regex]::Matches($tablePart, $regex) | ForEach-Object {
+    $OnlineRules = [regex]::Matches($tablePart, $regex) | ForEach-Object {
         [PSCustomObject]@{
             # Trim extra spaces, markdown line breaks (<br/>), and superscript markers (*)
             Description = $_.Groups['Description'].Value.Replace("<br/>", " ").Replace("<sup>\*</sup>", "").Trim()
@@ -32,14 +32,14 @@ catch {
     Write-Host "ERROR MESSAGE:  $($_.Exception.Message)" -ForegroundColor Yellow
 }
 
-if ($ruleset.Count -gt 0) {
-    Write-Host "Successfully fetched $($ruleset.Count) ASR rules.`n" -ForegroundColor Green
+if ($OnlineRules.Count -gt 0) {
+    Write-Host "Successfully fetched $($OnlineRules.Count) ASR rules.`n" -ForegroundColor Green
 }
 else {
     Write-Host "Failed to fetch online ASR ruleset." -ForegroundColor Cyan
     Write-Host "Using stored data." -ForegroundColor Cyan
     . ./asr-ruleset.ps1
-    $ruleset = $rules
+    $OnlineRules = $rules
 }
 
-$ruleset | Format-Table -AutoSize
+$OnlineRules | Format-Table -AutoSize

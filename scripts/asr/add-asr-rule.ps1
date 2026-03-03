@@ -1,4 +1,4 @@
-# Check for elevated privelages
+# Check for elevated privilages
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     Write-Error "This script must be run as an Administrator."
@@ -6,8 +6,16 @@ if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Adm
 }
 
 # Args check
-if ($args.Count -lt 1) {
-    Write-Error "No arguments provided, add some GUIDs!"
+if ($args.Count -lt 2 -or $args[0] -notin $ValidActions) {
+    Write-Host "`n--- 🛠️ ASR Rule Add Usage ---" -ForegroundColor Cyan
+    Write-Host "Usage:" -NoNewline
+    Write-Host "  .\add-asr-rule.ps1 <guid1> <guid2> ..." -ForegroundColor White
+    
+    Write-Host
+    Write-Host "Example:" -ForegroundColor Yellow
+    Write-Host "  .\add-asr-rule.ps1 75668c1f-73b5-4cf0-bb93-3ecf5cb7cc84 01443614-cd74-433a-b99e-2ecdc07bfc25"
+    Write-Host "-------------------------------`n"
+    
     exit 1
 }
 
@@ -16,9 +24,9 @@ if ($args.Count -lt 1) {
 
 foreach ($guid in $args) {
     # Check if the passed GUID exists in our ruleset's GUID column
-    if ($ruleset.GUID -contains $guid) {
+    if ($OnlineRules.GUID -contains $guid) {
         # Find the specific rule object to get the description for the log
-        $matchedRule = $ruleset | Where-Object { $_.GUID -eq $guid }
+        $matchedRule = $OnlineRules | Where-Object { $_.GUID -eq $guid }
         
         Write-Host "✅ Valid Rule Found: $($matchedRule.Description)" -ForegroundColor Green
         Write-Host "   Adding ID: $($guid)" -ForegroundColor Gray
