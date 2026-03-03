@@ -11,7 +11,7 @@ $ValidActions = @('d', 'r', 'disable', 'remove')
 if ($args.Count -lt 2 -or $args[0] -notin $ValidActions) {
     Write-Host "`n--- 🛠️ ASR Rule Remover Usage ---" -ForegroundColor Cyan
     Write-Host "Usage:" -NoNewline
-    Write-Host "  .\remove-asr-rule.ps1 <action> <guid1> <guid2> ..." -ForegroundColor White
+    Write-Host "  .\disable-asr-rule.ps1 <action> <guid1> <guid2> ..." -ForegroundColor White
     
     Write-Host
     Write-Host "Actions:" -ForegroundColor Yellow
@@ -20,7 +20,7 @@ if ($args.Count -lt 2 -or $args[0] -notin $ValidActions) {
     
     Write-Host
     Write-Host "Example:" -ForegroundColor Yellow
-    Write-Host "  .\remove-asr-rule.ps1 r 56a863a9-875e-4185-98a7-b882c64b5ce5"
+    Write-Host "  .\disable-asr-rule.ps1 r 56a863a9-875e-4185-98a7-b882c64b5ce5"
     Write-Host "-------------------------------`n"
     
     exit 1
