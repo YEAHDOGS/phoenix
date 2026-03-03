@@ -1,45 +1,17 @@
+# Check for elevated privilages
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Error "CRITICAL: This script must be run as Administrator."
+    Write-Error "This script must be run as an Administrator."
     exit 1
 }
 
-Write-Host "Success: Running with elevated privileges." -ForegroundColor Green
+. ./fetch-asr-rules
 
-# ASR Rule GUIDs
-$ASRRules = @{
-    "56a863a9-875e-4185-98a7-b882c64b5ce5" = "Block abuse of exploited vulnerable signed drivers"
-    "7674ba52-37eb-4a4f-a9a1-f0f9a1619a2c" = "Block Adobe Reader from creating child processes"
-    "d4f940ab-401b-4efc-aadc-ad5f3c50688a" = "Block all Office applications from creating child processes"
-    "9e6c4e1f-7d60-472f-ba1a-a39ef669e4b2" = "Block credential stealing from LSASS"
-    "be9ba2d9-53ea-4cdc-84e5-9b1eeee46550" = "Block executable content from email/webmail"
-    "01443614-cd74-433a-b99e-2ecdc07bfc25" = "Block executable files based on prevalence/age"
-    "5beb7efe-fd9a-4556-801d-275e5ffc04cc" = "Block execution of potentially obfuscated scripts"
-    "d3e037e1-3eb8-44c8-a917-57927947596d" = "Block JS/VBS from launching downloaded exec content"
-    "3b576869-a4ec-4529-8536-b80a7769e899" = "Block Office applications from creating executable content"
-    "75668c1f-73b5-4cf0-bb93-3ecf5cb7cc84" = "Block Office applications from injecting code into other processes"
-    "26190899-1602-49e8-8b27-eb1d0a1ce869" = "Block Office communication apps from creating child processes"
-    "e6db77e5-3df2-4cf1-b95a-636979351e5b" = "Block persistence through WMI event subscription"
-    "d1e49aac-8f56-4280-b9ba-993a6d77406c" = "Block process creations from PSExec and WMI"
-    "33ddedf1-c6e0-47cb-833e-de6133960387" = "Block rebooting machine in Safe Mode"
-    "b2b3f03d-6a65-4f7b-a9c7-1c7ef74a9ba4" = "Block untrusted/unsigned processes from USB"
-    "c0033c00-d16d-4114-a5a0-dc9b3a7d2ceb" = "Block use of copied or impersonated system tools"
-    "a8f5898e-1dc8-49a9-9878-85004b8a61e6" = "Block Webshell creation for Servers"
-    "92e97fa1-2edf-4476-bdd6-9dd0b4dddc7b" = "Block Win32 API calls from Office macros"
-    "c1db55ab-c21a-4637-bb3f-a12568109d35" = "Use advanced protection against ransomware"
+Write-Host "Disabling all ASR rules..." -ForegroundColor Cyan
+
+foreach ($Rule in $OnlineRules) {
+    Write-Host "❌ Disabling Rule: $($Rule.GUID) : Status: $($Rule.Status) : Description : $($Rule.Description)" -ForegroundColor Red
+    Add-MpPreference -AttackSurfaceReductionRules_Ids $Rule.GUID -AttackSurfaceReductionRules_Actions Disabled
 }
- 
-Write-Host "Applying ASR Rules..." -ForegroundColor Cyan
- 
-foreach ($RuleID in $ASRRules.Keys) {
-    try {
-        # Action 1 = Block, 2 = Audit, 0 = Disable
-        Set-MpPreference -AttackSurfaceReductionRules_Ids $RuleID -AttackSurfaceReductionRules_Actions Disabled
-        Write-Host "[SUCCESS] Disabled: $($ASRRules[$RuleID])" -ForegroundColor Green
-    }
-    catch {
-        Write-Error "[FAILED] Could not apply rule: $($ASRRules[$RuleID])"
-    }
-}
- 
-Write-Host "`nConfiguration Complete." -ForegroundColor Cyan
+
+Write-Host "`nSuccess: All rules disabled." -ForegroundColor Green

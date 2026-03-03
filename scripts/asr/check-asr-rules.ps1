@@ -6,6 +6,8 @@ Write-Host "`n--- Microsoft ASR Rule Configuration Report ---" -ForegroundColor 
 # Fetch available ASR Rules from Microsoft
 . ./fetch-asr-rules.ps1
 
+Write-Host "`n--- $($OnlineRules.Count) Fetched ASR Rules ---" -ForegroundColor Blue
+
 foreach ($Rule in $ActiveRules) {
     $MatchedRule = $OnlineRules | Where-Object { $_.GUID -eq $Rule.GUID }
 
@@ -19,5 +21,5 @@ foreach ($Rule in $ActiveRules) {
     }
 }
 
-Write-Host "`n--- $($ActiveRules.Count) Active ASR Rules found on this machine ---" -ForegroundColor Blue
+Write-Host "`n--- $($ActiveRules.Count) ASR Rules found on this machine ---" -ForegroundColor Blue
 $ActiveRules | Format-Table -AutoSize

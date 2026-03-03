@@ -2,7 +2,7 @@ Write-Host "Getting currently active ASR Rules for this machine..." -ForegroundC
 
 # Define Status Codes
 $StatusCodes = @{
-    0 = "Disabled / Not Configured"
+    0 = "Disabled"
     1 = "BLOCK MODE (Working)"
     2 = "Audit Mode (Logging Only)"
     6 = "Warn Mode (User can bypass)"
