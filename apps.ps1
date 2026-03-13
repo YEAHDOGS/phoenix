@@ -307,16 +307,16 @@ $media = @(
         Description = "If you've got Blu-Ray discs or video files, this will take care of you"
     },
     [PSCustomObject]@{
-        Name = "mpc-hc"
+        Name = "VLC"
         Default = $false
         Local = $false
         Description = "Because the Windows player is bloated and laggy"
     },
     [PSCustomObject]@{
-        Name = "VLC"
+        Name = "mpc-hc"
         Default = $false
         Local = $false
-        Description = "Because the Windows player is bloated and laggy"
+        Description = "Because VLC is bloated and laggy"
     },
     [PSCustomObject]@{
         Name = "Blender"
