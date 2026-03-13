@@ -44,9 +44,4 @@ foreach ($taskPath in $Tasks) {
     }
 }
 
-# 5. BLOCK UPDATE ORCHESTRATOR VIA FIREWALL
-# The "Nuclear" option: prevent the update client from reaching the internet.
-New-NetFirewallRule -DisplayName "BLOCK_USO_CLIENT_OUT" -Direction Outbound -Program "%systemroot%\system32\usoclient.exe" -Action Block
-New-NetFirewallRule -DisplayName "BLOCK_WUA_MGR_OUT" -Direction Outbound -Program "%systemroot%\system32\wuauclt.exe" -Action Block
-
 Write-Host "Hardening Applied. Restart required to lock kernel handles." -ForegroundColor Green

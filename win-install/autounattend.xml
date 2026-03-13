@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <unattend xmlns="urn:schemas-microsoft-com:unattend" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
-	<!--https://schneegans.de/windows/unattend-generator/?LanguageMode=Unattended&UILanguage=en-US&Locale=en-001&Keyboard=00000409&GeoLocation=244&ProcessorArchitecture=amd64&BypassNetworkCheck=true&ComputerNameMode=Custom&ComputerName=Nightmare&CompactOsMode=Never&TimeZoneMode=Explicit&TimeZone=Central+Standard+Time&PartitionMode=Unattended&PartitionLayout=GPT&EspSize=100&RecoveryMode=Partition&RecoverySize=600&DiskAssertionMode=Skip&WindowsEditionMode=Custom&ProductKey=VK7JG-NPHTM-C97JM-9MPGT-3V66T&InstallFromMode=Name&InstallFromName=Windows+11+Pro&PEMode=Generated&Disable8Dot3Names=true&UserAccountMode=Unattended&AccountName0=BigMan&AccountDisplayName0=&AccountPassword0=123&AccountGroup0=Administrators&AccountName1=Main&AccountDisplayName1=&AccountPassword1=abc&AccountGroup1=Users&AutoLogonMode=Own&PasswordExpirationMode=Unlimited&LockoutMode=Default&HideFiles=None&ShowFileExtensions=true&LaunchToThisPC=true&ShowEndTask=true&TaskbarSearch=Box&TaskbarIconsMode=Empty&HideTaskViewButton=true&DisableBingResults=true&StartTilesMode=Default&StartPinsMode=Custom&StartPinsJson=%7B%0D%0A++%22pinnedList%22%3A+%5B%0D%0A++++%7B%0D%0A++++++%22desktopAppLink%22%3A+%22%25ALLUSERSPROFILE%25%5C%5CMicrosoft%5C%5CWindows%5C%5CStart+Menu%5C%5CPrograms%5C%5CMicrosoft+Edge.lnk%22%0D%0A++++%7D%2C%0D%0A++++%7B%0D%0A++++++%22desktopAppLink%22%3A+%22%25APPDATA%25%5C%5CMicrosoft%5C%5CWindows%5C%5CStart+Menu%5C%5CPrograms%5C%5CFile+Explorer.lnk%22%0D%0A++++%7D%2C%0D%0A++++%7B%0D%0A++++++%22packagedAppId%22%3A+%22windows.immersivecontrolpanel_cw5n1h2txyewy%21microsoft.windows.immersivecontrolpanel%22%0D%0A++++%7D%0D%0A++%5D%0D%0A%7D&DisableWindowsUpdate=true&DisableFastStartup=true&HardenSystemDriveAcl=true&DeleteJunctions=true&AllowPowerShellScripts=true&PreventAutomaticReboot=true&DisableAppSuggestions=true&HideEdgeFre=true&DisableEdgeStartupBoost=true&MakeEdgeUninstallable=true&DeleteWindowsOld=true&DisableAutomaticRestartSignOn=true&DisableWpbt=true&ProcessAudit=true&ProcessAuditCommandLine=true&EffectsMode=Default&DesktopIconsMode=Default&StartFoldersMode=Custom&StartFolderDownloads=true&StartFolderNetwork=true&StartFolderSettings=true&WifiMode=Skip&ExpressSettings=DisableAll&LockKeysMode=Skip&StickyKeysMode=Disabled&ColorMode=Default&WallpaperMode=Default&LockScreenMode=Default&Remove3DViewer=true&RemoveBingSearch=true&RemoveClock=true&RemoveCopilot=true&RemoveCortana=true&RemoveDevHome=true&RemoveFamily=true&RemoveFeedbackHub=true&RemoveGameAssist=true&RemoveGetHelp=true&RemoveHandwriting=true&RemoveInternetExplorer=true&RemoveMaps=true&RemoveMathInputPanel=true&RemoveMixedReality=true&RemoveNotepadClassic=true&RemoveOffice365=true&RemoveOneDrive=true&RemoveOneNote=true&RemoveOneSync=true&RemoveOpenSSHClient=true&RemoveOutlook=true&RemovePaint3D=true&RemovePeople=true&RemovePowerAutomate=true&RemovePowerShell2=true&RemovePowerShellISE=true&RemoveQuickAssist=true&RemoveRecall=true&RemoveRdpClient=true&RemoveSkype=true&RemoveSolitaire=true&RemoveSpeech=true&RemoveStepsRecorder=true&RemoveTeams=true&RemoveGetStarted=true&RemoveToDo=true&RemoveVoiceRecorder=true&RemoveWallet=true&RemoveWeather=true&RemoveFaxAndScan=true&RemoveWindowsMediaPlayer=true&RemoveWindowsTerminal=true&RemoveXboxApps=true&WdacMode=Skip&AppLockerMode=Skip-->
+	<!--https://schneegans.de/windows/unattend-generator/?LanguageMode=Unattended&UILanguage=en-US&Locale=en-001&Keyboard=00000409&GeoLocation=244&ProcessorArchitecture=amd64&BypassNetworkCheck=true&ComputerNameMode=Custom&ComputerName=Nightmare&CompactOsMode=Never&TimeZoneMode=Explicit&TimeZone=Central+Standard+Time&PartitionMode=Unattended&PartitionLayout=GPT&EspSize=100&RecoveryMode=Partition&RecoverySize=600&DiskAssertionMode=Skip&WindowsEditionMode=Custom&ProductKey=VK7JG-NPHTM-C97JM-9MPGT-3V66T&InstallFromMode=Name&InstallFromName=Windows+11+Pro&PEMode=Generated&Disable8Dot3Names=true&UserAccountMode=Unattended&AccountName0=BigMan&AccountDisplayName0=&AccountPassword0=123456789abcdefghi&AccountGroup0=Administrators&AccountName1=Main&AccountDisplayName1=&AccountPassword1=abcdefghi123456789&AccountGroup1=Users&AutoLogonMode=Own&ObscurePasswords=true&PasswordExpirationMode=Unlimited&LockoutMode=Default&HideFiles=None&ShowFileExtensions=true&LaunchToThisPC=true&ShowEndTask=true&TaskbarSearch=Box&TaskbarIconsMode=Empty&HideTaskViewButton=true&DisableBingResults=true&StartTilesMode=Default&StartPinsMode=Custom&StartPinsJson=%7B%0D%0A++%22pinnedList%22%3A+%5B%0D%0A++++%7B%0D%0A++++++%22desktopAppLink%22%3A+%22%25ALLUSERSPROFILE%25%5C%5CMicrosoft%5C%5CWindows%5C%5CStart+Menu%5C%5CPrograms%5C%5CMicrosoft+Edge.lnk%22%0D%0A++++%7D%2C%0D%0A++++%7B%0D%0A++++++%22desktopAppLink%22%3A+%22%25APPDATA%25%5C%5CMicrosoft%5C%5CWindows%5C%5CStart+Menu%5C%5CPrograms%5C%5CFile+Explorer.lnk%22%0D%0A++++%7D%2C%0D%0A++++%7B%0D%0A++++++%22packagedAppId%22%3A+%22windows.immersivecontrolpanel_cw5n1h2txyewy%21microsoft.windows.immersivecontrolpanel%22%0D%0A++++%7D%0D%0A++%5D%0D%0A%7D&DisableWindowsUpdate=true&DisableFastStartup=true&HardenSystemDriveAcl=true&DeleteJunctions=true&AllowPowerShellScripts=true&PreventAutomaticReboot=true&DisableAppSuggestions=true&HideEdgeFre=true&DisableEdgeStartupBoost=true&MakeEdgeUninstallable=true&DeleteWindowsOld=true&DisableAutomaticRestartSignOn=true&DisableWpbt=true&ProcessAudit=true&ProcessAuditCommandLine=true&EffectsMode=Default&DesktopIconsMode=Default&StartFoldersMode=Custom&StartFolderDownloads=true&StartFolderNetwork=true&StartFolderSettings=true&WifiMode=Skip&ExpressSettings=DisableAll&LockKeysMode=Skip&StickyKeysMode=Disabled&ColorMode=Default&WallpaperMode=Default&LockScreenMode=Default&Remove3DViewer=true&RemoveBingSearch=true&RemoveClock=true&RemoveCopilot=true&RemoveCortana=true&RemoveDevHome=true&RemoveFamily=true&RemoveFeedbackHub=true&RemoveGameAssist=true&RemoveGetHelp=true&RemoveHandwriting=true&RemoveInternetExplorer=true&RemoveMaps=true&RemoveMathInputPanel=true&RemoveMixedReality=true&RemoveNotepadClassic=true&RemoveOffice365=true&RemoveOneDrive=true&RemoveOneNote=true&RemoveOneSync=true&RemoveOpenSSHClient=true&RemoveOutlook=true&RemovePaint3D=true&RemovePeople=true&RemovePowerAutomate=true&RemovePowerShell2=true&RemovePowerShellISE=true&RemoveQuickAssist=true&RemoveRecall=true&RemoveRdpClient=true&RemoveSkype=true&RemoveSolitaire=true&RemoveSpeech=true&RemoveStepsRecorder=true&RemoveTeams=true&RemoveGetStarted=true&RemoveToDo=true&RemoveVoiceRecorder=true&RemoveWallet=true&RemoveWeather=true&RemoveFaxAndScan=true&RemoveWindowsMediaPlayer=true&RemoveWindowsTerminal=true&RemoveXboxApps=true&WdacMode=Skip&AppLockerMode=Skip-->
 	<settings pass="offlineServicing"></settings>
 	<settings pass="windowsPE">
 		<component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
@@ -47,11 +47,11 @@
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>11</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:diskpart.exe /s X:\diskpart.txt ^|^| ( echo diskpart.exe encountered an error. ^&amp; pause ^&amp; exit /b 1 ^))</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:diskpart.exe /s X:\diskpart.txt ^|^| ( echo diskpart.exe encountered an error. ^&amp; pause ^&amp; exit /b 1 ^)&amp;echo:set ^"IMG_PARAM=/Name:^"Windows 11 Pro^"^")</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>12</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:dism.exe /Apply-Image /ImageFile:^%IMAGE_FILE^% ^%SWM_PARAM^% /Name:^"Windows 11 Pro^" /ApplyDir:W:\  /CheckIntegrity /Verify ^|^| ( echo dism.exe encountered an error. ^&amp; pause ^&amp; exit /b 1 ^))</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:dism.exe /Apply-Image /ImageFile:^%IMAGE_FILE^% ^%SWM_PARAM^% ^%IMG_PARAM^% /ApplyDir:W:\  /CheckIntegrity /Verify ^|^| ( echo dism.exe encountered an error. ^&amp; pause ^&amp; exit /b 1 ^))</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>13</Order>
@@ -129,8 +129,8 @@
 						<DisplayName></DisplayName>
 						<Group>Administrators</Group>
 						<Password>
-							<Value>123</Value>
-							<PlainText>true</PlainText>
+							<Value>MQAyADMANAA1ADYANwA4ADkAYQBiAGMAZABlAGYAZwBoAGkAUABhAHMAcwB3AG8AcgBkAA==</Value>
+							<PlainText>false</PlainText>
 						</Password>
 					</LocalAccount>
 					<LocalAccount wcm:action="add">
@@ -138,8 +138,8 @@
 						<DisplayName></DisplayName>
 						<Group>Users</Group>
 						<Password>
-							<Value>abc</Value>
-							<PlainText>true</PlainText>
+							<Value>YQBiAGMAZABlAGYAZwBoAGkAMQAyADMANAA1ADYANwA4ADkAUABhAHMAcwB3AG8AcgBkAA==</Value>
+							<PlainText>false</PlainText>
 						</Password>
 					</LocalAccount>
 				</LocalAccounts>
@@ -149,8 +149,8 @@
 				<Enabled>true</Enabled>
 				<LogonCount>1</LogonCount>
 				<Password>
-					<Value>123</Value>
-					<PlainText>true</PlainText>
+					<Value>MQAyADMANAA1ADYANwA4ADkAYQBiAGMAZABlAGYAZwBoAGkAUABhAHMAcwB3AG8AcgBkAA==</Value>
+					<PlainText>false</PlainText>
 				</Password>
 			</AutoLogon>
 			<OOBE>
@@ -442,27 +442,6 @@ End If
 	&lt;/Actions&gt;
 &lt;/Task&gt;
 		</File>
-		<File path="C:\Windows\Setup\Scripts\PauseWindowsUpdate.ps1">
-$formatter = {
-	$args[0].ToString( "yyyy'-'MM'-'dd'T'HH':'mm':'ssK" );
-};
-$now = [datetime]::UtcNow;
-$start = &amp; $formatter $now;
-$end = &amp; $formatter $now.AddDays( 7 );
-
-$params = @{
-	LiteralPath = 'Registry::HKLM\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings';
-	Type = 'String';
-	Force = $true;
-};
-
-Set-ItemProperty @params -Name 'PauseFeatureUpdatesStartTime' -Value $start;
-Set-ItemProperty @params -Name 'PauseFeatureUpdatesEndTime' -Value $end;
-Set-ItemProperty @params -Name 'PauseQualityUpdatesStartTime' -Value $start;
-Set-ItemProperty @params -Name 'PauseQualityUpdatesEndTime' -Value $end;
-Set-ItemProperty @params -Name 'PauseUpdatesStartTime' -Value $start;
-Set-ItemProperty @params -Name 'PauseUpdatesExpiryTime' -Value $end;
-		</File>
 		<File path="C:\Windows\Setup\Scripts\PauseWindowsUpdate.xml">
 &lt;Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task"&gt;
 	&lt;Triggers&gt;
@@ -502,7 +481,7 @@ Set-ItemProperty @params -Name 'PauseUpdatesExpiryTime' -Value $end;
 	&lt;Actions Context="Author"&gt;
 		&lt;Exec&gt;
 			&lt;Command&gt;C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe&lt;/Command&gt;
-			&lt;Arguments&gt;-ExecutionPolicy "Unrestricted" -NoProfile -File "C:\Windows\Setup\Scripts\PauseWindowsUpdate.ps1"&lt;/Arguments&gt;
+			&lt;Arguments&gt;-WindowStyle Hidden -NoProfile -NonInteractive -Command "$format = 'yyyy-MM-ddTHH\:mm\:ssK'; $now = [datetime]::UtcNow; $start = $now.ToString($format); $end = $now.AddDays(7).ToString($format); $params = @{ LiteralPath = 'Registry::HKLM\Software\Microsoft\WindowsUpdate\UX\Settings'; Type = 'String'; Force = $true; Verbose = $true; }; 'PauseFeatureUpdatesStartTime', 'PauseQualityUpdatesStartTime', 'PauseUpdatesStartTime' | foreach { Set-ItemProperty @params -Name $_ -Value $start; }; 'PauseFeatureUpdatesEndTime', 'PauseQualityUpdatesEndTime', 'PauseUpdatesExpiryTime' | foreach { Set-ItemProperty @params -Name $_ -Value $end; };"&lt;/Arguments&gt;
 		&lt;/Exec&gt;
 	&lt;/Actions&gt;
 &lt;/Task&gt;
@@ -553,7 +532,7 @@ Set-ItemProperty @params -Name 'PauseUpdatesExpiryTime' -Value $end;
 	&lt;Actions Context="Author"&gt;
 		&lt;Exec&gt;
 			&lt;Command&gt;%windir%\System32\conhost.exe&lt;/Command&gt;
-			&lt;Arguments&gt;--headless %windir%\System32\WindowsPowerShell\v1.0\powershell.exe -WindowStyle Hidden -NoProfile -NonInteractive -Command "$p = @{ LiteralPath = 'Registry::HKLM\Software\Microsoft\WindowsUpdate\UX\Settings'; Type = 'DWord'; }; $h = [datetime]::Now.Hour; Set-ItemProperty @p -Name 'ActiveHoursStart' -Value (($h + 23) % 24); Set-ItemProperty @p -Name 'ActiveHoursEnd' -Value (($h + 11) % 24); Set-ItemProperty @p -Name 'SmartActiveHoursState' -Value 2;"&lt;/Arguments&gt;
+			&lt;Arguments&gt;--headless %windir%\System32\WindowsPowerShell\v1.0\powershell.exe -WindowStyle Hidden -NoProfile -NonInteractive -Command "$p = @{ LiteralPath = 'Registry::HKLM\Software\Microsoft\WindowsUpdate\UX\Settings'; Type = 'DWord'; }; $h = [datetime]::Now.Hour; Set-ItemProperty @p -Name 'ActiveHoursStart' -Value (($h + 23) % 24); Set-ItemProperty @p -Name 'ActiveHoursEnd' -Value (($h + 11) % 24); Set-ItemProperty @p -Name 'SmartActiveHoursState' -Value 0;"&lt;/Arguments&gt;
 		&lt;/Exec&gt;
 	&lt;/Actions&gt;
 &lt;/Task&gt;
