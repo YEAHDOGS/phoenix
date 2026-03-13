@@ -8,8 +8,9 @@ try {
 
     # 1. Isolate the content starting from the 'ASR rule to GUID matrix' header
     # We split by the header and take the second part [1]
-    $tablePart = ($rawContent -split "## ASR rule to GUID matrix")[1]
-
+    $ruleSplit = ($rawContent -split "## ASR rule to GUID matrix")[1]
+    $tablePart = ($ruleSplit -split "## ASR rule modes")[0]
+    
     # 2. Extract lines that look like table rows (must contain a GUID)
     # This regex looks for: | Description | GUID |
     $regex = '\|(?<Description>.*?)\|(?<GUID>[0-9a-fA-F-]{36})\|'
