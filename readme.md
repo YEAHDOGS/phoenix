@@ -11,25 +11,25 @@ I'm currently plagued by Windows Update itself. Somehow malware has been enterin
 
 I've created this project to help automate the setup of freshly flashed PCs. This repo contains many scripts to remove bloatware, harden security, disable tasks, remove services, lock down settings, and install selected apps. The core idea is that I can wipe the SSD in the bios, plug in my Win 11 install USB, plug in another USB with this project on it, and get my system just the way I like it in one swoop.
 
-This project goes hand in hand with [Ameliorated Playbooks and the AME Client](https://amelabs.net/). My current playbook of choice is [ReviOS by Revision](https://www.revi.cc/download). If you wish to use these tools on air-gapped machines offline, I have modified the ReviOS Playbook to allow compilation and offline installation [here](https://github.com/REDACTED/reviOS-offline).
+This project goes hand in hand with Playbooks and [Ameliorated AME]. My current playbook of choice is [ReviOS]. If you wish to use these tools on air-gapped machines offline, I have modified the ReviOS Playbook to allow compilation and offline installation [here](https://github.com/REDACTED/reviOS-offline).
 
 Some people say it is impossible to use Windows 11 privately, as it is very shoddy by design. But I'll be damned if I'm switching to Linux. I'll be damned!
 
 ## Features
 
-- ASR Rule scripts - Fetch available ASR Rules from [Microsoft](https://github.com/MicrosoftDocs/defender-docs/blob/public/defender-endpoint/attack-surface-reduction-rules-reference.md), enable and disable them, and check their status
-- Answerfile AutoUnattend - My current template is in the repo or you can create your own via [Schneegans](https://schneegans.de/windows/unattend-generator) according to your own needs
+- ASR Rule scripts - Fetch all available [ASR Rules from Microsoft](https://github.com/MicrosoftDocs/defender-docs/blob/public/defender-endpoint/attack-surface-reduction-rules-reference.md), enable and disable them, and check their status
+- Answerfile AutoUnattend - My current template is in the repo or you can create your own via [Schneegans] according to your own needs
 - Firewall hardening - Scripts that add outbound and inbound rules to Windows Defender Firewall
-- [Chocolatey](https://chocolatey.org) scripts - Select and automate software installations during the OS installation process
+- [Chocolatey] scripts - Select and automate software installations during the OS installation process
 - Ghost Rider wallpapers - What good is a machine that isn't badass?
 
 ## Tech
 
-- [Chocolatey](https://chocolatey.org) - Automate installation of the software you need
+- [Chocolatey] - Automate installation of the software you need
 - [Schneegans Answer File AutoUnattend Generator](https://schneegans.de/windows/unattend-generator) - Create a file that tells the Windows installation media to behave differently. Extremely powerful
-- [Ameliorated AME Beta](https://amelabs.net) - Install Playbooks to tune Windows in any way
-- [ReviOS](https://www.revi.cc/download) - A Playbook by Revision focused on minimalism and privacy
-- [SysInternals](https://learn.microsoft.com/en-us/sysinternals) - A very important toolset for disabling startup services, monitoring processes, and so much more
+- [Ameliorated AME] - Install Playbooks to tune Windows in any way
+- [ReviOS] - A Playbook by Revision focused on minimalism and privacy
+- [SysInternals] - A very important toolset for disabling startup services, monitoring processes, and so much more
 - [Ventoy](https://www.ventoy.net) - Create runnable USBs with your choice of operating systems or install isos
 
 ## Installation
@@ -48,6 +48,8 @@ MIT
 
 [//]: # (These are reference links used in the body of this note and get stripped out when the markdown processor does its job. There is no need to format nicely because it shouldn't be seen. Thanks SO - http://stackoverflow.com/questions/4823468/store-comments-in-markdown-syntax)
 
-   [dill]: <https://github.com/joemccann/dillinger>
-   [git-repo-url]: <https://github.com/joemccann/dillinger.git>
-   [john gruber]: <http://daringfireball.net>
+   [Chocolatey]: <https://chocolatey.org>
+   [ReviOS]: <https://www.revi.cc>
+   [Schneegans]: <https://schneegans.de/windows/unattend-generator>
+   [Ameliorated AME]: <https://amelabs.net>
+   [SysInternals]: <https://learn.microsoft.com/en-us/sysinternals>
