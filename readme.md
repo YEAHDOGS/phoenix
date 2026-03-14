@@ -17,7 +17,7 @@ Some people say it is impossible to use Windows 11 privately, as it is very shod
 
 ## Features
 
-- ASR Rule scripts - Fetch all available [ASR Rules from Microsoft](https://github.com/MicrosoftDocs/defender-docs/blob/public/defender-endpoint/attack-surface-reduction-rules-reference.md), enable and disable them, and check their status
+- Attack Surface Reduction (ASR) Rule scripts - Fetch all available [ASR Rules from Microsoft](https://github.com/MicrosoftDocs/defender-docs/blob/public/defender-endpoint/attack-surface-reduction-rules-reference.md), enable and disable them, and check their status
 - Answerfile AutoUnattend - My current template is in the repo or you can create your own via [Schneegans] according to your own needs
 - Firewall hardening - Scripts that add outbound and inbound rules to Windows Defender Firewall
 - [Chocolatey] scripts - Select and automate software installations during the OS installation process
@@ -34,12 +34,16 @@ Some people say it is impossible to use Windows 11 privately, as it is very shod
 
 ## Installation
 
-Not sure yet, leaving this here so I can edit later.
+For now, the ASR Scripts work well. Simply clone this repo, and run one of the main scripts in Get-It-Goin/scripts/asr/
+- check-asr-rules.ps1 : Fetches rules from Microsoft and verifies if they are enabled on your machine
+- add-asr-rule.ps1 : Adds an ASR Rule in Block mode given a GUID
+- add-all-asr-rules.ps1 : Fetches and adds all available ASR Rules in Block mode. I highly recommend running this script on every Windows machine you own
+- disable-asr-rule.ps1 : Disables or deletes an active ASR Rule from your machine
+- disable-all-asr-rules.ps1 : Disables or deletes all active ASR Rules
 
-```sh
-cd blah
-npm i
-node app
+```powershell
+cd .\get-it-goin\scripts\asr
+.\check-asr-rules.ps1
 ```
 
 ## License
