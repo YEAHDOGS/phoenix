@@ -21,13 +21,16 @@ Some people say it is impossible to use Windows 11 privately, as it is very shod
 - Answerfile AutoUnattend - My current template is in the repo or you can create your own via [Schneegans](https://schneegans.de/windows/unattend-generator) according to your own needs
 - Firewall hardening - Scripts that add outbound and inbound rules to Windows Defender Firewall
 - [Chocolatey](https://chocolatey.org) scripts - Select and automate software installations during the OS installation process
+- Ghost Rider wallpapers - What good is a machine that isn't badass?
 
 ## Tech
 
 - [Chocolatey](https://chocolatey.org) - Automate installation of the software you need
 - [Schneegans Answer File AutoUnattend Generator](https://schneegans.de/windows/unattend-generator) - Create a file that tells the Windows installation media to behave differently. Extremely powerful
-- [Ameliorated AME Beta](https://amelabs.net/) - Install Playbooks to tune Windows in any way
+- [Ameliorated AME Beta](https://amelabs.net) - Install Playbooks to tune Windows in any way
 - [ReviOS](https://www.revi.cc/download) - A Playbook by Revision focused on minimalism and privacy
+- [SysInternals](https://learn.microsoft.com/en-us/sysinternals) - A very important toolset for disabling startup services, monitoring processes, and so much more
+- [Ventoy](https://www.ventoy.net) - Create runnable USBs with your choice of operating systems or install isos
 
 ## Installation
 
