@@ -34,7 +34,7 @@ catch {
 }
 
 if ($OnlineRules.Count -gt 0) {
-    Write-Host "Successfully fetched $($OnlineRules.Count) ASR rules.`n" -ForegroundColor Green
+    Write-Host "Successfully fetched $($OnlineRules.Count) ASR rules online from Microsoft.`n" -ForegroundColor Green
 }
 else {
     Write-Host "Failed to fetch online ASR ruleset." -ForegroundColor Cyan
