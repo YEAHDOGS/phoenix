@@ -9,7 +9,7 @@ I'm currently plagued by Windows Update itself. Somehow malware has been enterin
 
 > My privacy is raked
 
-I've created this project to help automate the setup of freshly flashed PCs. This repo contains many scripts to remove bloatware, harden security, disable tasks, remove services, lock down settings, and install selected apps. The core idea is that I can wipe the SSD in the bios, plug in my Win 11 install USB, plug in another USB with this project on it, and get my system just the way I like it in one swoop.
+I've created this project to help automate the setup of freshly flashed PCs. This repo contains many scripts to remove bloatware, harden security, disable tasks, remove services, lock down settings, and install selected apps. The core idea is that I can wipe the SSD via bios, plug in my Win 11 install USB, plug in another USB with this project on it, and get my system just the way I like it in one swoop.
 
 This project goes hand in hand with Playbooks and [Ameliorated AME]. My current playbook of choice is [ReviOS]. If you wish to use these tools on air-gapped machines offline, I have modified the ReviOS Playbook to allow compilation and offline installation [here](https://github.com/REDACTED/reviOS-offline).
 
@@ -33,7 +33,7 @@ Some people say it is impossible to use Windows 11 privately, as it is very shod
 - Windows Telemetry, Bing integration, AI features like Windows Recall, and many more spyware features disabled
 - Disable Windows Update and other auto-update features that come default, as these overwrite our changes and can even add malware
 - Change various Windows settings to enhance privacy
-- Attack the registry, device manager (drivers), services, task scheduler, firewall, and control panel to minimize background services, cut the attack surface down, and turn Windows 11 into a lean mean silent fighting machine
+- Attack the registry, device manager (drivers), services, task scheduler, firewall, and control panel to minimize background services, cut the attack surface down, and turn Windows 11 into a lean mean silent machine
 - 0 to 1. Wipe ssd from bios, plug Win 11 install media and this project on a usb in, press play, and get back to where I like to be in 15 minutes or less automatically
 
 ## Tech
@@ -50,13 +50,26 @@ Some people say it is impossible to use Windows 11 privately, as it is very shod
 
 For now, the ASR Scripts work well. Simply clone this repo, and run one of the main scripts in Get-It-Goin/scripts/asr/
 - check-asr-rules.ps1 : Fetches rules from Microsoft and verifies if they are enabled on your machine
-- add-asr-rule.ps1 : Adds an ASR Rule in Block mode given a GUID
 - add-all-asr-rules.ps1 : Fetches and adds all available ASR Rules in Block mode. I highly recommend running this script on every Windows machine you own
-- disable-asr-rule.ps1 : Disables or deletes an active ASR Rule from your machine
+- add-asr-rule.ps1 : Adds an ASR Rule in Block mode given a GUID
 - disable-all-asr-rules.ps1 : Disables or deletes all active ASR Rules
+- disable-asr-rule.ps1 : Disables or deletes an active ASR Rule from your machine
 
+I highly recommend running check-asr-rules, then add-all-asr-rules, then check-asr-rules again to confim they work. If you want to see them in action, I got one to trigger by installing [Idea IntelliJ](https://www.jetbrains.com/idea/download/?section=windows), which attempts to replace klist.exe (a Kerberos ticket caching thingy) in the Windows dir.
+
+Go to the ASR scripts folder and run check-asr-rules.ps1, it will display a list of all MS ASR rules present on their website, then report that you have 0 of them active
 ```powershell
 cd .\get-it-goin\scripts\asr
+.\check-asr-rules.ps1
+```
+
+Add them all
+```powershell
+.\add-all-asr-rules.ps1
+```
+
+Afterwards, check again to confirm they are now active
+```powershell
 .\check-asr-rules.ps1
 ```
 
