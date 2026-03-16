@@ -23,6 +23,19 @@ Some people say it is impossible to use Windows 11 privately, as it is very shod
 - [Chocolatey] scripts - Select and automate software installations during the OS installation process
 - Ghost Rider wallpapers - What good is a machine that isn't badass?
 
+# Goals
+
+- Custom setup mainly targetting an HP Omnibook 7 laptop running Windows 11 Pro
+- [Yubico Yubikey] smart card lockdown of administrator privileges
+- [Chocolatey] software install automation
+- Security hardening with Windows Defender Firewall rules and MS Defender Attack Surface Reduction (ASR) rules
+- Auto disabling or uninstalling of as many unnecessary services and drivers as possible
+- Windows Telemetry, Bing integration, AI features like Windows Recall, and many more spyware features disabled
+- Disable Windows Update and other auto-update features that come default, as these overwrite our changes and can even add malware
+- Change various Windows settings to enhance privacy
+- Attack the registry, device manager (drivers), services, task scheduler, firewall, and control panel to minimize background services, cut the attack surface down, and turn Windows 11 into a lean mean silent fighting machine
+- 0 to 1. Wipe ssd from bios, plug Win 11 install media and this project on a usb in, press play, and get back to where I like to be in 15 minutes or less automatically
+
 ## Tech
 
 - [Chocolatey] - Automate installation of the software you need
@@ -31,6 +44,7 @@ Some people say it is impossible to use Windows 11 privately, as it is very shod
 - [ReviOS] - A Playbook by Revision focused on minimalism and privacy
 - [SysInternals] - A very important toolset for disabling startup services, monitoring processes, and so much more
 - [Ventoy](https://www.ventoy.net) - Create runnable USBs with your choice of operating systems or install isos
+- [Yubico Yubikey] - A $50 USB FIDO smart card. Currently smart card login appears only accessible to Windows Enterprise users set up with Group Policies in Microsoft Intune. This is a shame, as a beautiful security setup would be to have 2 accounts, a user and an admin one that's added to the Administrators group, then only allow the admin account to be logged in via smart card. Then leave the yubikey at home, and do what you want to do in peace. This repo will contain documentation and scripts to enable this setup
 
 ## Installation
 
@@ -57,3 +71,4 @@ MIT
    [Schneegans]: <https://schneegans.de/windows/unattend-generator>
    [Ameliorated AME]: <https://amelabs.net>
    [SysInternals]: <https://learn.microsoft.com/en-us/sysinternals>
+   [Yubico Yubikey]: <https://www.yubico.com>
