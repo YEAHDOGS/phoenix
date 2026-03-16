@@ -1,0 +1,112 @@
+{
+    "System Configuration Services": {
+        "Background Intelligent Transfer Service": {
+            "description": "Transfers files in the background using idle network bandwidth.",
+            "vulnerability": "Potential to update software with malicious updates"
+        },
+        "DevQuery Background Discovery Broker": {
+            "description": "Facilitates the discovery of devices and services on a network.",
+            "vulnerability": "Potential for unauthorized device discovery, giving system access to malicious network devices and services"
+        },
+        "Distributed Link Tracking Client": {
+            "description": "Maintains links between NTFS files within a computer or across computers in a network.",
+            "vulnerability": "Potential for unauthorized file access"
+        },
+        "Connected Devices Platform Service": {
+            "description": "Provides support for connected devices and their interactions with the system.",
+            "vulnerability": "Connected devices will actually kill us all"
+        },
+        "Downloaded Maps Manager": {
+            "description": "Manages downloaded maps for offline use in applications.",
+            "vulnerability": "Idk but I'm using a fucking laptop so why would I need maps"
+        },
+        "Internet Connection Sharing (ICS)": {
+            "description": "Allows a computer to share its internet connection with other devices on the network.",
+            "vulnerability": "Potential for unauthorized network access"
+        },
+        "Link-Layer Topology Discovery Mapper": {
+            "description": "Discovers and maps the network topology of devices on a local network.",
+            "vulnerability": "Potential to push payloads to devices on the local network"
+        },
+        "Remote Desktop Services UserMode Port Redirector": {
+            "description": "Redirects ports for Remote Desktop Services sessions.",
+            "vulnerability": "Potential for unauthorized remote desktop access"
+        },
+        "Remote Desktop Services": {
+            "description": "Allows users to connect to a remote computer and access its resources.",
+            "vulnerability": "Potential for unauthorized remote desktop access"
+        },
+        "Remote Desktop Configuration": {
+            "description": "Manages the configuration of Remote Desktop Services.",
+            "vulnerability": "Destroy all remote desktop abilities"
+        },
+        "Remote Procedure Call (RPC)": {
+            "description": "Enables communication between processes on the same computer or across a network using the Remote Procedure Call (RPC) protocol.",
+            "vulnerability": "I don't like things talking to each other without my express permission"
+        },
+        "Remote Access Connection Manager": {
+            "description": "Manages dial-up and VPN connections.",
+            "vulnerability": "Potential for unauthorized remote access connections"
+        },
+        "Secure Socket Tunneling Protocol Service": {
+            "description": "Provides support for the Secure Socket Tunneling Protocol (SSTP) for VPN connections.",
+            "vulnerability": "Potential for unauthorized VPN connections"
+        },
+        "SSDP Discovery": {
+            "description": "Discovers devices and services on a network using the Simple Service Discovery Protocol (SSDP).",
+            "vulnerability": "Potential for unauthorized device discovery"
+        },
+        "Telephony": {
+            "description": "Provides telephony services for applications that use the Telephony API (TAPI).",
+            "vulnerability": "Potential for unauthorized telephony services"
+        },
+        "TCP/IP NetBIOS Helper": {
+            "description": "Provides support for NetBIOS over TCP/IP (NetBT) service and NetBIOS name resolution.",
+            "vulnerability": "Potential for unauthorized NetBIOS name resolution"
+        },
+        "Update Orchestrator Service": {
+            "description": "Manages the installation of Windows updates and patches.",
+            "vulnerability": "Potential for unauthorized update orchestration"
+        },
+        "Windows Remote Management (WS-Management)": {
+            "description": "Provides support for remote management of Windows-based systems using the WS-Management protocol.",
+            "vulnerability": "Potential for unauthorized remote management"
+        },
+        "Windows Perception Simulation Service": {
+            "description": "Simulates perception data for applications that use the Windows Perception API.",
+            "vulnerability": "Imagine if your device is set to auto-unlock via facial recognition and this service is compromised, allowing attackers to simulate perception data and gain unauthorized access to the device"
+        },
+        "Windows Update": {
+            "description": "Manages the downloading and installation of Windows updates.",
+            "vulnerability": "Windows Update will actually kill us all"
+        },
+        "Xbox Live Networking Service": {
+            "description": "Provides support for Xbox Live networking features for games and applications.",
+            "vulnerability": "Why is xbox here this is a laptop"
+        },
+        "Xbox Accessory Management Service": {
+            "description": "Manages Xbox accessories and their interactions with the system.",
+            "vulnerability": "Why is xbox here this is a laptop"
+        },
+        "Xbox Live Game Save": {
+            "description": "Provides support for saving game data to the cloud for Xbox Live-enabled games.",
+            "vulnerability": "Why is xbox here this is a laptop"
+        },
+        "Xbox Live Auth Manager": {
+            "description": "Manages authentication for Xbox Live services and applications.",
+            "vulnerability": "Why is xbox here this is a laptop"
+        },
+        "WSAIFabricSvc": {
+            "description": "AI Management Service for Windows Subsystem for Android (WSA) to manage AI-related tasks and operations. Let it be known that when I researched this service previously using Google Gemini no ai I checked with mentioned Android at all. And now they're all mentioning Android. I hate this goddamn world now.",
+            "vulnerability": "Facing a malicious ai is like when your big brother plays basketball with you and just keeps dunking on you for hours. It is absolutely awful."
+        },
+        "WMI Performance Adapter": {
+            "description": "Provides performance data for Windows Management Instrumentation (WMI).",
+            "vulnerability": "Who needs this shit"
+        },
+        "Workstation": {
+            "description": "Provides network connectivity and access to shared resources on a network.",
+            "vulnerability": "Potential for unauthorized network access"
+        }
+    }
+}
