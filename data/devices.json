@@ -1,0 +1,60 @@
+{
+    "Devices": {
+        "System devices": {
+            "NDIS Virtual Network Adapter Enumerator": {
+                "description": "Enumerates NDIS virtual network adapters."
+            },
+            "Remote Desktop Device Redirector Bus": {
+                "description": "Provides support for redirecting devices in Remote Desktop Services sessions."
+            }
+        },
+        "Network adapters": {
+            "Microsoft Wi-Fi Direct Virtual Adapter": {
+                "description": "Provides virtual adapter support for Wi-Fi Direct connections."
+            },
+            "Microsoft Kernel Debug Network Adapter": {
+                "description": "Provides support for kernel debugging over a network connection."
+            },
+            "Bluetooth Device (Personal Area Network)": {
+                "description": "Provides support for Bluetooth Personal Area Network (PAN) connections."
+            },
+            "Hidden Devices": {
+                "Microsoft Wi-Fi Direct Virtual Adapter #2": {
+                    "description": "Provides virtual adapter support for Wi-Fi Direct connections."
+                },
+                "WAN Miniport (IKEv2)": {
+                    "description": "Provides support for IKEv2 VPN connections."
+                },
+                "WAN Miniport (IP)": {
+                    "description": "Provides support for IP-based WAN connections."
+                },
+                "WAN Miniport (IPv6)": {
+                    "description": "Provides support for IPv6-based WAN connections."
+                },
+                "WAN Miniport (L2TP)": {
+                    "description": "Provides support for L2TP VPN connections."
+                },
+                "WAN Miniport (Network Monitor)": {
+                    "description": "Provides support for network monitoring and analysis."
+                },
+                "WAN Miniport (PPPOE)": {
+                    "description": "Provides support for PPPoE connections."
+                },
+                "WAN Miniport (PPTP)": {
+                    "description": "Provides support for PPTP VPN connections."
+                },
+                "WAN Miniport (SSTP)": {
+                    "description": "Provides support for SSTP VPN connections."
+                }
+            }
+        },
+        "Ports (COM & LPT)": {
+            "Standard Serial over Bluetooth link (COM3)": {
+                "description": "Provides support for serial communication over a Bluetooth link."
+            },
+            "Standard Serial over Bluetooth link (COM4)": {
+                "description": "Provides support for serial communication over a Bluetooth link."
+            }
+        }
+    }
+}
