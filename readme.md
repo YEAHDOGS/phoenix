@@ -18,7 +18,7 @@ Some people say it is impossible to use Windows 11 privately, as it is very shod
 ## Features
 
 - Attack Surface Reduction (ASR) Rule scripts - Fetch all available [ASR Rules from Microsoft](https://github.com/MicrosoftDocs/defender-docs/blob/public/defender-endpoint/attack-surface-reduction-rules-reference.md), enable and disable them, and check their status
-- Answerfile AutoUnattend - My current template is in the repo or you can create your own via [Schneegans] according to your own needs
+- Answerfile AutoUnattend - An xml file that configures a Windows Installation Media. Allows account setup, drive formatting, bloatware removal, reg edits, and much more all automated. Done right, you don't have to click anything in the install gui, you just sail right to the desktop. My current template is in the repo /win-install/autounattend.xml or you can create your own via [Schneegans] according to your own needs
 - Firewall hardening - Scripts that add outbound and inbound rules to Windows Defender Firewall
 - [Chocolatey] scripts - Select and automate software installations during the OS installation process
 - Ghost Rider wallpapers - What good is a machine that isn't badass?
