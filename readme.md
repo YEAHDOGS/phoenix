@@ -55,7 +55,7 @@ For now, the ASR Scripts work well. Simply clone this repo, and run one of the m
 - disable-all-asr-rules.ps1 : Disables or deletes all active ASR Rules
 - disable-asr-rule.ps1 : Disables or deletes an active ASR Rule from your machine
 
-I highly recommend running check-asr-rules, then add-all-asr-rules, then check-asr-rules again to confim they work. If you want to see them in action, I got one to trigger by installing [Idea IntelliJ](https://www.jetbrains.com/idea/download/?section=windows), which attempts to replace klist.exe (a Kerberos ticket caching thingy) in the Windows dir.
+I highly recommend running check-asr-rules, then add-all-asr-rules, then check-asr-rules again to confim they work. If you want to see them in action, I got one to trigger by installing [Idea IntelliJ](https://www.jetbrains.com/idea/download/?section=windows), which attempts to replace klist.exe (a Kerberos ticket caching thingy) in the Windows dir. Google Gemini tells me this is normal because IntelliJ contains a jdk and the jdk contains a klist.exe. So yeah. But this is exactly what I mean, all this software doing god knows what to the sanctity of the operating system's heart willy nilly, no more of this horseshit!
 
 Go to the ASR scripts folder and run check-asr-rules.ps1, it will display a list of all MS ASR rules present on their website, then report that you have 0 of them active
 ```powershell
