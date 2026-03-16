@@ -41,6 +41,7 @@ Some people say it is impossible to use Windows 11 privately, as it is very shod
 ## Tech
 
 - [Chocolatey] - Automate installation of the software you need
+- [Boxstarter] - Ooh la la, I'm liking the look of this puppy
 - [Schneegans Answer File AutoUnattend Generator](https://schneegans.de/windows/unattend-generator) - Create a file that tells the Windows installation media to behave differently. Extremely powerful
 - [Ameliorated AME] - Install Playbooks to tune Windows in any way
 - [ReviOS] - A Playbook by Revision focused on minimalism and privacy
@@ -89,3 +90,4 @@ MIT
    [SysInternals]: <https://learn.microsoft.com/en-us/sysinternals>
    [Yubico Yubikey]: <https://www.yubico.com>
    [QEMU]: <https://www.qemu.org>
+   [Boxstarter]: <https://boxstarter.org>
