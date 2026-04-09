@@ -15,6 +15,9 @@ This project goes hand in hand with Playbooks and [Ameliorated AME]. My current 
 
 Some people say it is impossible to use Windows 11 privately, as it is very shoddy by design. But I'll be damned if I'm switching to Linux. I'll be damned!
 
+> [!IMPORTANT]
+> **Status:** 🚧 Work in Progress - This project is under active development and does not work rn. Some scripts are functional.
+
 ## Features
 
 - Attack Surface Reduction (ASR) Rule scripts - Fetch all available [ASR Rules from Microsoft](https://github.com/MicrosoftDocs/defender-docs/blob/public/defender-endpoint/attack-surface-reduction-rules-reference.md), enable and disable them, and check their status
@@ -48,6 +51,7 @@ Some people say it is impossible to use Windows 11 privately, as it is very shod
 - [Ventoy](https://www.ventoy.net) - Create runnable USBs with your choice of operating systems or install isos
 - [Yubico Yubikey] - A $50 USB FIDO smart card. Currently smart card login appears only accessible to Windows Enterprise users set up with Group Policies in Microsoft Intune. This is a shame, as a beautiful security setup would be to have 2 accounts, a user and an admin one that's added to the Administrators group, then only allow the admin account to be logged in via smart card. Then leave the yubikey at home, and do what you want to do in peace. This repo will contain documentation and scripts to enable this setup
 - [QEMU] - Much slicker than VirtualBox albeit a bit more setup heavy. Allows fast emulation of other operating systems
+- [Portmaster] - Windows Defender Firewall can only do so much. This is a modern solution for a proper dynamic firewall.
 
 ## Installation
 
@@ -76,6 +80,26 @@ Afterwards, check again to confirm they are now active
 .\check-asr-rules.ps1
 ```
 
+There is a script that lists all installed and active drivers on the machine. It lists the version, installed date, associated PnP device, and more.
+
+```powershell
+cd .\get-it-goin\scripts\settings
+.\list-drivers.ps1
+```
+
+There are some scripts to fetch, and install Windows Updates manually using the Windows Update Agent. This is separate from the Windows Update services, and can be used manually from Powershell even if Windows Update is disabled.
+
+Fetch and list all incoming update info without installing any of them
+```powershell
+cd .\get-it-goin\scripts\get-windows-updates
+.\fetch-updates.ps1
+```
+
+Install the specific update that you want with its ID (replace the ID below)
+```powershell
+.\install.ps1 a32ca1d0-ddd4-486b-b708-d941db4f1101
+```
+
 ## License
 
 MIT
@@ -89,3 +113,4 @@ MIT
    [SysInternals]: <https://learn.microsoft.com/en-us/sysinternals>
    [Yubico Yubikey]: <https://www.yubico.com>
    [QEMU]: <https://www.qemu.org>
+   [Portmaster]: <https://safing.io/>
