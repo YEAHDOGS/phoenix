@@ -1,0 +1,57 @@
+Windows Registry Editor Version 5.00
+
+; Disable "Allow downloads from other PCs" (Delivery Optimization)
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization]
+"DODownloadMode"=dword:00000000
+
+; Stop Windows from auto-downloading Optional Features/FODs
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate]
+"DisableOSUpgrade"=dword:00000001
+
+; Stop the "Update Orchestrator" from pushing optional content
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Orchestrator]
+"DisableAutoAutomaticMinorUpdates"=dword:00000001
+
+; Prevent Windows from automatically adding features based on your language/region
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Control Panel\International]
+"PreventUpdateLanguages"=dword:00000001
+
+; Enforce Admin Approval Mode (UAC) for the Built-in Administrator
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System]
+"EnableLUA"=dword:00000001
+"FilterAdministratorToken"=dword:00000001
+"ConsentPromptBehaviorAdmin"=dword:00000002
+"PromptOnSecureDesktop"=dword:00000001
+
+; Exclude drivers from Windows Update (main policy key)
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate]
+"ExcludeWUDriversInQualityUpdate"=dword:00000001
+"DoNotIncludeDriversWithWindowsUpdates"=dword:00000001
+
+; Block driver searches from WU
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\DriverSearching]
+"SearchOrderConfig"=dword:00000000
+"DontSearchWindowsUpdate"=dword:00000001
+"DriverUpdateWizardEnabled"=dword:00000000
+
+; Prevent device metadata downloads (often triggers extra driver fetches)
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Device Metadata]
+"PreventDeviceMetadataFromNetwork"=dword:00000001
+
+; Extra exclusions in PolicyManager paths (helps in newer Windows 11 builds)
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\default\Update]
+"ExcludeWUDriversInQualityUpdate"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\current\device\Update]
+"ExcludeWUDriversInQualityUpdate"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings]
+"ExcludeWUDriversInQualityUpdate"=dword:00000001
+
+; Disable Windows Update service (wuauserv) - Startup type: Disabled
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\wuauserv]
+"Start"=dword:00000004
+
+; Disable Background Intelligent Transfer Service (bits) - Startup type: Disabled
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\bits]
+"Start"=dword:00000004
