@@ -1,3 +1,5 @@
 Applications/*
 
 win-install/drivers
+
+scripts/settings/*.csv
