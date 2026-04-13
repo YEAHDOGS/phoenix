@@ -80,7 +80,8 @@ $Results = foreach ($d in $Drivers) {
     }
 }
 
-# Display results in a searchable grid
+# Display results in a searchable grid and export to CSV
 $Results | Sort-Object INSTALLED -Descending | Out-GridView -Title "Driver Inventory"
+$Results | Sort-Object INSTALLED -Descending | Export-Csv -Path ".\System_Drivers.csv" -NoTypeInformation
 
 Write-Host "[+] System analysis complete." -ForegroundColor Green
