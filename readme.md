@@ -55,6 +55,13 @@ Some people say it is impossible to use Windows 11 privately, as it is very shod
 
 ## Installation
 
+This repo now includes a Schneegans answerfile generation workflow.
+
+1. Copy `.env.example` to `.env` and fill in your admin/user credentials, Windows key, Windows edition, and machine values.
+2. Run `.\scripts\win-install\parse-schneegans-url.ps1` to extract the current Schneegans generator parameters from `win-install/autounattend.xml` into `data/win-install/answerfile-config.json`.
+3. Edit `data/win-install/answerfile-config.json` to toggle features on or off via the `toggles` section while preserving the current selected values.
+4. Run `.\scripts\win-install\generate-autounattend.ps1` to build a new Schneegans URL, download the generated answerfile, and save it to `win-install/autounattend.xml`.
+
 For now, the ASR Scripts work well. Simply clone this repo, and run one of the main scripts in Get-It-Goin/scripts/asr/
 - check-asr-rules.ps1 : Fetches rules from Microsoft and verifies if they are enabled on your machine
 - add-all-asr-rules.ps1 : Fetches and adds all available ASR Rules in Block mode. I highly recommend running this script on every Windows machine you own

@@ -1,5 +1,11 @@
+# Add offline installers here
 Applications/*
 
+# Add drivers here
 win-install/drivers
 
+# Local information
 scripts/settings/*.csv
+
+# Local environment settings
+.env
