@@ -16,10 +16,10 @@ $ActiveActions = $MpPrefs.AttackSurfaceReductionRules_Actions
 $ActiveRules = for ($i = 0; $i -lt $ActiveIds.Count; $i++) {
     $Action = [int]$ActiveActions[$i]
     [PSCustomObject]@{
-        Number = $($i + 1)
-        GUID = $ActiveIds[$i]
-        Action = $Action
-        Status = $StatusCodes[$Action]
+        Number      = $($i + 1)
+        GUID        = $ActiveIds[$i]
+        Action      = $Action
+        Status      = $StatusCodes[$Action]
         Description = 0
     }
 }
