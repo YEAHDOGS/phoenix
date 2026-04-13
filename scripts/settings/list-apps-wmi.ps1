@@ -1,1 +1,0 @@
-Get-CimInstance -ClassName Win32_Product | Select-Object Name, Version | Export-Csv -Path ".\WMI_Apps.csv" -NoTypeInformation

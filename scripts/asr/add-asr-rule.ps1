@@ -1,9 +1,4 @@
-# Check for elevated privilages
-$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Error "This script must be run as an Administrator."
-    exit 1
-}
+#Requires -RunAsAdministrator
 
 # Args check
 if ($args.Count -lt 2 -or $args[0] -notin $ValidActions) {

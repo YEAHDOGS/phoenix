@@ -5,7 +5,7 @@ Applications/*
 win-install/drivers
 
 # Local information
-scripts/settings/*.csv
+*.csv
 
 # Local environment settings
 .env

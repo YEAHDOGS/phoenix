@@ -3,9 +3,9 @@
 
 [![Alice In Chains](https://img.youtube.com/vi/kq9MBnX00hs/maxresdefault.jpg)](https://youtu.be/kq9MBnX00hs)
 
-I'm at a weird time in my life where my trust in technology is at an all-time low. I've been encountering malware everywhere, in any machine you can think of from cell phones to HVAC machines. Anyways, I need a laptop, and my operating system of choice is and always will be Windows. Sadly, Microsoft has been hard at work ruining Windows, obliterating privacy, slowing it down with bloatware to a crawl. Worse, they have added hundreds of services, apps, drivers, scripts, all in the name of convenience, all increasing the attack surface, easily exploitable by tactics such as Living off the Land vulnerabilities. [Here's a beautiful website detailing many compromisable apps baked into the OS, many impossible to remove](https://lolbas-project.github.io/). Every day more get added.
+I'm at a weird time in my life where my trust in technology is at an all-time low. I've been encountering problems with technology everywhere, in any machine you can think of from cell phones to HVAC machines. Anyways, I need a laptop, and my operating system of choice is and always will be Windows. Sadly, over the last decade Microsoft has been hard at work ruining Windows, obliterating privacy, slowing it down with bloatware to a crawl. Worse than the programs, they have added hundreds of services, apps, drivers, scripts, all in the name of convenience, all increasing the attack surface, easily exploitable by tactics such as Living off the Land vulnerabilities. [Here's a beautiful website detailing many compromisable apps baked into the OS, many impossible to remove](https://lolbas-project.github.io/). Every day more get added.
 
-I'm currently plagued by Windows Update itself. Somehow malware has been entering my PCs via officially signed packages. I'm also suspicious of Windows Defender, as for security sakes, this app is able to bypass firewalls and hosts files entirely, downloading whatever it thinks is "critical" whenever it wants with no control given to the user at all. Furthermore, Windows comes default with different wake timers and scheduled update tasks, allowing it to turn itself on and update itself when it deems fit, usually overnight. Attackers are also exploiting settings and app sharing, where devices I do not own are being added to my Google and Microsoft Account "My Devices" pages. These malicious devices push whatever they want to my things. And this is good. These features makes things convenient, so this is all good.
+I'm currently plagued by Windows Update itself. Somehow bothersome things that I don't understand have been entering my PCs via officially signed packages as seemingly legitimate driver updates. I'm also suspicious of Windows Defender, as for security sakes, this app is able to bypass firewalls and hosts files entirely, downloading whatever it thinks is "critical" whenever it wants with no control given to the user at all. Furthermore, Windows comes default with different wake timers and scheduled update tasks, allowing it to turn itself on and update itself when it deems fit, usually overnight. Attackers are also exploiting settings and app sharing, where devices I do not own are being added to my Google and Microsoft Account "My Devices" pages. These malicious devices push whatever they want to my things. And this is good. These features makes things convenient, so this is all good.
 
 > My privacy is raked
 
@@ -89,11 +89,11 @@ Afterwards, check again to confirm they are now active
 .\check-asr-rules.ps1
 ```
 
-There is a script that lists all installed and active drivers on the machine. It lists the version, installed date, associated PnP device, and more.
+There is a script that lists all installed and active drivers on the machine. It lists the version, installed date, associated PnP device, and more. There are also scripts to list all apps and services found in the registry. They will export the data as .csv files.
 
 ```powershell
-cd .\get-it-goin\scripts\settings
-.\list-drivers.ps1
+cd .\get-it-goin\scripts\sys-info
+.\list-all.ps1
 ```
 
 There are some scripts to fetch, and install Windows Updates manually using the Windows Update Agent. This is separate from the Windows Update services, and can be used manually from Powershell even if Windows Update is disabled.

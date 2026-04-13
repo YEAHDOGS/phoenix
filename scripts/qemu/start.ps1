@@ -1,0 +1,14 @@
+qemu-system-x86_64.exe ^
+-accel whpx, kernel-irqchip=on ^
+-cpu host ^
+-m 8G ^
+-smp 4 ^
+-drive if=pflash, format=raw, readonly=on, file="C:\path\to\OVMF_CODE.fd" ^
+-drive if=pflash, format=raw, file="C:\path\to\OVMF_VARS.fd" ^
+-device virtio-vga-gl ^
+-display sdl, gl=on ^
+-device virtio-blk-pci, drive=drive0 ^
+-drive file=win11_vm.qcow2, format=qcow2, if=none, id=drive0 ^
+-device usb-tablet ^
+-cdrom "C:\path\to\Win11_English_x64.iso" ^
+-drive file="C:\path\to\virtio-win.iso", media=cdrom

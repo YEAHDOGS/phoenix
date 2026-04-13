@@ -1,9 +1,4 @@
-# Check for elevated privilages
-$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Error "This script must be run as an Administrator."
-    exit 1
-}
+#Requires -RunAsAdministrator
 
 $ValidActions = @('d', 'r', 'disable', 'remove')
 
@@ -36,10 +31,11 @@ foreach ($guid in ($args | Select-Object -Skip 1)) {
 
     if ($MatchedRule) {
         Write-Host "❌ Matching GUID Found: $($MatchedRule.GUID) Current Status: $($MatchedRule.Status)" -ForegroundColor Red
-        if($RemovalType -in @('d', 'disable')) {
+        if ($RemovalType -in @('d', 'disable')) {
             Add-MpPreference -AttackSurfaceReductionRules_Ids $guid -AttackSurfaceReductionRules_Actions Disabled
             Write-Host "  Disabled Rule $($MatchedRule.GUID)" -ForegroundColor Red
-        } else {
+        }
+        else {
             Remove-MpPreference -AttackSurfaceReductionRules_Ids $guid
             Write-Host "  Removed Rule $($MatchedRule.GUID)" -ForegroundColor Red
         }
