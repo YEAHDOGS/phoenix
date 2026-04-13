@@ -2,3 +2,4 @@
 . ./list-programs.ps1
 . ./list-services.ps1
 . ./list-tasks.ps1
+. ./list-users.ps1
