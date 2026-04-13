@@ -82,13 +82,11 @@ Afterwards, check again to confirm they are now active
 .\check-asr-rules.ps1
 ```
 
-There is a script that lists all installed and active drivers on the machine. It lists the version, installed date, associated PnP device, and more. There are also scripts to list all apps and services found in the registry
+There is a script that lists all installed and active drivers on the machine. It lists the version, installed date, associated PnP device, and more. There are also scripts to list all apps and services found in the registry. They will export the data as .csv files.
 
 ```powershell
 cd .\get-it-goin\scripts\sys-info
-.\list-drivers.ps1
-.\list-apps.ps1
-.\list-services.ps1
+.\list-all.ps1
 ```
 
 There are some scripts to fetch, and install Windows Updates manually using the Windows Update Agent. This is separate from the Windows Update services, and can be used manually from Powershell even if Windows Update is disabled.
