@@ -5,3 +5,5 @@
 . ./list-services.ps1
 . ./list-tasks.ps1
 . ./list-users.ps1
+. ./list-filters.ps1
+. ./list-wmi.ps1

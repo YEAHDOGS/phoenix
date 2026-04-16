@@ -1,15 +1,21 @@
 # WMI Event Consumers are like scripts or programs that run when certain events happen. They can be used for good, but if something bad gets installed here, it can run whenever the right event happens.
 
-# SCM Event Log Consumer with SCM Event Log Filter and its binding should be good...
+# SCM Event Log Consumer with SCM Event Log Filter and their binding should be ok... i think idk anything anymore. If theres anything more listed you probably hacked
 
 # Get-WMIObject -Namespace root\subscription -Class __EventConsumer
 
-Write-Host "Listing WMI Event Consumers, Filters, and Bindings..." -ForegroundColor Cyan
+$ExportPath = ".\Sys-WMIEvents.csv"
 
-Write-Host "WMI Event Consumers: " -ForegroundColor Yellow
-Get-CimInstance -Namespace root\subscription -ClassName __EventConsumer
-Write-Host "WMI Event Filters: " -ForegroundColor Yellow
-Get-CimInstance -Namespace root\subscription -ClassName __EventFilter
+# Define the classes to audit
+$WmiClasses = @("__EventConsumer", "__EventFilter", "__FilterToConsumerBinding")
 
-Write-Host "WMI Event Consumer Bindings (Binds two from the above lists together): " -ForegroundColor Yellow
-Get-CimInstance -Namespace root\subscription -ClassName __FilterToConsumerBinding
+$WmiClasses | ForEach-Object {
+    $ClassName = $_
+    # Query each class and add a 'Type' property for easy filtering in Excel/CSV
+    Get-CimInstance -Namespace root\subscription -ClassName $ClassName -ErrorAction SilentlyContinue |
+    Select-Object @{Name = "WmiType"; Expression = { $ClassName } }, Name, Query, Consumer, Filter, ExecutablePath, CommandLineTemplate |
+    # We use -Append so all three queries land in the same file
+    Export-Csv -Path $ExportPath -NoTypeInformation -Append
+}
+
+Write-Host "WMI Subscription audit exported to $ExportPath" -ForegroundColor Cyan
