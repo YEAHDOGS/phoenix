@@ -1,3 +1,8 @@
+param (
+    [Alias("t")]
+    [switch]$TableView
+)
+
 $ExportPath = ".\Sys-Users.csv"
 
 # Get all local users
@@ -30,3 +35,8 @@ $Report = foreach ($User in $AllUsers) {
 $Report | Sort-Object Enabled, UserName | Export-Csv -Path $ExportPath -NoTypeInformation
 
 Write-Host "Users audit exported to $ExportPath" -ForegroundColor Cyan
+
+# Check for the -t (TableView) flag
+if ($TableView) {
+    Import-Csv -Path $ExportPath | Out-GridView -Title "Users"
+}

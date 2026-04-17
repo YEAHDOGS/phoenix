@@ -2,8 +2,6 @@
 # These should all usually exist in System32 System32/Drivers System32/DRIVERS or System32/DriverStore folders
 # This also lists their running status, installed date, associated .inf files, and more
 
-# This is where the wild things are.
-
 # Get-CimInstance Win32_SystemDriver |
 # Where-Object { $_.State -eq "Running" } |
 # ForEach-Object {
@@ -24,7 +22,7 @@ Write-Host "   SYSTEM DRIVER & HARDWARE SCANNER   " -ForegroundColor Blue
 Write-Host "========================================" -ForegroundColor Magenta
 Write-Host "[*] Mapping services to PnP hardware devices..." -ForegroundColor Yellow
 
-# Get all system drivers
+# Get all running system drivers
 $Drivers = Get-CimInstance Win32_SystemDriver
 
 # Pre-fetch PnP drivers
@@ -42,18 +40,18 @@ $Results = foreach ($d in $Drivers) {
     if ($rawDate) {
         try {
             if ($rawDate -is [DateTime]) {
-                $formattedDate = $rawDate.ToString("yyyy-MM-dd HH:mm") + " (DT)"
+                $formattedDate = $rawDate.ToString("yyyy-MM-dd HH:mm")
             }
             else {
                 # Convert CIM string, but trim any weirdness first
                 $dt = [Management.ManagementDateTimeConverter]::ToDateTime($rawDate.ToString())
-                $formattedDate = $dt.ToString("yyyy-MM-dd HH:mm") + " (CIM)"
+                $formattedDate = $dt.ToString("yyyy-MM-dd HH:mm")
             }
         }
         catch {
             # Final fallback: if conversion fails, check file system one last time
             if (Test-Path $d.PathName) {
-                $formattedDate = (Get-Item $d.PathName).CreationTime.ToString("yyyy-MM-dd HH:mm") + " (File System)"
+                $formattedDate = (Get-Item $d.PathName).CreationTime.ToString("yyyy-MM-dd HH:mm")
             }
             else {
                 $formattedDate = "N/A"
@@ -71,7 +69,6 @@ $Results = foreach ($d in $Drivers) {
         NAME         = $d.Name
         DISPLAY_NAME = $d.DisplayName
         STATE        = $d.State
-        SERVICE_TYPE = $d.ServiceType
         VERSION      = if ($pnp.DriverVersion) { $pnp.DriverVersion } else { "N/A" }
         PROVIDER     = $provider
         INF_FILE     = $pnp.InfName

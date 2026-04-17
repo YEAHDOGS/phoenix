@@ -1,3 +1,8 @@
+param (
+    [Alias("t")]
+    [switch]$TableView
+)
+
 #Requires -RunAsAdministrator
 
 # I fucking hate filters
@@ -20,3 +25,8 @@ $results = foreach ($line in $rawOutput) {
 }
 
 $results | Export-Csv -Path $ExportPath -NoTypeInformation
+
+# Check for the -t (TableView) flag
+if ($TableView) {
+    Import-Csv -Path $ExportPath | Out-GridView -Title "Filters"
+}

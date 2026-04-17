@@ -1,3 +1,8 @@
+param (
+    [Alias("t")]
+    [switch]$TableView
+)
+
 #Requires -RunAsAdministrator
 
 $ExportPath = ".\Sys-AppxPackages.csv"
@@ -33,3 +38,8 @@ $manifestData = Get-AppxPackage -AllUsers | ForEach-Object {
 $manifestData | Export-Csv -Path $ExportPath -NoTypeInformation
 
 Write-Host "APPX Packages and APPX Manifests audit exported to $ExportPath" -ForegroundColor Cyan
+
+# Check for the -t (TableView) flag
+if ($TableView) {
+    Import-Csv -Path $ExportPath | Out-GridView -Title "AppX Packages and Manifests"
+}

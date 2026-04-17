@@ -1,3 +1,8 @@
+param (
+    [Alias("t")]
+    [switch]$TableView
+)
+
 $ExportPath = ".\Sys-Tasks.csv"
 
 Get-ScheduledTask | Sort-Object TaskName | ForEach-Object {
@@ -15,3 +20,8 @@ Get-ScheduledTask | Sort-Object TaskName | ForEach-Object {
 } | Export-Csv -Path $ExportPath -NoTypeInformation
 
 Write-Host "Scheduled Tasks audit exported to $ExportPath" -ForegroundColor Cyan
+
+# Check for the -t (TableView) flag
+if ($TableView) {
+    Import-Csv -Path $ExportPath | Out-GridView -Title "Scheduled Tasks"
+}

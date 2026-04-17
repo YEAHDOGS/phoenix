@@ -4,6 +4,11 @@
 
 # Get-WMIObject -Namespace root\subscription -Class __EventConsumer
 
+param (
+    [Alias("t")]
+    [switch]$TableView
+)
+
 $ExportPath = ".\Sys-WMIEvents.csv"
 
 # Define the classes to audit
@@ -19,3 +24,8 @@ $WmiClasses | ForEach-Object {
 }
 
 Write-Host "WMI Subscription audit exported to $ExportPath" -ForegroundColor Cyan
+
+# Check for the -t (TableView) flag
+if ($TableView) {
+    Import-Csv -Path $ExportPath | Out-GridView -Title "WMI Subscriptions"
+}

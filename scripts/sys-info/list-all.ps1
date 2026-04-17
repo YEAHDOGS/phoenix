@@ -1,4 +1,5 @@
 . ./list-drivers.ps1
+# . ./list-driver-store.ps1
 . ./list-programs.ps1
 . ./list-appx.ps1
 . ./list-com.ps1
