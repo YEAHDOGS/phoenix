@@ -3,7 +3,7 @@ param (
     [switch]$TableView
 )
 
-$ExportPath = ".\Sys-Users.csv"
+$ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-Users.csv"
 
 # Get all local users
 $AllUsers = Get-LocalUser

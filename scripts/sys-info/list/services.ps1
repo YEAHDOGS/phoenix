@@ -3,7 +3,7 @@ param (
     [switch]$TableView
 )
 
-$ExportPath = ".\Sys-Services.csv"
+$ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-Services.csv"
 
 # Query all services, select relevant properties, and filter out those without a name
 Get-Service | 

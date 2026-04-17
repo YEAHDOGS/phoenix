@@ -86,7 +86,7 @@ There is a script that lists all installed and active drivers on the machine. It
 
 ```powershell
 cd .\get-it-goin\scripts\sys-info
-.\list-all.ps1
+.\info.ps1
 ```
 
 There are some scripts to fetch, and install Windows Updates manually using the Windows Update Agent. This is separate from the Windows Update services, and can be used manually from Powershell even if Windows Update is disabled.

@@ -3,7 +3,7 @@ param (
     [switch]$TableView
 )
 
-$ExportPath = ".\Sys-Programs.csv"
+$ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-Programs.csv"
 
 $Paths = @(
     "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",

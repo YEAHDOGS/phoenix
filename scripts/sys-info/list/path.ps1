@@ -5,7 +5,7 @@ param (
     [switch]$TableView
 )
 
-$ExportPath = ".\Sys-Path.csv"
+$ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-Path.csv"
 
 $env:Path.Split(';') |
 Get-ChildItem -Filter *.exe -ErrorAction SilentlyContinue |
@@ -16,5 +16,5 @@ Write-Host "Path variable audit exported to $ExportPath" -ForegroundColor Cyan
 
 # Check for the -t (TableView) flag
 if ($TableView) {
-    Import-Csv -Path $ExportPath | Out-GridView -Title "PATH Variable Executables"
+    Import-Csv -Path $ExportPath | Sort-Object Directory | Out-GridView -Title "PATH Variable Executables"
 }

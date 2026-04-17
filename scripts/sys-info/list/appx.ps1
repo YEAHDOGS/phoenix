@@ -5,7 +5,7 @@ param (
 
 #Requires -RunAsAdministrator
 
-$ExportPath = ".\Sys-AppxPackages.csv"
+$ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-AppxPackages.csv"
 
 $manifestData = Get-AppxPackage -AllUsers | ForEach-Object {
     $pkg = $_

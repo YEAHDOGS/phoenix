@@ -9,7 +9,7 @@ param (
     [switch]$TableView
 )
 
-$ExportPath = ".\Sys-WMIEvents.csv"
+$ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-WMIEvents.csv"
 
 # Define the classes to audit
 $WmiClasses = @("__EventConsumer", "__EventFilter", "__FilterToConsumerBinding")

@@ -4,7 +4,7 @@ param (
     [switch]$TableView
 )
 
-$ExportPath = ".\Sys-Com.csv"
+$ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-Com.csv"
 
 Get-ChildItem HKLM:\Software\Classes -ErrorAction SilentlyContinue | 
 Where-Object { $_.PSChildName -match '^\w+\.\w+$' } | 

@@ -130,5 +130,8 @@ foreach ($s in ($StoreRaw | Where-Object { $RunningInfs -notcontains $_.Driver }
 
 # Display & Export
 Write-Host "[+] Driver Store Inventory Complete." -ForegroundColor Green
+
+$ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-Driver-Store.csv"
+
 $Results | Sort-Object DATA_ORIGIN, INSTALLED -Descending | Out-GridView -Title "Driver Store Inventory"
-$Results | Sort-Object DATA_ORIGIN, INSTALLED -Descending | Export-Csv -Path ".\Sys-Driver-Store.csv" -NoTypeInformation
+$Results | Sort-Object DATA_ORIGIN, INSTALLED -Descending | Export-Csv -Path $ExportPath -NoTypeInformation

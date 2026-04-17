@@ -81,5 +81,8 @@ $Results = foreach ($d in $Drivers) {
 }
 
 # Display results in a searchable grid and export to CSV
+
+$ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-Drivers.csv"
+
 $Results | Sort-Object INSTALLED -Descending | Out-GridView -Title "Driver Inventory"
-$Results | Sort-Object INSTALLED -Descending | Export-Csv -Path ".\Sys-Drivers.csv" -NoTypeInformation
+$Results | Sort-Object INSTALLED -Descending | Export-Csv -Path $ExportPath -NoTypeInformation

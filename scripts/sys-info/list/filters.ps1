@@ -7,7 +7,7 @@ param (
 
 # I fucking hate filters
 
-$ExportPath = ".\Sys-Filters.csv"
+$ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-Filters.csv"
 $rawOutput = fltmc filters | Select-Object -Skip 3
 
 $results = foreach ($line in $rawOutput) {

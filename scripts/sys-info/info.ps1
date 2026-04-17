@@ -18,22 +18,22 @@ if ($result -ge 0) {
     Write-Host "`n[+] You chose: $selection" -ForegroundColor Cyan
     
     switch ($selection) {
-        "All" { . ./list-all.ps1 }
-        "Drivers" { . ./list-drivers.ps1 }
-        "Drivers with Store" { . ./list-driver-store.ps1 }
-        "Programs" { . ./list-programs.ps1 -t }
-        "Services" { . ./list-services.ps1 -t }
-        "ScheduledTasks" { . ./list-tasks.ps1 -t }
-        "AppX" { . ./list-appx.ps1 -t }
-        "COM" { . ./list-com.ps1 -t }
-        "Users" { . ./list-users.ps1 -t }
-        "WMI" { . ./list-wmi.ps1 -t }
-        "ENV Vars" { . ./list-env-vars.ps1 }
-        "Filters" { . ./list-filters.ps1 -t }
-        "Hosts" { . ./list-hosts.ps1 }
-        "PathVars" { . ./list-path.ps1 -t }
-        "UEFIBIOSVars" { . ./list-UEFI.ps1 }
-        Default { . ./list-all.ps1 }
+        "All" { . ./list/all.ps1 }
+        "Drivers" { . ./list/drivers.ps1 }
+        "Drivers with Store" { . ./list/driver-store.ps1 }
+        "Programs" { . ./list/programs.ps1 -t }
+        "Services" { . ./list/services.ps1 -t }
+        "ScheduledTasks" { . ./list/tasks.ps1 -t }
+        "AppX" { . ./list/appx.ps1 -t }
+        "COM" { . ./list/com.ps1 -t }
+        "Users" { . ./list/users.ps1 -t }
+        "WMI" { . ./list/wmi.ps1 -t }
+        "ENV Vars" { . ./list/env-vars.ps1 }
+        "Filters" { . ./list/filters.ps1 -t }
+        "Hosts" { . ./list/hosts.ps1 }
+        "PathVars" { . ./list/path.ps1 -t }
+        "UEFIBIOSVars" { . ./list/UEFI.ps1 }
+        Default { . ./list/all.ps1 }
     }
 }
 else {

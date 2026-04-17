@@ -3,7 +3,7 @@ param (
     [switch]$TableView
 )
 
-$ExportPath = ".\Sys-Tasks.csv"
+$ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-Tasks.csv"
 
 Get-ScheduledTask | Sort-Object TaskName | ForEach-Object {
     [PSCustomObject]@{
