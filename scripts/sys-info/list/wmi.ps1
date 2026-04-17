@@ -11,6 +11,8 @@ param (
 
 $ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-WMIEvents.csv"
 
+if (Test-Path $ExportPath) { Remove-Item $ExportPath -Force }
+
 # Define the classes to audit
 $WmiClasses = @("__EventConsumer", "__EventFilter", "__FilterToConsumerBinding")
 
