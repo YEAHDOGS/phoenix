@@ -3,25 +3,8 @@ param (
     [switch]$TableView
 )
 
-$ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-Tasks.csv"
-$BackupFolder = Join-Path (Split-Path $PSScriptRoot -Parent) "data-backup"
-
-if (Test-Path $ExportPath) {
-    # Ensure backup directory exists
-    if (-not (Test-Path $BackupFolder)) { 
-        New-Item -Path $BackupFolder -ItemType Directory -Force | Out-Null 
-    }
-
-    # Create timestamp (e.g., 20260417-1655)
-    $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $FileName = Split-Path $ExportPath -Leaf
-    $BackupPath = Join-Path $BackupFolder "$Timestamp-$FileName"
-
-    # Move and rename
-    Move-Item -Path $ExportPath -Destination $BackupPath -Force
-    Write-Host "[!] Existing audit archived to: $BackupPath" -ForegroundColor Gray
-}
-
+. "$PSScriptRoot\utils.ps1"
+$ExportPath = Initialize-AuditFile -Name "ScheduledTasks"
 
 Get-ScheduledTask | Sort-Object TaskName | ForEach-Object {
     [PSCustomObject]@{

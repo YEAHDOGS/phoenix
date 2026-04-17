@@ -24,24 +24,8 @@ Write-Host "     SYSTEM DRIVER STORE & HARDWARE SCANNER     " -ForegroundColor B
 Write-Host "========================================" -ForegroundColor Magenta
 Write-Host "[*] Let's rock" -ForegroundColor Yellow
 
-$ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-Driver-Store.csv"
-$BackupFolder = Join-Path (Split-Path $PSScriptRoot -Parent) "data-backup"
-
-if (Test-Path $ExportPath) {
-    # Ensure backup directory exists
-    if (-not (Test-Path $BackupFolder)) { 
-        New-Item -Path $BackupFolder -ItemType Directory -Force | Out-Null 
-    }
-
-    # Create timestamp (e.g., 20260417-1655)
-    $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $FileName = Split-Path $ExportPath -Leaf
-    $BackupPath = Join-Path $BackupFolder "$Timestamp-$FileName"
-
-    # Move and rename
-    Move-Item -Path $ExportPath -Destination $BackupPath -Force
-    Write-Host "[!] Existing audit archived to: $BackupPath" -ForegroundColor Gray
-}
+. "$PSScriptRoot\utils.ps1"
+$ExportPath = Initialize-AuditFile -Name "DriverStore"
 
 # 1. Fetch data sources
 Write-Host "[*] Fetching system drivers..." -ForegroundColor Yellow
