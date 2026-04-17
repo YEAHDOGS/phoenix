@@ -2,6 +2,8 @@
 # These should all usually exist in System32 System32/Drivers System32/DRIVERS or System32/DriverStore folders
 # This also lists their running status, installed date, associated .inf files, and more
 
+# This is where the wild things are.
+
 # Get-CimInstance Win32_SystemDriver |
 # Where-Object { $_.State -eq "Running" } |
 # ForEach-Object {
@@ -22,8 +24,8 @@ Write-Host "   SYSTEM DRIVER & HARDWARE SCANNER   " -ForegroundColor Blue
 Write-Host "========================================" -ForegroundColor Magenta
 Write-Host "[*] Mapping services to PnP hardware devices..." -ForegroundColor Yellow
 
-# Get all running system drivers
-$Drivers = Get-CimInstance Win32_SystemDriver | Where-Object { $_.State -eq "Running" }
+# Get all system drivers
+$Drivers = Get-CimInstance Win32_SystemDriver
 
 # Pre-fetch PnP drivers
 $PnPMap = Get-CimInstance Win32_PnPSignedDriver
@@ -69,6 +71,7 @@ $Results = foreach ($d in $Drivers) {
         NAME         = $d.Name
         DISPLAY_NAME = $d.DisplayName
         STATE        = $d.State
+        SERVICE_TYPE = $d.ServiceType
         VERSION      = if ($pnp.DriverVersion) { $pnp.DriverVersion } else { "N/A" }
         PROVIDER     = $provider
         INF_FILE     = $pnp.InfName
