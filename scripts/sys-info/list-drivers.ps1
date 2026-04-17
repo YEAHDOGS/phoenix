@@ -42,18 +42,18 @@ $Results = foreach ($d in $Drivers) {
     if ($rawDate) {
         try {
             if ($rawDate -is [DateTime]) {
-                $formattedDate = $rawDate.ToString("yyyy-MM-dd HH:mm")
+                $formattedDate = $rawDate.ToString("yyyy-MM-dd HH:mm") + " (DT)"
             }
             else {
                 # Convert CIM string, but trim any weirdness first
                 $dt = [Management.ManagementDateTimeConverter]::ToDateTime($rawDate.ToString())
-                $formattedDate = $dt.ToString("yyyy-MM-dd HH:mm")
+                $formattedDate = $dt.ToString("yyyy-MM-dd HH:mm") + " (CIM)"
             }
         }
         catch {
             # Final fallback: if conversion fails, check file system one last time
             if (Test-Path $d.PathName) {
-                $formattedDate = (Get-Item $d.PathName).CreationTime.ToString("yyyy-MM-dd HH:mm")
+                $formattedDate = (Get-Item $d.PathName).CreationTime.ToString("yyyy-MM-dd HH:mm") + " (File System)"
             }
             else {
                 $formattedDate = "N/A"
