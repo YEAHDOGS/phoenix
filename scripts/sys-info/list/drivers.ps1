@@ -22,6 +22,25 @@ Write-Host "   SYSTEM DRIVER & HARDWARE SCANNER   " -ForegroundColor Blue
 Write-Host "========================================" -ForegroundColor Magenta
 Write-Host "[*] Mapping services to PnP hardware devices..." -ForegroundColor Yellow
 
+$ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-Drivers.csv"
+$BackupFolder = Join-Path (Split-Path $PSScriptRoot -Parent) "data-backup"
+
+if (Test-Path $ExportPath) {
+    # Ensure backup directory exists
+    if (-not (Test-Path $BackupFolder)) { 
+        New-Item -Path $BackupFolder -ItemType Directory -Force | Out-Null 
+    }
+
+    # Create timestamp (e.g., 20260417-1655)
+    $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $FileName = Split-Path $ExportPath -Leaf
+    $BackupPath = Join-Path $BackupFolder "$Timestamp-$FileName"
+
+    # Move and rename
+    Move-Item -Path $ExportPath -Destination $BackupPath -Force
+    Write-Host "[!] Existing audit archived to: $BackupPath" -ForegroundColor Gray
+}
+
 # Get all running system drivers
 $Drivers = Get-CimInstance Win32_SystemDriver
 
@@ -81,8 +100,6 @@ $Results = foreach ($d in $Drivers) {
 }
 
 # Display results in a searchable grid and export to CSV
-
-$ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-Drivers.csv"
 
 $Results | Sort-Object INSTALLED -Descending | Out-GridView -Title "Driver Inventory"
 $Results | Sort-Object INSTALLED -Descending | Export-Csv -Path $ExportPath -NoTypeInformation

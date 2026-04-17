@@ -24,6 +24,25 @@ Write-Host "     SYSTEM DRIVER STORE & HARDWARE SCANNER     " -ForegroundColor B
 Write-Host "========================================" -ForegroundColor Magenta
 Write-Host "[*] Let's rock" -ForegroundColor Yellow
 
+$ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-Driver-Store.csv"
+$BackupFolder = Join-Path (Split-Path $PSScriptRoot -Parent) "data-backup"
+
+if (Test-Path $ExportPath) {
+    # Ensure backup directory exists
+    if (-not (Test-Path $BackupFolder)) { 
+        New-Item -Path $BackupFolder -ItemType Directory -Force | Out-Null 
+    }
+
+    # Create timestamp (e.g., 20260417-1655)
+    $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $FileName = Split-Path $ExportPath -Leaf
+    $BackupPath = Join-Path $BackupFolder "$Timestamp-$FileName"
+
+    # Move and rename
+    Move-Item -Path $ExportPath -Destination $BackupPath -Force
+    Write-Host "[!] Existing audit archived to: $BackupPath" -ForegroundColor Gray
+}
+
 # 1. Fetch data sources
 Write-Host "[*] Fetching system drivers..." -ForegroundColor Yellow
 $Drivers = Get-CimInstance Win32_SystemDriver
@@ -130,8 +149,6 @@ foreach ($s in ($StoreRaw | Where-Object { $RunningInfs -notcontains $_.Driver }
 
 # Display & Export
 Write-Host "[+] Driver Store Inventory Complete." -ForegroundColor Green
-
-$ExportPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data\Sys-Driver-Store.csv"
 
 $Results | Sort-Object DATA_ORIGIN, INSTALLED -Descending | Out-GridView -Title "Driver Store Inventory"
 $Results | Sort-Object DATA_ORIGIN, INSTALLED -Descending | Export-Csv -Path $ExportPath -NoTypeInformation
