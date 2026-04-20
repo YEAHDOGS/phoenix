@@ -1,7 +1,8 @@
 $AuditMenu = [ordered]@{
     "&All"                = { . "$PSScriptRoot/list/all.ps1" }
-    "&Drivers"            = { . "$PSScriptRoot/list/drivers.ps1" }
-    "D&rivers with Store" = { . "$PSScriptRoot/list/driver-store.ps1" }
+    "&Devices"            = { . "$PSScriptRoot/list/devices.ps1" }
+    "D&rivers"            = { . "$PSScriptRoot/list/drivers.ps1" }
+    "Dr&ivers with Store" = { . "$PSScriptRoot/list/driver-store.ps1" }
     "&Programs"           = { . "$PSScriptRoot/list/programs.ps1" -t }
     "&Services"           = { . "$PSScriptRoot/list/services.ps1" -t }
     "Scheduled&Tasks"     = { . "$PSScriptRoot/list/tasks.ps1" -t }

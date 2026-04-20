@@ -1,3 +1,4 @@
+. ./list/devices.ps1
 . ./list/drivers.ps1
 # . ./list/driver-store.ps1
 . ./list/programs.ps1
