@@ -21,8 +21,9 @@ My telephone of choice in 2026 is Android. I really love my OnePlus phone, it is
 
 OnePlus lets me disable mobile data and wifi network access for individual apps, which somewhat works. But even with the Google Play Store network access disabled in the settings fully, it still makes requests all the time, totally unblocked. My current main weapon against this terror is [RethinkDNS]. It features DNS filtering, Ad blocking, app network blocking, firewall and ip config blocks, app ip request logging, and a lot more. I previously used [Blokada 5](https://blokada.org/) but it did not have enough information for my needs. Rethink is a beautiful alternative, and so far it's my main way to track app installs, data requests, everything. It even displays apps that are invisible to the Android Settings menus. Hundreds of them. It's devastatingly terrifying.
 
-I'll be adding ADB scripts to monitor and audit apps and services on Android soon. Android does not feature any answerfile automation system for re-installs, so I do a lot of manual work to get my system back to where it needs to be. Hopefully I can add info here for the future.
+I'll be adding ADB scripts to monitor and audit apps and services on Android soon. The goal being the ability to quickly detect malware and spyware including [Pegasus](https://en.wikipedia.org/wiki/Pegasus_(spyware)) and [Graphite](https://en.wikipedia.org/wiki/Paragon_Solutions) by analyzing installed components, and comparing recent dns requests with publicly available threat analysis docs. Tools like [Mobile Verification Toolkit (MVT)] created by the [Amnesty International Security Lab] are the only ways to detect threats like Pegasus. MVT uses .stix2 files that denote Indicators of Compromise (IOCs). By using sources that analyze these threats in these ways [like this](https://github.com/mvt-project/mvt-indicators), automating security to block this kind of invisible, heinous, insane malware may be possible. Still, it's insane that these threats are still very very powerful, they've been around for the past decade! My eyes are on these auto-update features. Perhaps if I disable them all, I can be safe. Maybe. Ah, damn...
 
+Android does not feature any answerfile automation system for re-installs, so I do a lot of manual work to get my system back to where it needs to be. Hopefully I can add info here for the future.
 
 > [!IMPORTANT]
 > 🚧 Work in Progress - This project is under active development and does not work rn. Some scripts are functional.
@@ -62,6 +63,7 @@ I'll be adding ADB scripts to monitor and audit apps and services on Android soo
 - [QEMU] - Much slicker than VirtualBox albeit a bit more setup heavy. Allows fast emulation of other operating systems
 - [Portmaster] - Windows Defender Firewall can only do so much. This is a modern solution for a proper dynamic firewall.
 - [RethinkDNS] - Android app to filter dns/ip requests, log app traffic, and block malicious network behavior
+- [Mobile Verification Toolkit (MVT)] - A way to detect threats like Pegasus, created by the [Amnesty International Security Lab]
 
 ## Installation
 
@@ -127,3 +129,5 @@ MIT
    [QEMU]: <https://www.qemu.org>
    [Portmaster]: <https://safing.io/>
    [RethinkDNS]: <https://rethinkdns.com/>
+   [Mobile Verification Toolkit (MVT)]: <https://github.com/mvt-project/mvt>
+   [Amnesty International Security Lab]: <https://securitylab.amnesty.org/>
