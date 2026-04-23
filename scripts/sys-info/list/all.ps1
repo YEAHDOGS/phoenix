@@ -9,3 +9,4 @@
 . ./list/users.ps1
 . ./list/filters.ps1
 . ./list/wmi.ps1
+. ./list/messaging-hosts.ps1

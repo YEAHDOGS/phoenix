@@ -29,7 +29,6 @@ function Initialize-AuditFile {
         Write-Host "$Name " -ForegroundColor DarkGreen -NoNewline
         Write-Host "Archiving old csv file. Destination: $(Join-Path $BackupFolder $_.Name)" -ForegroundColor DarkGray
     
-        # Logic (Now on a new line, so it won't print)
         Move-Item -Path $_.FullName -Destination (Join-Path $BackupFolder $_.Name) -Force
     }
 
