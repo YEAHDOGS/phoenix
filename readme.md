@@ -1,5 +1,5 @@
 # Get it Goin
-## _A way to automate a clean Windows 11 Pro installation_
+## _Ways to secure, automate, diagnose, and streamline fresh Windows 11 and Android resets_
 
 [![Alice In Chains](https://img.youtube.com/vi/kq9MBnX00hs/maxresdefault.jpg)](https://youtu.be/kq9MBnX00hs)
 
@@ -15,8 +15,17 @@ This project goes hand in hand with Playbooks and [Ameliorated AME]. My current 
 
 Some people say it is impossible to use Windows 11 privately, as it is very shoddy by design. But I'll be damned if I'm switching to Linux. I'll be damned!
 
+# Android
+
+My telephone of choice in 2026 is Android. I really love my OnePlus phone, it is beautiful, but I'm plagued by similar issues on it. Locking it down is just as difficult, and apps seem to update or install themselves willy nilly. I had severe issues with [Google Cross Device Services](https://play.google.com/store/apps/details?id=com.google.ambient.streaming) which was pinging my location all day everyday and sending it around the world. Apps like [Android System SafetyCore](https://play.google.com/store/apps/details?id=com.google.android.safetycore), [Android Device Policy](https://play.google.com/store/apps/details?id=com.google.android.apps.work.clouddpc&hl=en_US), [Android System Key Verifier](https://play.google.com/store/apps/details?id=com.google.android.contactkeys&hl=en_US), [Android System WebView](https://play.google.com/store/apps/details?id=com.google.android.webview&hl=en_US), [Captive Portal Login](https://f-droid.org/en/packages/com.juliansparber.captiveportallogin/), [Sim Manager](https://play.google.com/store/apps/details?id=com.google.android.euicc&hl=en_US), [Support components](https://www.apkmirror.com/apk/google-inc/support-components/), [Network manager](https://www.apkmirror.com/apk/google-inc/networkstack/), [Device configuration](https://www.apkmirror.com/apk/google-inc/device-configuration-2/), [Main components](https://www.apkmirror.com/apk/google-inc/main-components/main-components-2026-05-01s-release/), I am constantly at war with these applications. They will install themselves, and stopping the services running these updates is very difficult. I do not know what any of these apps do, but they do not provide any feature whatsoever to my phone functionality. And I hate things installed on my device, without my permission, that seemingly do nothing except make dns requests. That's the definition of spyware.
+
+OnePlus let's me disable mobile data and wifi network access for individual apps, which somewhat works. But even with the Google Play Store network access disabled in the settings fully, it still makes requests all the time, totally unblocked. My current main weapon against this terror is [RethinkDNS]. It features DNS filtering, Ad blocking, app network blocking, firewall and ip config blocks, app ip request logging, and a lot more. I previously used [Blokada 5](https://blokada.org/) but it did not have enough information for my needs. Rethink is a beautiful alternative, and so far it's my main way to track app installs, data requests, everything. It even displays apps that are invisible to the Android Settings menus. Hundreds of them. It's devastatingly terrifying.
+
+I'll be adding ADB scripts to monitor and audit apps and services on Android soon. Android does not feature any answerfile automation system for re-installs, so I do a lot of manual work to get my system back to where it needs to be. Hopefully I can add info here for the future.
+
+
 > [!IMPORTANT]
-> **Status:** 🚧 Work in Progress - This project is under active development and does not work rn. Some scripts are functional.
+> 🚧 Work in Progress - This project is under active development and does not work rn. Some scripts are functional.
 
 ## Features
 
@@ -52,6 +61,7 @@ Some people say it is impossible to use Windows 11 privately, as it is very shod
 - [Yubico Yubikey] - A $50 USB FIDO smart card. Currently smart card login appears only accessible to Windows Enterprise users set up with Group Policies in Microsoft Intune. This is a shame, as a beautiful security setup would be to have 2 accounts, a user and an admin one that's added to the Administrators group, then only allow the admin account to be logged in via smart card. Then leave the yubikey at home, and do what you want to do in peace. This repo will contain documentation and scripts to enable this setup
 - [QEMU] - Much slicker than VirtualBox albeit a bit more setup heavy. Allows fast emulation of other operating systems
 - [Portmaster] - Windows Defender Firewall can only do so much. This is a modern solution for a proper dynamic firewall.
+- [RethinkDNS] - Android app to filter dns/ip requests, log app traffic, and block malicious network behavior
 
 ## Installation
 
@@ -116,3 +126,4 @@ MIT
    [Yubico Yubikey]: <https://www.yubico.com>
    [QEMU]: <https://www.qemu.org>
    [Portmaster]: <https://safing.io/>
+   [RethinkDNS]: <https://rethinkdns.com/>
