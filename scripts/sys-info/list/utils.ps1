@@ -1,5 +1,3 @@
-# utils.ps1
-
 function Initialize-AuditFile {
     param (
         [Parameter(Mandatory = $true)]
@@ -10,13 +8,15 @@ function Initialize-AuditFile {
     # We use $script: to ensure the variable persists across dotsourced calls
     if (-not $script:SharedTimestamp) {
         $script:SharedTimestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    }
+    } 
+
+    $SubFolder = $script:SharedTimestamp.Substring(2, 4)
     
     $FileName = "Sys-$Name-$script:SharedTimestamp.csv"
 
     $ProjectRoot = Split-Path $PSScriptRoot -Parent
     $DataFolder = Join-Path $ProjectRoot "data"
-    $BackupFolder = Join-Path $ProjectRoot "data-backup"
+    $BackupFolder = Join-Path $ProjectRoot "data-backup/$SubFolder"
     $ExportPath = Join-Path $DataFolder $FileName
 
     if (-not (Test-Path $DataFolder)) { New-Item $DataFolder -ItemType Directory -Force | Out-Null }
