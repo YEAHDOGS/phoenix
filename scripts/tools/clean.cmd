@@ -1,0 +1,2 @@
+@REM This should be run as admin to securely wipe free space on C: drive after moving data files to backup location. It will not delete the data files, but will make it much harder for anyone to recover them if they were deleted.
+cipher /w:C:\

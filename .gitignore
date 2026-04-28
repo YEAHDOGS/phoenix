@@ -9,3 +9,6 @@ win-install/drivers
 
 # Local environment settings
 .env
+
+scripts/sys-info/data/*
+scripts/sys-info/data-backup/*
