@@ -8,5 +8,6 @@
 . ./list/tasks.ps1
 . ./list/users.ps1
 . ./list/filters.ps1
-. ./list/wmi.ps1
+. ./list/wmi/wmi.ps1
 . ./list/messaging-hosts.ps1
+. ./list/pipes.ps1
