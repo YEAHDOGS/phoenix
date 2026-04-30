@@ -16,7 +16,7 @@ function Initialize-AuditFile {
 
     $ProjectRoot = Split-Path $PSScriptRoot -Parent
     $DataFolder = Join-Path $ProjectRoot "data"
-    $BackupFolder = Join-Path $ProjectRoot "data-backup/$SubFolder"
+    $BackupFolder = Join-Path $ProjectRoot "data/backup/$SubFolder"
     $ExportPath = Join-Path $DataFolder $FileName
 
     if (-not (Test-Path $DataFolder)) { New-Item $DataFolder -ItemType Directory -Force | Out-Null }
