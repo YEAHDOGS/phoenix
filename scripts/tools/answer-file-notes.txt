@@ -1,0 +1,267 @@
+For Windows Updates, use powershell
+
+Block all incoming connections in the network tab!
+
+- Get all incoming windows updates
+
+$u=(New-Object -ComObject Microsoft.Update.Session).CreateUpdateSearcher().Search("IsInstalled=0 and IsHidden=0").Updates; Write-Host "Total Updates Found: $($u.Count)" -ForegroundColor Cyan; ($u | Select-Object Title, Description, LastDeploymentChangeTime, @{Name="Type"; Expression={if($_.DriverClass) {"Hardware"} else {"Software"}}}, @{Name="Classification"; Expression={($_.Categories | Where-Object {$_.Type -eq 'UpdateClassification'} | Select-Object -ExpandProperty Name) -join ', '}}, @{Name="DriverClass"; Expression={$_.DriverClass}}, @{Name="DriverModel"; Expression={$_.DriverModel}}, @{Name="Manufacturer"; Expression={$_.DriverManufacturer}}, @{Name="Provider"; Expression={$_.DriverProvider}}, IsMandatory, @{Name="IsTrusted"; Expression={$_.IsTrusted}}, @{Name="NeedsReboot"; Expression={$_.InstallationBehavior.RebootBehavior -eq 1}}, @{Name="Size(MB)"; Expression={"{0:N2}" -f ($_.MaxDownloadSize / 1MB)}}, @{Name="DeploymentID"; Expression={$_.DeploymentAction}}, @{Name="UpdateID"; Expression={$_.Identity.UpdateID}}, @{Name="Identity.RevisionNumber"; Expression={$_.Identity.RevisionNumber}}, EulaUrl, UninstallationNotes | Sort-Object Title | Format-List); Write-Host "Total Updates Found: $($u.Count)" -ForegroundColor Cyan
+
+- Download and install one of them
+
+$ID="INSERT-UPDATE-ID-HERE"; $u=(New-Object -ComObject Microsoft.Update.Session).CreateUpdateSearcher().Search("IsInstalled=0").Updates | Where-Object {$_.Identity.UpdateID -eq $ID}; $c=New-Object -ComObject Microsoft.Update.UpdateColl; $c.Add($u) | Out-Null; Write-Host "Downloading: $($u.Title)" -ForegroundColor Yellow; $d=(New-Object -ComObject Microsoft.Update.Session).CreateUpdateDownloader(); $d.Updates=$c; $d.Download() | Out-Null; Write-Host "Installing..." -ForegroundColor Green; $i=(New-Object -ComObject Microsoft.Update.Session).CreateUpdateInstaller(); $i.Updates=$c; $r=$i.Install(); Write-Host "Result Code: $($r.ResultCode) (2=Success, 3=Reboot Required)" -ForegroundColor Cyan
+
+- Sync updates with Settings Update History page
+
+(New-Object -ComObject Microsoft.Update.Session).CreateUpdateSearcher().Search("IsInstalled=1").Updates | Select-Object -First 1
+
+
+
+
+To display all system drivers currently installed and running, use these commands
+
+- Display all running system drivers in a nice window
+
+Get-CimInstance Win32_SystemDriver |
+Where-Object { $_.State -eq "Running" } |
+ForEach-Object {
+    $sig = Get-AuthenticodeSignature $_.PathName
+    [PSCustomObject]@{
+        Name        = $_.Name
+        DisplayName = $_.DisplayName
+        StartMode   = $_.StartMode
+        State       = $_.State
+        PathName    = $_.PathName
+        Publisher   = if ($sig.SignerCertificate) { $sig.SignerCertificate.Subject } else { "Unsigned/Unknown" }
+        Status      = $sig.Status
+    }
+} | Out-GridView
+
+- or export to csv
+
+ ... | Export-Csv -Path "C:\Data\RunningDrivers.csv" -NoTypeInformation -Encoding UTF8
+
+
+- When updates are needed, go to the hosts file
+Windows\System32\drivers\etc\hosts
+
+Comment out the added urls with #
+
+Then run this cmd
+ipconfig /flushdns
+
+Update as you need, readd the lines to hosts, flushdns again.
+
+
+1/26/26
+
+- Malicious volumes often use "Filters" to hide their true purpose from Windows Defender (Control 117). Run this command in PowerShell (Admin) to see if there is a "Shadow Service" sitting on top of your storage:
+
+Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Class\{71a27cdd-812a-11d0-bec7-08002be2092f}" | Select-Object UpperFilters, LowerFilters
+
+- Standard Result: LowerFilters should be empty or fvevol (BitLocker). UpperFilters should be empty or volsnap. Red Flag: If you see any random filenames (e.g., wdfilter, btmod, or strings of numbers), that is the driver that is "faking" the 8 volumes.
+
+- Potentially bad output (iorate and rdyboost may be malicious):
+LowerFilters               UpperFilters
+------------               ------------
+{fvevol, iorate, rdyboost} {volsnap}
+
+
+- Virtualization, virtual drives, appear to be whooping your ass.
+
+- cmd and bad output:
+Get-Service | Where-Object {$_.DisplayName -like "*Virtual*" -or $_.Name -like "*vhd*"}
+
+Status   Name               DisplayName
+------   ----               -----------
+Stopped  ApxSvc             Windows Virtual Audio Device Proxy Se…
+Stopped  UevAgentService    User Experience Virtualization Service
+Running  vds                Virtual Disk
+Stopped  vmicrdv            Hyper-V Remote Desktop Virtualization…
+Get-Service: Service 'WaaSMedicSvc (WaaSMedicSvc)' cannot be queried due to the following error: PermissionDenied
+
+- The fact that vds (Virtual Disk) is currently Running while you have no virtual drives mounted, combined with the PermissionDenied error for WaaSMedicSvc, is a major red flag.
+
+- If you re-image without killing these "Active" states, the hardware-level instructions in your USB4 controller might survive the reboot.
+- Force-Stop the Virtual Disk Service Run this in PowerShell (Admin)
+
+Stop-Service vds -Force
+Set-Service vds -StartupType Disabled
+
+
+
+- Useful Registry keys
+
+- Windows as a Service Medic Service. This is the bodyguard for windows update, and restarts the service if it fails. Disable for no windows update with 4, or enable with 3.
+Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\WaaSMedicSvc
+
+
+
+
+[System]
+
+.reg
+
+Windows Registry Editor Version 5.00
+
+; Disable "Allow downloads from other PCs" (Delivery Optimization)
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization]
+"DODownloadMode"=dword:00000000
+
+; Stop Windows from auto-downloading Optional Features/FODs
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate]
+"DisableOSUpgrade"=dword:00000001
+
+; Stop the "Update Orchestrator" from pushing optional content
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Orchestrator]
+"DisableAutoAutomaticMinorUpdates"=dword:00000001
+
+; Prevent Windows from automatically adding features based on your language/region
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Control Panel\International]
+"PreventUpdateLanguages"=dword:00000001
+
+; Enforce Admin Approval Mode (UAC) for the Built-in Administrator
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System]
+"EnableLUA"=dword:00000001
+"FilterAdministratorToken"=dword:00000001
+"ConsentPromptBehaviorAdmin"=dword:00000002
+"PromptOnSecureDesktop"=dword:00000001
+
+; Exclude drivers from Windows Update (main policy key)
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate]
+"ExcludeWUDriversInQualityUpdate"=dword:00000001
+"DoNotIncludeDriversWithWindowsUpdates"=dword:00000001
+
+; Block driver searches from WU
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\DriverSearching]
+"SearchOrderConfig"=dword:00000000
+"DontSearchWindowsUpdate"=dword:00000001
+"DriverUpdateWizardEnabled"=dword:00000000
+
+; Prevent device metadata downloads (often triggers extra driver fetches)
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Device Metadata]
+"PreventDeviceMetadataFromNetwork"=dword:00000001
+
+; Extra exclusions in PolicyManager paths (helps in newer Windows 11 builds)
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\default\Update]
+"ExcludeWUDriversInQualityUpdate"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\current\device\Update]
+"ExcludeWUDriversInQualityUpdate"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings]
+"ExcludeWUDriversInQualityUpdate"=dword:00000001
+
+; Disable Windows Update service (wuauserv) - Startup type: Disabled
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\wuauserv]
+"Start"=dword:00000004
+
+; Disable Background Intelligent Transfer Service (bits) - Startup type: Disabled
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\bits]
+"Start"=dword:00000004
+
+
+.cmd - add windows update urls to hosts file, prevent any connection to them entirely.
+
+@echo off
+:: Block Windows Update / Driver domains in hosts file
+:: Safe to run multiple times (checks for existing entries)
+:: Designed for unattend.xml RunSynchronous or manual run as admin
+
+:: Require Administrator
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo ERROR: This script must be run as Administrator.
+    echo Right-click Run as administrator
+    pause
+    exit /b 1
+)
+
+echo.
+echo Adding blocks to %SystemRoot%\System32\drivers\etc\hosts
+echo (prevents auto-driver downloads from Microsoft during/after install)
+
+set "HOSTS=%SystemRoot%\System32\drivers\etc\hosts"
+
+:: Domains to block (focused on driver/update servers)
+set "DOMAINS=download.windowsupdate.com windowsupdate.microsoft.com *.windowsupdate.microsoft.com update.microsoft.com *.update.microsoft.com download.microsoft.com *.download.windowsupdate.com wustat.windows.com ctldl.windowsupdate.com slscr.update.microsoft.com ntservicepack.microsoft.com"
+
+:: Append missing entries
+(for %%d in (%DOMAINS%) do (
+    findstr /C:"0.0.0.0 %%d" "%HOSTS%" >nul
+    if errorlevel 1 echo 0.0.0.0 %%d
+)) >> "%HOSTS%"
+
+echo.
+echo Done. Current blocked entries in hosts file:
+findstr /C:"0.0.0.0" "%HOSTS%" | findstr /C:"windowsupdate" /C:"update.microsoft" /C:"download" /C:"wustat" /C:"ctldl"
+
+echo.
+echo For changes to take effect immediately, run these commands:
+echo   ipconfig /flushdns
+echo   net stop wuauserv ^&amp; net stop bits ^&amp; net start wuauserv ^&amp; net start bits
+echo   (or restart "Windows Update" service in services.msc)
+echo.
+echo Recommended: Reboot the system after this.
+echo.
+echo To allow a specific driver later (selective update):
+echo 1. Open %HOSTS% in Notepad as admin
+echo 2. Comment out (#) or remove the unwanted lines
+echo 3. Save, then run ipconfig /flushdns + restart services
+echo 4. Go to Settings ^&gt; Windows Update ^&gt; Check for updates
+echo.
+
+
+
+
+[UserOnce]
+.reg
+
+Windows Registry Editor Version 5.00
+
+; Folder Options -> Hide protected operating system files = ON
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"ShowSuperHidden"=dword:00000000
+
+
+
+
+Jan 15th, 2026
+
+Computers are going to keep me smoking cigarettes until I die at the ripe age of 45. But today I refuse to let the smoke win. It has ruined my life. It's time I take it back.
+
+I'm desperately trying to have a laptop I can trust, and unfortunately I am failing at this. And I don't know what's going on, or what to do about it.
+
+Today I started my computer at 9:30am. The windows defender tray icon has a warning on it. App & Browser Control -> Potentially unwanted app blocking was off. I hovered my mouse over it, the thing started a very brief loading wheel, then the keyboard lit off. I am unhappy. And sad that this is my life. Borderline schizophrenic with the trust of a lottery grandma. The cars continue to rev outside and near me these windows are thick enough for the wind but not enough for the noise. They just revved as I typed lottery grandma.
+
+In startup apps, "Mobile devices" has been enabled. I have disabled it. Hitting properties at the top of task manager prompts a warning that Windows cannot find 'CrossDeviceService.exe'. Also the bluetooth tray icon has reappeared even though I definitely turned that bastard off yesterday. 3 distinct fucking changes. No new updates shown in Windows Update. I am in purgatory most definately. Either I become the master of the Windows operating system, or I continue getting dunked on.
+
+My eyes and gut is on Windows Update. The BITS Background Intelligent Transfer Service. Yesterday after a fresh install I got the system where I liked it, and I need to take more care at this step to note down services, processes, details, everything before continuing. I need to take a time freeze backup so I can quickly restore to that clean image. I need fast flash drives.
+
+Copilot just opened up on its own I might've accidentally clicked this damn copilot button.
+
+After I installed the wifi driver and connected to wifi, despite using scripts to turn off windows update via schneegans answerfile, it immediately downloaded and installed 32 drivers. After a few restarts it automatically installed another 18 for a total of 50 driver updates present in the Windows Update history. I must eradicate this behavior. My guess is there are drivers coming in from Windows Update, officially signed sons of bitches, that add xAI right into my penis. I hate this. I need prime selection of all software that touches this machine. There must be a stronger way to prevent Windows Update from fucking my shit up.
+
+Sus drivers
+- NVIDIA SAMSUNG sound driver - doesn't output shit... Samsung and NVIDIA? wtf?
+- Cirrus Logic Inc. MEDIA - wtf is cirrus logic, it wasn't here when I had the other used omnibook
+- INTEL Driver Update (20.22.19.28) - I hate all caps...
+- INTEL - System - 10.1.57.5 
+
+
+
+1/20/26
+
+When hovering over the list of installable drivers, windows did a loading symbol over a potential Bluetooth one to fix a headset issue. AI recognized my issue and pointed me in what it thought was the right direction. It was wrong anyways. But fucking no more pointing, no more sneaky bullshit. I am resetting the machine again. This time we hold it in initial state, take a snapshot, and wait a week before continuing updates. I've backed up some games. But really it's gonna be offline for a little while.
+
+More work must be done to disable windows fucking update. When the LAN driver is installed, and on subsequent restarts, lord help me if windows update auto updates these sons of bitches. Lord fucking help me.
+
+We are going all the way, blocking the urls in the hosts file and disabling all windows update services.
+
+...Maybe I'll wait until after the coding assessment... Ok.
+
+AnswerFile changelog
+
+- Re-enabled hibernate and fastboot, this did not prevent the ai from entering my shit
+- Disabled windowsupdateservice and BITS, added reg tweaks for more wupdate bullshit
+- Added cmd to add windowsupdate urls to the hosts file. block at network level.
+- Removed copilot and cortana. fuck them.
