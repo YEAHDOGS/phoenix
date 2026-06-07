@@ -192,7 +192,6 @@ $scriptPathLabel.Height = 100
 $scriptPathLabel.Location = New-Object System.Drawing.Point(15, 50)
 $scriptPathLabel.ForeColor = $Colors.Text
 $scriptPathLabel.Font = New-Object System.Drawing.Font("Segoe UI", 9)
-$scriptPathLabel.WordWrap = $true
 
 $detailsPanel.Controls.Add($scriptNameLabel)
 $detailsPanel.Controls.Add($scriptPathLabel)
