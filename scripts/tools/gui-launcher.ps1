@@ -3,180 +3,176 @@
 
 <#
 .SYNOPSIS
-    GUI Launcher for all PowerShell scripts in the get-it-goin project (v2.0 - Modern UI)
+    GUI Launcher for all PowerShell scripts (v3.0 - Improved List-Based UI)
     
 .DESCRIPTION
-    Provides a unified, modern graphical interface to browse, select, and execute
-    PowerShell scripts organized by category. Features auto-sizing, animations,
-    and professional UX design.
+    Modern graphical interface with list-based script selection,
+    better organization, and cleaner UX.
 #>
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
-# Color Scheme - Modern Dark Theme
+# Color Scheme
 $Colors = @{
-    Primary       = [System.Drawing.Color]::FromArgb(41, 128, 185)      # Blue
-    Secondary     = [System.Drawing.Color]::FromArgb(52, 152, 219)      # Light Blue
-    Background    = [System.Drawing.Color]::FromArgb(236, 240, 241)     # Light Gray
-    DarkBg        = [System.Drawing.Color]::FromArgb(44, 62, 80)        # Dark Gray
-    Text          = [System.Drawing.Color]::FromArgb(52, 73, 94)        # Dark Text
-    TextLight     = [System.Drawing.Color]::FromArgb(189, 195, 199)     # Light Text
-    Accent        = [System.Drawing.Color]::FromArgb(231, 76, 60)       # Red for warnings
-    Success       = [System.Drawing.Color]::FromArgb(39, 174, 96)       # Green
+    Primary       = [System.Drawing.Color]::FromArgb(41, 128, 185)
+    Secondary     = [System.Drawing.Color]::FromArgb(52, 152, 219)
+    Background    = [System.Drawing.Color]::FromArgb(236, 240, 241)
+    DarkBg        = [System.Drawing.Color]::FromArgb(44, 62, 80)
+    Text          = [System.Drawing.Color]::FromArgb(52, 73, 94)
+    TextLight     = [System.Drawing.Color]::FromArgb(189, 195, 199)
+    Accent        = [System.Drawing.Color]::FromArgb(231, 76, 60)
+    Success       = [System.Drawing.Color]::FromArgb(39, 174, 96)
     White         = [System.Drawing.Color]::White
-    Border        = [System.Drawing.Color]::FromArgb(189, 195, 199)     # Gray border
+    Hover         = [System.Drawing.Color]::FromArgb(236, 240, 241)
 }
 
 # Get script directory and paths
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ProjectRoot = Split-Path -Parent (Split-Path -Parent $ScriptDir)
 $ScriptsRoot = Split-Path -Parent $ScriptDir
 
-# Source the GUI library for auto-discovery
+# Source the GUI library
 . (Join-Path $ScriptDir "gui-lib.ps1")
 
-# Build catalog dynamically from file structure
+# Build catalog
 $metadata = Build-ScriptCatalog -ScriptsRoot $ScriptsRoot
 
-# Create main form with modern styling
+# Create main form
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "Get-It-Goin Script Launcher v2.0"
-$form.Size = New-Object System.Drawing.Size(1200, 800)
+$form.Text = "Get-It-Goin Script Launcher v3.0"
+$form.Size = New-Object System.Drawing.Size(1400, 900)
 $form.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
-$form.MinimumSize = New-Object System.Drawing.Size(900, 600)
+$form.MinimumSize = New-Object System.Drawing.Size(1000, 700)
 $form.BackColor = $Colors.Background
 $form.Font = New-Object System.Drawing.Font("Segoe UI", 10)
-$form.Icon = [System.Drawing.SystemIcons]::Application
 
-# Create menu strip with styling
+# Menu bar
 $menuStrip = New-Object System.Windows.Forms.MenuStrip
 $menuStrip.BackColor = $Colors.DarkBg
 $menuStrip.ForeColor = $Colors.TextLight
-$menuStrip.Font = New-Object System.Drawing.Font("Segoe UI", 10)
 
 $fileMenu = New-Object System.Windows.Forms.ToolStripMenuItem
 $fileMenu.Text = "File"
 $fileMenu.ForeColor = $Colors.TextLight
-
 $refreshItem = New-Object System.Windows.Forms.ToolStripMenuItem
-$refreshItem.Text = "Refresh Catalog (F5)"
-$refreshItem.ForeColor = $Colors.TextLight
-
-$exitItem = New-Object System.Windows.Forms.ToolStripMenuItem
-$exitItem.Text = "Exit"
-$exitItem.ForeColor = $Colors.TextLight
-$exitItem.Add_Click({ $form.Close() })
-
+$refreshItem.Text = "Refresh (F5)"
 $fileMenu.DropDownItems.Add($refreshItem) | Out-Null
 $fileMenu.DropDownItems.Add($(New-Object System.Windows.Forms.ToolStripSeparator)) | Out-Null
+$exitItem = New-Object System.Windows.Forms.ToolStripMenuItem
+$exitItem.Text = "Exit"
+$exitItem.Add_Click({ $form.Close() })
 $fileMenu.DropDownItems.Add($exitItem) | Out-Null
 $menuStrip.Items.Add($fileMenu) | Out-Null
 
 $helpMenu = New-Object System.Windows.Forms.ToolStripMenuItem
 $helpMenu.Text = "Help"
 $helpMenu.ForeColor = $Colors.TextLight
-
 $aboutItem = New-Object System.Windows.Forms.ToolStripMenuItem
 $aboutItem.Text = "About"
-$aboutItem.ForeColor = $Colors.TextLight
 $aboutItem.Add_Click({
-    [System.Windows.Forms.MessageBox]::Show(
-        "Get-It-Goin Script Launcher v2.0`n`nModern GUI with auto-discovery`n`nScripts: $($metadata.scripts.Count) | Categories: 13`n`nFeatures:`n• Dynamic script discovery`n• Full-text search`n• Auto-sizing UI`n• Smooth animations",
-        "About",
-        [System.Windows.Forms.MessageBoxButtons]::OK,
-        [System.Windows.Forms.MessageBoxIcon]::Information
-    ) | Out-Null
+    [System.Windows.Forms.MessageBox]::Show("Get-It-Goin Script Launcher v3.0`n`nScripts: $($metadata.scripts.Count)`nCategories: 13","About") | Out-Null
 })
 $helpMenu.DropDownItems.Add($aboutItem) | Out-Null
 $menuStrip.Items.Add($helpMenu) | Out-Null
 
-# Create top panel with search (styling enhanced)
+# Top panel with search and category filter
 $topPanel = New-Object System.Windows.Forms.Panel
 $topPanel.Dock = [System.Windows.Forms.DockStyle]::Top
-$topPanel.Height = 80
-$topPanel.Padding = New-Object System.Windows.Forms.Padding(15, 12, 15, 12)
+$topPanel.Height = 90
 $topPanel.BackColor = $Colors.DarkBg
+$topPanel.Padding = New-Object System.Windows.Forms.Padding(15)
 
 $titleLabel = New-Object System.Windows.Forms.Label
-$titleLabel.Text = "Script Manager"
-$titleLabel.AutoSize = $true
+$titleLabel.Text = "📜 Script Manager"
 $titleLabel.Font = New-Object System.Drawing.Font("Segoe UI", 16, [System.Drawing.FontStyle]::Bold)
 $titleLabel.ForeColor = $Colors.Secondary
+$titleLabel.AutoSize = $true
 $titleLabel.Location = New-Object System.Drawing.Point(15, 8)
 
 $searchLabel = New-Object System.Windows.Forms.Label
-$searchLabel.Text = "🔍 Search Scripts:"
-$searchLabel.AutoSize = $true
+$searchLabel.Text = "🔍 Search:"
 $searchLabel.Font = New-Object System.Drawing.Font("Segoe UI", 10)
 $searchLabel.ForeColor = $Colors.TextLight
+$searchLabel.AutoSize = $true
 $searchLabel.Location = New-Object System.Drawing.Point(15, 45)
 
 $searchBox = New-Object System.Windows.Forms.TextBox
-$searchBox.Location = New-Object System.Drawing.Point(150, 42)
+$searchBox.Location = New-Object System.Drawing.Point(100, 42)
 $searchBox.Width = 350
 $searchBox.Height = 28
 $searchBox.Font = New-Object System.Drawing.Font("Segoe UI", 10)
 $searchBox.BackColor = $Colors.White
-$searchBox.ForeColor = $Colors.Text
-$searchBox.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+
+$categoryLabel = New-Object System.Windows.Forms.Label
+$categoryLabel.Text = "📁 Category:"
+$categoryLabel.Font = New-Object System.Drawing.Font("Segoe UI", 10)
+$categoryLabel.ForeColor = $Colors.TextLight
+$categoryLabel.AutoSize = $true
+$categoryLabel.Location = New-Object System.Drawing.Point(480, 45)
+
+$categoryCombo = New-Object System.Windows.Forms.ComboBox
+$categoryCombo.Location = New-Object System.Drawing.Point(570, 42)
+$categoryCombo.Width = 250
+$categoryCombo.Height = 28
+$categoryCombo.Font = New-Object System.Drawing.Font("Segoe UI", 10)
+$categoryCombo.BackColor = $Colors.White
+$categoryCombo.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
 
 $topPanel.Controls.Add($titleLabel)
 $topPanel.Controls.Add($searchLabel)
 $topPanel.Controls.Add($searchBox)
+$topPanel.Controls.Add($categoryLabel)
+$topPanel.Controls.Add($categoryCombo)
 
-# Create split container for tree and details
+# Main content split
 $splitContainer = New-Object System.Windows.Forms.SplitContainer
 $splitContainer.Dock = [System.Windows.Forms.DockStyle]::Fill
-$splitContainer.SplitterDistance = 320
+$splitContainer.SplitterDistance = 550
 $splitContainer.Orientation = [System.Windows.Forms.Orientation]::Vertical
 $splitContainer.BackColor = $Colors.Background
 
-# Left panel - Tree view with better styling
-$treePanel = New-Object System.Windows.Forms.Panel
-$treePanel.Dock = [System.Windows.Forms.DockStyle]::Fill
-$treePanel.BackColor = $Colors.Background
-$treePanel.Padding = New-Object System.Windows.Forms.Padding(8)
+# Left panel - Script list
+$leftPanel = New-Object System.Windows.Forms.Panel
+$leftPanel.Dock = [System.Windows.Forms.DockStyle]::Fill
+$leftPanel.BackColor = $Colors.Background
+$leftPanel.Padding = New-Object System.Windows.Forms.Padding(8)
 
-$treeTitleLabel = New-Object System.Windows.Forms.Label
-$treeTitleLabel.Text = "📂 Categories & Scripts"
-$treeTitleLabel.AutoSize = $true
-$treeTitleLabel.Font = New-Object System.Drawing.Font("Segoe UI", 11, [System.Drawing.FontStyle]::Bold)
-$treeTitleLabel.ForeColor = $Colors.Text
-$treeTitleLabel.Location = New-Object System.Drawing.Point(8, 8)
-$treeTitleLabel.Height = 22
+$listLabel = New-Object System.Windows.Forms.Label
+$listLabel.Text = "Available Scripts"
+$listLabel.Font = New-Object System.Drawing.Font("Segoe UI", 11, [System.Drawing.FontStyle]::Bold)
+$listLabel.ForeColor = $Colors.Text
+$listLabel.AutoSize = $true
+$listLabel.Location = New-Object System.Drawing.Point(8, 8)
 
-$treeView = New-Object System.Windows.Forms.TreeView
-$treeView.Dock = [System.Windows.Forms.DockStyle]::Fill
-$treeView.Location = New-Object System.Drawing.Point(8, 30)
-$treeView.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
-$treeView.Font = New-Object System.Drawing.Font("Segoe UI", 10)
-$treeView.BackColor = $Colors.White
-$treeView.ForeColor = $Colors.Text
-$treeView.ImageList = New-Object System.Windows.Forms.ImageList
-$treeView.FullRowSelect = $false
-$treeView.Margin = New-Object System.Windows.Forms.Padding(0, 22, 0, 0)
+$scriptList = New-Object System.Windows.Forms.ListBox
+$scriptList.Dock = [System.Windows.Forms.DockStyle]::Fill
+$scriptList.Font = New-Object System.Drawing.Font("Segoe UI", 10)
+$scriptList.BackColor = $Colors.White
+$scriptList.ForeColor = $Colors.Text
+$scriptList.Location = New-Object System.Drawing.Point(8, 30)
+$scriptList.Margin = New-Object System.Windows.Forms.Padding(0, 22, 0, 0)
+$scriptList.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
 
-$treePanel.Controls.Add($treeTitleLabel)
-$treePanel.Controls.Add($treeView)
+$leftPanel.Controls.Add($listLabel)
+$leftPanel.Controls.Add($scriptList)
 
-# Right panel - Script details and output
+# Right panel - Details and output
 $rightPanel = New-Object System.Windows.Forms.Panel
 $rightPanel.Dock = [System.Windows.Forms.DockStyle]::Fill
 $rightPanel.BackColor = $Colors.Background
 $rightPanel.Padding = New-Object System.Windows.Forms.Padding(8)
 
-# Script details panel (top)
+# Details panel
 $detailsPanel = New-Object System.Windows.Forms.Panel
 $detailsPanel.Dock = [System.Windows.Forms.DockStyle]::Top
-$detailsPanel.Height = 160
+$detailsPanel.Height = 180
 $detailsPanel.BackColor = $Colors.White
 $detailsPanel.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
 $detailsPanel.Padding = New-Object System.Windows.Forms.Padding(15)
 
 $scriptNameLabel = New-Object System.Windows.Forms.Label
-$scriptNameLabel.Text = "Select a script to view details"
+$scriptNameLabel.Text = "Select a script"
 $scriptNameLabel.Font = New-Object System.Drawing.Font("Segoe UI", 14, [System.Drawing.FontStyle]::Bold)
 $scriptNameLabel.ForeColor = $Colors.Primary
 $scriptNameLabel.AutoSize = $false
@@ -184,19 +180,19 @@ $scriptNameLabel.Width = 350
 $scriptNameLabel.Height = 30
 $scriptNameLabel.Location = New-Object System.Drawing.Point(15, 15)
 
-$scriptPathLabel = New-Object System.Windows.Forms.Label
-$scriptPathLabel.Text = ""
-$scriptPathLabel.AutoSize = $false
-$scriptPathLabel.Width = 450
-$scriptPathLabel.Height = 100
-$scriptPathLabel.Location = New-Object System.Drawing.Point(15, 50)
-$scriptPathLabel.ForeColor = $Colors.Text
-$scriptPathLabel.Font = New-Object System.Drawing.Font("Segoe UI", 9)
+$scriptDetailsLabel = New-Object System.Windows.Forms.Label
+$scriptDetailsLabel.Text = ""
+$scriptDetailsLabel.AutoSize = $false
+$scriptDetailsLabel.Width = 400
+$scriptDetailsLabel.Height = 130
+$scriptDetailsLabel.Location = New-Object System.Drawing.Point(15, 50)
+$scriptDetailsLabel.ForeColor = $Colors.Text
+$scriptDetailsLabel.Font = New-Object System.Drawing.Font("Segoe UI", 9)
 
 $detailsPanel.Controls.Add($scriptNameLabel)
-$detailsPanel.Controls.Add($scriptPathLabel)
+$detailsPanel.Controls.Add($scriptDetailsLabel)
 
-# Button panel with enhanced styling
+# Buttons panel
 $buttonPanel = New-Object System.Windows.Forms.Panel
 $buttonPanel.Dock = [System.Windows.Forms.DockStyle]::Top
 $buttonPanel.Height = 50
@@ -208,127 +204,129 @@ $runButton = New-Object System.Windows.Forms.Button
 $runButton.Text = "▶ Run Script"
 $runButton.Width = 120
 $runButton.Height = 32
-$runButton.Location = New-Object System.Drawing.Point(15, 10)
 $runButton.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
 $runButton.BackColor = $Colors.Success
 $runButton.ForeColor = $Colors.White
 $runButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $runButton.FlatAppearance.BorderSize = 0
-$runButton.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(30, 150, 80)
 $runButton.Enabled = $false
 $runButton.Cursor = [System.Windows.Forms.Cursors]::Hand
-
-$refreshButton = New-Object System.Windows.Forms.Button
-$refreshButton.Text = "⟳ Refresh"
-$refreshButton.Width = 100
-$refreshButton.Height = 32
-$refreshButton.Location = New-Object System.Drawing.Point(145, 10)
-$refreshButton.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
-$refreshButton.BackColor = $Colors.Primary
-$refreshButton.ForeColor = $Colors.White
-$refreshButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
-$refreshButton.FlatAppearance.BorderSize = 0
-$refreshButton.FlatAppearance.MouseOverBackColor = $Colors.Secondary
-$refreshButton.Cursor = [System.Windows.Forms.Cursors]::Hand
+$runButton.Location = New-Object System.Drawing.Point(15, 10)
 
 $clearButton = New-Object System.Windows.Forms.Button
-$clearButton.Text = "🗑 Clear"
-$clearButton.Width = 90
+$clearButton.Text = "🗑 Clear Output"
+$clearButton.Width = 120
 $clearButton.Height = 32
-$clearButton.Location = New-Object System.Drawing.Point(255, 10)
 $clearButton.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
 $clearButton.BackColor = $Colors.Accent
 $clearButton.ForeColor = $Colors.White
 $clearButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $clearButton.FlatAppearance.BorderSize = 0
-$clearButton.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(200, 50, 30)
 $clearButton.Cursor = [System.Windows.Forms.Cursors]::Hand
+$clearButton.Location = New-Object System.Drawing.Point(145, 10)
 
 $buttonPanel.Controls.Add($runButton)
-$buttonPanel.Controls.Add($refreshButton)
 $buttonPanel.Controls.Add($clearButton)
 
-# Output panel with header
-$outputHeaderPanel = New-Object System.Windows.Forms.Panel
-$outputHeaderPanel.Dock = [System.Windows.Forms.DockStyle]::Top
-$outputHeaderPanel.Height = 35
-$outputHeaderPanel.BackColor = $Colors.Background
-$outputHeaderPanel.Margin = New-Object System.Windows.Forms.Padding(0, 8, 0, 0)
-
+# Output panel
 $outputLabel = New-Object System.Windows.Forms.Label
-$outputLabel.Text = "📋 Execution Output"
-$outputLabel.AutoSize = $true
-$outputLabel.Location = New-Object System.Drawing.Point(15, 10)
+$outputLabel.Text = "📋 Output"
 $outputLabel.Font = New-Object System.Drawing.Font("Segoe UI", 11, [System.Drawing.FontStyle]::Bold)
 $outputLabel.ForeColor = $Colors.Text
-
-$outputHeaderPanel.Controls.Add($outputLabel)
+$outputLabel.AutoSize = $true
+$outputLabel.Dock = [System.Windows.Forms.DockStyle]::Top
+$outputLabel.Padding = New-Object System.Windows.Forms.Padding(15, 8, 15, 5)
 
 $outputBox = New-Object System.Windows.Forms.RichTextBox
 $outputBox.Dock = [System.Windows.Forms.DockStyle]::Fill
-$outputBox.ReadOnly = $false
 $outputBox.Font = New-Object System.Drawing.Font("Consolas", 9)
 $outputBox.ForeColor = $Colors.TextLight
 $outputBox.BackColor = $Colors.DarkBg
-$outputBox.Text = "Select a script and click 'Run Script' to execute. Output will appear here."
+$outputBox.Text = "Output will appear here"
 $outputBox.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+$outputBox.Margin = New-Object System.Windows.Forms.Padding(0, 8, 0, 0)
 
-# Assemble right panel
 $rightPanel.Controls.Add($outputBox)
-$rightPanel.Controls.Add($outputHeaderPanel)
+$rightPanel.Controls.Add($outputLabel)
 $rightPanel.Controls.Add($buttonPanel)
 $rightPanel.Controls.Add($detailsPanel)
 
-$splitContainer.Panel1.Controls.Add($treePanel)
+$splitContainer.Panel1.Controls.Add($leftPanel)
 $splitContainer.Panel2.Controls.Add($rightPanel)
 
-# Add controls to form
+# Add to form
 $form.Controls.Add($splitContainer)
 $form.Controls.Add($topPanel)
 $form.Controls.Add($menuStrip)
 
-# Current selected script
+# Current selection
 $selectedScript = $null
 
-# Populate tree view
-function PopulateTree {
-    $treeView.Nodes.Clear()
+# Populate category combo and script list
+function RefreshScriptList {
+    $categoryCombo.Items.Clear()
+    $categoryCombo.Items.Add("All Categories")
+    $metadata.categories.Keys | Sort-Object | ForEach-Object {
+        $categoryCombo.Items.Add($_) | Out-Null
+    }
+    $categoryCombo.SelectedIndex = 0
     
-    $nodes = ConvertTo-TreeViewNodes -Catalog $metadata
-    foreach ($node in $nodes) {
-        $treeView.Nodes.Add($node) | Out-Null
+    UpdateScriptList
+}
+
+# Update script list based on category and search
+function UpdateScriptList {
+    $scriptList.Items.Clear()
+    
+    $selectedCategory = if ($categoryCombo.SelectedIndex -le 0) { $null } else { $categoryCombo.SelectedItem }
+    $searchTerm = $searchBox.Text.ToLower()
+    
+    $filtered = $metadata.scripts | Where-Object {
+        ($selectedCategory -eq $null -or $_.category -eq $selectedCategory) -and
+        ($_.name.ToLower().Contains($searchTerm) -or $_.description.ToLower().Contains($searchTerm))
+    }
+    
+    $filtered | ForEach-Object {
+        $displayName = "$(if($_.requiresAdmin) {'⚠️ '})$($_.name)"
+        $scriptList.Items.Add($displayName) | Out-Null
     }
 }
 
-# Handle tree selection with visual feedback
-$treeView.Add_AfterSelect({
-    $node = $_.Node
-    if ($node.Tag.type -eq "script") {
-        $selectedScript = $node.Tag
+# Handle script selection
+$scriptList.Add_SelectedIndexChanged({
+    if ($scriptList.SelectedIndex -ge 0) {
+        $selectedCategory = if ($categoryCombo.SelectedIndex -le 0) { $null } else { $categoryCombo.SelectedItem }
+        $searchTerm = $searchBox.Text.ToLower()
         
-        $scriptNameLabel.Text = "📜 $($node.Tag.name)"
+        $filtered = $metadata.scripts | Where-Object {
+            ($selectedCategory -eq $null -or $_.category -eq $selectedCategory) -and
+            ($_.name.ToLower().Contains($searchTerm) -or $_.description.ToLower().Contains($searchTerm))
+        }
+        
+        $selectedScript = $filtered[$scriptList.SelectedIndex]
+        
+        $scriptNameLabel.Text = "📜 $($selectedScript.name)"
         $scriptNameLabel.ForeColor = $Colors.Primary
         
-        $details = "📁 Path: $($node.Tag.path)`n"
-        if ($node.Tag.description) { $details += "`n📝 Description:`n   $($node.Tag.description)`n" }
-        if ($node.Tag.requiresAdmin) { $details += "`n⚠️  Requires Administrator privileges" }
-        if ($node.Tag.hasParameters) { $details += "`n🔧 Accepts parameters" }
+        $details = "📁 Category: $($selectedScript.category)`n"
+        $details += "📍 Path: $($selectedScript.path)`n`n"
+        if ($selectedScript.description) { $details += "📝 $($selectedScript.description)`n" }
+        if ($selectedScript.requiresAdmin) { $details += "`n⚠️  Requires Admin Privileges" }
+        if ($selectedScript.hasParameters) { $details += "`n🔧 Accepts Parameters" }
         
-        $scriptPathLabel.Text = $details
+        $scriptDetailsLabel.Text = $details
         $runButton.Enabled = $true
-        $runButton.BackColor = $Colors.Success
     }
     else {
         $selectedScript = $null
-        $scriptNameLabel.Text = "Select a script to view details"
+        $scriptNameLabel.Text = "Select a script"
         $scriptNameLabel.ForeColor = $Colors.Text
-        $scriptPathLabel.Text = ""
+        $scriptDetailsLabel.Text = ""
         $runButton.Enabled = $false
-        $runButton.BackColor = [System.Drawing.Color]::FromArgb(180, 180, 180)
     }
 })
 
-# Run script handler
+# Run button
 $runButton.Add_Click({
     if ($selectedScript) {
         $fullPath = Join-Path $ScriptsRoot $selectedScript.path
@@ -353,57 +351,41 @@ $runButton.Add_Click({
             
             $outputBox.ScrollToCaret()
         }
-        else {
-            [System.Windows.Forms.MessageBox]::Show("Script not found: $fullPath", "Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
-        }
     }
 })
 
-# Clear output handler
+# Clear button
 $clearButton.Add_Click({
     $outputBox.Clear()
 })
 
-# Refresh handler
-$refreshButton.Add_Click({
-    $metadata = Build-ScriptCatalog -ScriptsRoot $ScriptsRoot
-    PopulateTree
+# Search
+$searchBox.Add_TextChanged({
+    UpdateScriptList
 })
 
+# Category filter
+$categoryCombo.Add_SelectedIndexChanged({
+    UpdateScriptList
+})
+
+# Refresh
 $refreshItem.Add_Click({
     $metadata = Build-ScriptCatalog -ScriptsRoot $ScriptsRoot
-    PopulateTree
+    RefreshScriptList
 })
 
-# Search functionality with live filtering
-$searchBox.Add_TextChanged({
-    $query = $searchBox.Text.ToLower()
-    
-    if ([string]::IsNullOrWhiteSpace($query)) {
-        PopulateTree
-    }
-    else {
-        $filtered = Filter-CatalogBySearch -Catalog $metadata -Query $query
-        $treeView.Nodes.Clear()
-        
-        $nodes = ConvertTo-TreeViewNodes -Catalog $filtered
-        foreach ($node in $nodes) {
-            $treeView.Nodes.Add($node) | Out-Null
-        }
-    }
-})
-
-# F5 key for refresh
+# F5 shortcut
 $form.Add_KeyDown({
     if ($_.KeyCode -eq [System.Windows.Forms.Keys]::F5) {
         $metadata = Build-ScriptCatalog -ScriptsRoot $ScriptsRoot
-        PopulateTree
+        RefreshScriptList
         $_.Handled = $true
     }
 })
 
-# Initial population
-PopulateTree
+# Initial load
+RefreshScriptList
 
-# Show form
+# Show
 $form.ShowDialog() | Out-Null
