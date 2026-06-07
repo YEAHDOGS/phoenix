@@ -84,14 +84,14 @@ $topPanel.BackColor = $Colors.DarkBg
 $topPanel.Padding = New-Object System.Windows.Forms.Padding(15)
 
 $titleLabel = New-Object System.Windows.Forms.Label
-$titleLabel.Text = "📜 Script Manager"
+$titleLabel.Text = "SCRIPTS - Script Manager"
 $titleLabel.Font = New-Object System.Drawing.Font("Segoe UI", 16, [System.Drawing.FontStyle]::Bold)
 $titleLabel.ForeColor = $Colors.Secondary
 $titleLabel.AutoSize = $true
 $titleLabel.Location = New-Object System.Drawing.Point(15, 8)
 
 $searchLabel = New-Object System.Windows.Forms.Label
-$searchLabel.Text = "🔍 Search:"
+$searchLabel.Text = "SEARCH:"
 $searchLabel.Font = New-Object System.Drawing.Font("Segoe UI", 10)
 $searchLabel.ForeColor = $Colors.TextLight
 $searchLabel.AutoSize = $true
@@ -105,7 +105,7 @@ $searchBox.Font = New-Object System.Drawing.Font("Segoe UI", 10)
 $searchBox.BackColor = $Colors.White
 
 $categoryLabel = New-Object System.Windows.Forms.Label
-$categoryLabel.Text = "📁 Category:"
+$categoryLabel.Text = "CATEGORY:"
 $categoryLabel.Font = New-Object System.Drawing.Font("Segoe UI", 10)
 $categoryLabel.ForeColor = $Colors.TextLight
 $categoryLabel.AutoSize = $true
@@ -201,7 +201,7 @@ $buttonPanel.BackColor = $Colors.Background
 $buttonPanel.Margin = New-Object System.Windows.Forms.Padding(0, 8, 0, 0)
 
 $runButton = New-Object System.Windows.Forms.Button
-$runButton.Text = "▶ Run Script"
+$runButton.Text = "RUN Script"
 $runButton.Width = 120
 $runButton.Height = 32
 $runButton.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
@@ -214,7 +214,7 @@ $runButton.Cursor = [System.Windows.Forms.Cursors]::Hand
 $runButton.Location = New-Object System.Drawing.Point(15, 10)
 
 $clearButton = New-Object System.Windows.Forms.Button
-$clearButton.Text = "🗑 Clear Output"
+$clearButton.Text = "CLEAR Output"
 $clearButton.Width = 120
 $clearButton.Height = 32
 $clearButton.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
@@ -230,7 +230,7 @@ $buttonPanel.Controls.Add($clearButton)
 
 # Output panel
 $outputLabel = New-Object System.Windows.Forms.Label
-$outputLabel.Text = "📋 Output"
+$outputLabel.Text = "OUTPUT"
 $outputLabel.Font = New-Object System.Drawing.Font("Segoe UI", 11, [System.Drawing.FontStyle]::Bold)
 $outputLabel.ForeColor = $Colors.Text
 $outputLabel.AutoSize = $true
@@ -289,8 +289,8 @@ function UpdateScriptList {
     
     $script:filteredScripts | ForEach-Object {
         $folder = [System.IO.Path]::GetDirectoryName($_.path)
-        $displayFolder = if ($folder) { "📁 $folder/" } else { "" }
-        $adminIcon = if ($_.requiresAdmin) { "⚠️ " } else { "" }
+        $displayFolder = if ($folder) { "$folder/" } else { "" }
+        $adminIcon = if ($_.requiresAdmin) { "ADMIN " } else { "" }
         $displayName = "$adminIcon$displayFolder$($_.name)"
         $scriptList.Items.Add($displayName) | Out-Null
     }
@@ -301,14 +301,14 @@ $scriptList.Add_SelectedIndexChanged({
     if ($scriptList.SelectedIndex -ge 0 -and $scriptList.SelectedIndex -lt $filteredScripts.Count) {
         $selectedScript = $filteredScripts[$scriptList.SelectedIndex]
         
-        $scriptNameLabel.Text = "📜 $($selectedScript.name)"
+        $scriptNameLabel.Text = "SCRIPT: $($selectedScript.name)"
         $scriptNameLabel.ForeColor = $Colors.Primary
         
-        $details = "📁 Category: $($selectedScript.category)`n"
-        $details += "📍 Path: $($selectedScript.path)`n`n"
-        if ($selectedScript.description) { $details += "📝 $($selectedScript.description)`n" }
-        if ($selectedScript.requiresAdmin) { $details += "`n⚠️  Requires Admin Privileges" }
-        if ($selectedScript.hasParameters) { $details += "`n🔧 Accepts Parameters" }
+        $details = "CATEGORY: $($selectedScript.category)`n"
+        $details += "PATH: $($selectedScript.path)`n`n"
+        if ($selectedScript.description) { $details += "DESCRIPTION: $($selectedScript.description)`n" }
+        if ($selectedScript.requiresAdmin) { $details += "`nADMIN: Requires Admin Privileges" }
+        if ($selectedScript.hasParameters) { $details += "`nPARAMS: Accepts Parameters" }
         
         $scriptDetailsLabel.Text = $details
         $runButton.Enabled = $true
@@ -344,23 +344,23 @@ $runButton.Add_Click({
                     $outputBox.AppendText("[*] Script executed with no output`r`n")
                 }
                 $outputBox.AppendText("`r`n" + ("="*70) + "`r`n")
-                $outputBox.AppendText("[✓] Script completed successfully`r`n")
+                $outputBox.AppendText("[OK] Script completed successfully`r`n")
             }
             catch {
-                $outputBox.AppendText("[✗] Error: $_`r`n")
-                $outputBox.AppendText("[✗] Stack: $($_.ScriptStackTrace)`r`n")
+                $outputBox.AppendText("[ERROR] $_`r`n")
+                $outputBox.AppendText("[STACK] $($_.ScriptStackTrace)`r`n")
             }
             
             $outputBox.ScrollToCaret()
         }
         else {
             $outputBox.Clear()
-            $outputBox.AppendText("[✗] Script not found: $fullPath`r`n")
+            $outputBox.AppendText("[ERROR] Script not found: $fullPath`r`n")
         }
     }
     else {
         $outputBox.Clear()
-        $outputBox.AppendText("[✗] No script selected`r`n")
+        $outputBox.AppendText("[ERROR] No script selected`r`n")
     }
 })
 
