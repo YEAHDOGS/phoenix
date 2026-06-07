@@ -1,0 +1,749 @@
+{
+  "lastUpdated": "2026-06-07T00:10:38Z",
+  "scripts": [
+    {
+      "category": "asr",
+      "requiresAdmin": true,
+      "name": "add-all-asr-rules",
+      "path": "asr/add-all-asr-rules.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "asr",
+      "requiresAdmin": true,
+      "name": "add-asr-rule",
+      "path": "asr/add-asr-rule.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "asr",
+      "requiresAdmin": false,
+      "name": "asr-ruleset",
+      "path": "asr/asr-ruleset.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "asr",
+      "requiresAdmin": false,
+      "name": "check-asr-rules",
+      "path": "asr/check-asr-rules.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "asr",
+      "requiresAdmin": true,
+      "name": "disable-all-asr-rules",
+      "path": "asr/disable-all-asr-rules.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "asr",
+      "requiresAdmin": true,
+      "name": "disable-asr-rule",
+      "path": "asr/disable-asr-rule.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "asr",
+      "requiresAdmin": false,
+      "name": "fetch-asr-rules",
+      "path": "asr/fetch-asr-rules.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "asr",
+      "requiresAdmin": false,
+      "name": "get-active-asr-rules",
+      "path": "asr/get-active-asr-rules.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "checksum",
+      "requiresAdmin": false,
+      "name": "check",
+      "path": "checksum/check.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "checksum",
+      "requiresAdmin": false,
+      "name": "compare",
+      "path": "checksum/compare.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "chocolatey",
+      "requiresAdmin": false,
+      "name": "apps",
+      "path": "chocolatey/apps.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "chocolatey",
+      "requiresAdmin": false,
+      "name": "install-chocolatey-online",
+      "path": "chocolatey/install-chocolatey-online.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "files",
+      "requiresAdmin": false,
+      "name": "games",
+      "path": "files/games.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "firewall",
+      "requiresAdmin": true,
+      "name": "block-lolbas",
+      "path": "firewall/block-lolbas.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "firewall",
+      "requiresAdmin": false,
+      "name": "block-updates",
+      "path": "firewall/block-updates.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "firewall",
+      "requiresAdmin": false,
+      "name": "programs",
+      "path": "firewall/programs.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "get-windows-updates",
+      "requiresAdmin": false,
+      "name": "fetch-updates",
+      "path": "get-windows-updates/fetch-updates.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "get-windows-updates",
+      "requiresAdmin": false,
+      "name": "install",
+      "path": "get-windows-updates/install.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "get-windows-updates",
+      "requiresAdmin": false,
+      "name": "sync-updates",
+      "path": "get-windows-updates/sync-updates.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "kill-updates",
+      "requiresAdmin": false,
+      "name": "wake-disable",
+      "path": "kill-updates/wake-disable.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "qemu",
+      "requiresAdmin": false,
+      "name": "start",
+      "path": "qemu/start.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "settings",
+      "requiresAdmin": false,
+      "name": "remove-optional",
+      "path": "settings/remove-optional.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "sys-info",
+      "requiresAdmin": false,
+      "name": "info",
+      "path": "sys-info/info.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "all",
+      "path": "sys-info/list/all.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": true,
+      "name": "appx",
+      "path": "sys-info/list/appx.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "check-debug",
+      "path": "sys-info/list/check-debug.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "com",
+      "path": "sys-info/list/com.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "dcom",
+      "path": "sys-info/list/dcom.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "devices",
+      "path": "sys-info/list/devices.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "driver-store",
+      "path": "sys-info/list/driver-store.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "drivers",
+      "path": "sys-info/list/drivers.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "envs",
+      "path": "sys-info/list/envs.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": true,
+      "name": "filters",
+      "path": "sys-info/list/filters.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "hosts",
+      "path": "sys-info/list/hosts.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "messaging-hosts",
+      "path": "sys-info/list/messaging-hosts.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "path",
+      "path": "sys-info/list/path.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "pipes",
+      "path": "sys-info/list/pipes.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "programs",
+      "path": "sys-info/list/programs.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "service-path",
+      "path": "sys-info/list/service-path.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "services",
+      "path": "sys-info/list/services.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": true,
+      "name": "startup",
+      "path": "sys-info/list/startup.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "systeminfo",
+      "path": "sys-info/list/systeminfo.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "tasks",
+      "path": "sys-info/list/tasks.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "UEFI",
+      "path": "sys-info/list/UEFI.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "users",
+      "path": "sys-info/list/users.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "sys-info/list",
+      "requiresAdmin": false,
+      "name": "utils",
+      "path": "sys-info/list/utils.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "sys-info/wmi",
+      "requiresAdmin": false,
+      "name": "hidden-processes",
+      "path": "sys-info/list/wmi/hidden-processes.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "sys-info/wmi",
+      "requiresAdmin": false,
+      "name": "persistance",
+      "path": "sys-info/list/wmi/persistance.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "sys-info/wmi",
+      "requiresAdmin": false,
+      "name": "startup",
+      "path": "sys-info/list/wmi/startup.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "sys-info/wmi",
+      "requiresAdmin": false,
+      "name": "wmi",
+      "path": "sys-info/list/wmi/wmi.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "sys-info",
+      "requiresAdmin": false,
+      "name": "open-hosts",
+      "path": "sys-info/open-hosts.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "tools",
+      "requiresAdmin": false,
+      "name": "godmode",
+      "path": "tools/godmode.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "tools",
+      "requiresAdmin": true,
+      "name": "gui-launcher",
+      "path": "tools/gui-launcher.ps1",
+      "hasParameters": true
+    },
+    {
+      "category": "tools",
+      "requiresAdmin": false,
+      "name": "netmon",
+      "path": "tools/netmon.ps1",
+      "hasParameters": false
+    },
+    {
+      "category": "tools",
+      "requiresAdmin": false,
+      "name": "runscripts",
+      "path": "tools/runscripts.ps1",
+      "hasParameters": false
+    }
+  ],
+  "categories": {
+    "checksum": [
+      {
+        "hasParameters": true,
+        "requiresAdmin": false,
+        "name": "check",
+        "path": "checksum/check.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "compare",
+        "path": "checksum/compare.ps1"
+      }
+    ],
+    "sys-info/list": [
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "all",
+        "path": "sys-info/list/all.ps1"
+      },
+      {
+        "hasParameters": true,
+        "requiresAdmin": true,
+        "name": "appx",
+        "path": "sys-info/list/appx.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "check-debug",
+        "path": "sys-info/list/check-debug.ps1"
+      },
+      {
+        "hasParameters": true,
+        "requiresAdmin": false,
+        "name": "com",
+        "path": "sys-info/list/com.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "dcom",
+        "path": "sys-info/list/dcom.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "devices",
+        "path": "sys-info/list/devices.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "driver-store",
+        "path": "sys-info/list/driver-store.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "drivers",
+        "path": "sys-info/list/drivers.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "envs",
+        "path": "sys-info/list/envs.ps1"
+      },
+      {
+        "hasParameters": true,
+        "requiresAdmin": true,
+        "name": "filters",
+        "path": "sys-info/list/filters.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "hosts",
+        "path": "sys-info/list/hosts.ps1"
+      },
+      {
+        "hasParameters": true,
+        "requiresAdmin": false,
+        "name": "messaging-hosts",
+        "path": "sys-info/list/messaging-hosts.ps1"
+      },
+      {
+        "hasParameters": true,
+        "requiresAdmin": false,
+        "name": "path",
+        "path": "sys-info/list/path.ps1"
+      },
+      {
+        "hasParameters": true,
+        "requiresAdmin": false,
+        "name": "pipes",
+        "path": "sys-info/list/pipes.ps1"
+      },
+      {
+        "hasParameters": true,
+        "requiresAdmin": false,
+        "name": "programs",
+        "path": "sys-info/list/programs.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "service-path",
+        "path": "sys-info/list/service-path.ps1"
+      },
+      {
+        "hasParameters": true,
+        "requiresAdmin": false,
+        "name": "services",
+        "path": "sys-info/list/services.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": true,
+        "name": "startup",
+        "path": "sys-info/list/startup.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "systeminfo",
+        "path": "sys-info/list/systeminfo.ps1"
+      },
+      {
+        "hasParameters": true,
+        "requiresAdmin": false,
+        "name": "tasks",
+        "path": "sys-info/list/tasks.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "UEFI",
+        "path": "sys-info/list/UEFI.ps1"
+      },
+      {
+        "hasParameters": true,
+        "requiresAdmin": false,
+        "name": "users",
+        "path": "sys-info/list/users.ps1"
+      },
+      {
+        "hasParameters": true,
+        "requiresAdmin": false,
+        "name": "utils",
+        "path": "sys-info/list/utils.ps1"
+      }
+    ],
+    "firewall": [
+      {
+        "hasParameters": false,
+        "requiresAdmin": true,
+        "name": "block-lolbas",
+        "path": "firewall/block-lolbas.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "block-updates",
+        "path": "firewall/block-updates.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "programs",
+        "path": "firewall/programs.ps1"
+      }
+    ],
+    "get-windows-updates": [
+      {
+        "hasParameters": true,
+        "requiresAdmin": false,
+        "name": "fetch-updates",
+        "path": "get-windows-updates/fetch-updates.ps1"
+      },
+      {
+        "hasParameters": true,
+        "requiresAdmin": false,
+        "name": "install",
+        "path": "get-windows-updates/install.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "sync-updates",
+        "path": "get-windows-updates/sync-updates.ps1"
+      }
+    ],
+    "tools": [
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "godmode",
+        "path": "tools/godmode.ps1"
+      },
+      {
+        "hasParameters": true,
+        "requiresAdmin": true,
+        "name": "gui-launcher",
+        "path": "tools/gui-launcher.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "netmon",
+        "path": "tools/netmon.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "runscripts",
+        "path": "tools/runscripts.ps1"
+      }
+    ],
+    "asr": [
+      {
+        "hasParameters": false,
+        "requiresAdmin": true,
+        "name": "add-all-asr-rules",
+        "path": "asr/add-all-asr-rules.ps1"
+      },
+      {
+        "hasParameters": true,
+        "requiresAdmin": true,
+        "name": "add-asr-rule",
+        "path": "asr/add-asr-rule.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "asr-ruleset",
+        "path": "asr/asr-ruleset.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "check-asr-rules",
+        "path": "asr/check-asr-rules.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": true,
+        "name": "disable-all-asr-rules",
+        "path": "asr/disable-all-asr-rules.ps1"
+      },
+      {
+        "hasParameters": true,
+        "requiresAdmin": true,
+        "name": "disable-asr-rule",
+        "path": "asr/disable-asr-rule.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "fetch-asr-rules",
+        "path": "asr/fetch-asr-rules.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "get-active-asr-rules",
+        "path": "asr/get-active-asr-rules.ps1"
+      }
+    ],
+    "files": [
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "games",
+        "path": "files/games.ps1"
+      }
+    ],
+    "settings": [
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "remove-optional",
+        "path": "settings/remove-optional.ps1"
+      }
+    ],
+    "qemu": [
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "start",
+        "path": "qemu/start.ps1"
+      }
+    ],
+    "sys-info/wmi": [
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "hidden-processes",
+        "path": "sys-info/list/wmi/hidden-processes.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "persistance",
+        "path": "sys-info/list/wmi/persistance.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "startup",
+        "path": "sys-info/list/wmi/startup.ps1"
+      },
+      {
+        "hasParameters": true,
+        "requiresAdmin": false,
+        "name": "wmi",
+        "path": "sys-info/list/wmi/wmi.ps1"
+      }
+    ],
+    "sys-info": [
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "info",
+        "path": "sys-info/info.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "open-hosts",
+        "path": "sys-info/open-hosts.ps1"
+      }
+    ],
+    "kill-updates": [
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "wake-disable",
+        "path": "kill-updates/wake-disable.ps1"
+      }
+    ],
+    "chocolatey": [
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "apps",
+        "path": "chocolatey/apps.ps1"
+      },
+      {
+        "hasParameters": false,
+        "requiresAdmin": false,
+        "name": "install-chocolatey-online",
+        "path": "chocolatey/install-chocolatey-online.ps1"
+      }
+    ]
+  },
+  "version": "1.0"
+}

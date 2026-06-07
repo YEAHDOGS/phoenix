@@ -69,6 +69,24 @@ Android does not feature any answerfile automation system for re-installs, so I 
 
 ## Installation
 
+### Using the GUI Launcher (Recommended)
+
+A unified GUI launcher is available to browse, search, and execute all scripts in this project:
+
+```powershell
+cd .\scripts\tools
+.\gui-launcher.ps1
+```
+
+The launcher provides:
+- **Organized Script Browser** - Browse all 50+ scripts organized by category
+- **Search Functionality** - Quickly find scripts by name
+- **Script Details** - View script path and requirements
+- **Integrated Output** - See script results directly in the GUI
+- **One-Click Execution** - Run scripts with a single click
+
+### Manual Execution
+
 For now, the ASR Scripts work well. Simply clone this repo, and run one of the main scripts in Get-It-Goin/scripts/asr/
 - check-asr-rules.ps1 : Fetches rules from Microsoft and verifies if they are enabled on your machine
 - add-all-asr-rules.ps1 : Fetches and adds all available ASR Rules in Block mode. I highly recommend running this script on every Windows machine you own
