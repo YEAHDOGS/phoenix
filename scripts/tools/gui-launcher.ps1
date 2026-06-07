@@ -23,18 +23,12 @@ Add-Type -AssemblyName System.Drawing
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = Split-Path -Parent (Split-Path -Parent $ScriptDir)
 $ScriptsRoot = Split-Path -Parent $ScriptDir
-$MetadataFile = Join-Path $ScriptDir "script-metadata.json"
 
-# Load metadata
-$metadata = @{}
-if (Test-Path $MetadataFile) {
-    try {
-        $metadata = Get-Content $MetadataFile -Raw | ConvertFrom-Json
-    }
-    catch {
-        Write-Host "Warning: Could not load metadata file" -ForegroundColor Yellow
-    }
-}
+# Source the GUI library for auto-discovery
+. (Join-Path $ScriptDir "gui-lib.ps1")
+
+# Build catalog dynamically from file structure
+$metadata = Build-ScriptCatalog -ScriptsRoot $ScriptsRoot
 
 # Create main form
 $form = New-Object System.Windows.Forms.Form
@@ -196,48 +190,9 @@ $selectedScript = $null
 function PopulateTree {
     $treeView.Nodes.Clear()
     
-    if ($metadata.categories) {
-        foreach ($category in ($metadata.categories | Get-Member -MemberType NoteProperty | Sort-Object Name)) {
-            $catName = $category.Name
-            $catNode = New-Object System.Windows.Forms.TreeNode
-            $catNode.Text = $catName
-            $catNode.Tag = @{ type = "category" }
-            
-            $scripts = $metadata.categories.$catName
-            if ($scripts -is [object[]]) {
-                foreach ($script in $scripts) {
-                    $scriptNode = New-Object System.Windows.Forms.TreeNode
-                    $scriptNode.Text = $script.name
-                    $scriptNode.Tag = @{ 
-                        type = "script"
-                        name = $script.name
-                        path = $script.path
-                        requiresAdmin = $script.requiresAdmin
-                        hasParameters = $script.hasParameters
-                    }
-                    $catNode.Nodes.Add($scriptNode) | Out-Null
-                }
-            }
-            else {
-                $scriptNode = New-Object System.Windows.Forms.TreeNode
-                $scriptNode.Text = $scripts.name
-                $scriptNode.Tag = @{ 
-                    type = "script"
-                    name = $scripts.name
-                    path = $scripts.path
-                    requiresAdmin = $scripts.requiresAdmin
-                    hasParameters = $scripts.hasParameters
-                }
-                $catNode.Nodes.Add($scriptNode) | Out-Null
-            }
-            
-            $treeView.Nodes.Add($catNode) | Out-Null
-        }
-    }
-    else {
-        $rootNode = New-Object System.Windows.Forms.TreeNode
-        $rootNode.Text = "No scripts found - check metadata file"
-        $treeView.Nodes.Add($rootNode) | Out-Null
+    $nodes = ConvertTo-TreeViewNodes -Catalog $metadata
+    foreach ($node in $nodes) {
+        $treeView.Nodes.Add($node) | Out-Null
     }
 }
 
@@ -249,8 +204,9 @@ $treeView.Add_AfterSelect({
         
         $scriptNameLabel.Text = $node.Tag.name
         $details = "Path: $($node.Tag.path)"
-        if ($node.Tag.requiresAdmin) { $details += "`nRequires: Administrator" }
-        if ($node.Tag.hasParameters) { $details += "`nNote: This script accepts parameters" }
+        if ($node.Tag.description) { $details += "`nDescription: $($node.Tag.description)" }
+        if ($node.Tag.requiresAdmin) { $details += "`n⚠ Requires: Administrator" }
+        if ($node.Tag.hasParameters) { $details += "`n📝 Note: This script accepts parameters" }
         $scriptPathLabel.Text = $details
         
         $runButton.Enabled = $true
@@ -308,56 +264,17 @@ $refreshButton.Add_Click({
 # Search functionality
 $searchBox.Add_TextChanged({
     $query = $searchBox.Text.ToLower()
-    $treeView.Nodes.Clear()
     
     if ([string]::IsNullOrWhiteSpace($query)) {
         PopulateTree
     }
     else {
-        foreach ($category in ($metadata.categories | Get-Member -MemberType NoteProperty | Sort-Object Name)) {
-            $catName = $category.Name
-            $catNode = New-Object System.Windows.Forms.TreeNode
-            $catNode.Text = $catName
-            
-            $scripts = $metadata.categories.$catName
-            $added = $false
-            
-            if ($scripts -is [object[]]) {
-                foreach ($script in $scripts) {
-                    if ($script.name.ToLower().Contains($query) -or $catName.ToLower().Contains($query)) {
-                        $scriptNode = New-Object System.Windows.Forms.TreeNode
-                        $scriptNode.Text = $script.name
-                        $scriptNode.Tag = @{ 
-                            type = "script"
-                            name = $script.name
-                            path = $script.path
-                            requiresAdmin = $script.requiresAdmin
-                            hasParameters = $script.hasParameters
-                        }
-                        $catNode.Nodes.Add($scriptNode) | Out-Null
-                        $added = $true
-                    }
-                }
-            }
-            else {
-                if ($scripts.name.ToLower().Contains($query) -or $catName.ToLower().Contains($query)) {
-                    $scriptNode = New-Object System.Windows.Forms.TreeNode
-                    $scriptNode.Text = $scripts.name
-                    $scriptNode.Tag = @{ 
-                        type = "script"
-                        name = $scripts.name
-                        path = $scripts.path
-                        requiresAdmin = $scripts.requiresAdmin
-                        hasParameters = $scripts.hasParameters
-                    }
-                    $catNode.Nodes.Add($scriptNode) | Out-Null
-                    $added = $true
-                }
-            }
-            
-            if ($added) {
-                $treeView.Nodes.Add($catNode) | Out-Null
-            }
+        $filtered = Filter-CatalogBySearch -Catalog $metadata -Query $query
+        $treeView.Nodes.Clear()
+        
+        $nodes = ConvertTo-TreeViewNodes -Catalog $filtered
+        foreach ($node in $nodes) {
+            $treeView.Nodes.Add($node) | Out-Null
         }
     }
 })
