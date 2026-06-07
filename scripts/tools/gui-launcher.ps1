@@ -261,6 +261,7 @@ $form.Controls.Add($menuStrip)
 
 # Current selection
 $selectedScript = $null
+$filteredScripts = @()  # Keep track of filtered scripts for proper indexing
 
 # Populate category combo and script list
 function RefreshScriptList {
@@ -281,29 +282,24 @@ function UpdateScriptList {
     $selectedCategory = if ($categoryCombo.SelectedIndex -le 0) { $null } else { $categoryCombo.SelectedItem }
     $searchTerm = $searchBox.Text.ToLower()
     
-    $filtered = $metadata.scripts | Where-Object {
+    $script:filteredScripts = @($metadata.scripts | Where-Object {
         ($selectedCategory -eq $null -or $_.category -eq $selectedCategory) -and
         ($_.name.ToLower().Contains($searchTerm) -or $_.description.ToLower().Contains($searchTerm))
-    }
+    })
     
-    $filtered | ForEach-Object {
-        $displayName = "$(if($_.requiresAdmin) {'⚠️ '})$($_.name)"
+    $script:filteredScripts | ForEach-Object {
+        $folder = [System.IO.Path]::GetDirectoryName($_.path)
+        $displayFolder = if ($folder) { "📁 $folder/" } else { "" }
+        $adminIcon = if ($_.requiresAdmin) { "⚠️ " } else { "" }
+        $displayName = "$adminIcon$displayFolder$($_.name)"
         $scriptList.Items.Add($displayName) | Out-Null
     }
 }
 
 # Handle script selection
 $scriptList.Add_SelectedIndexChanged({
-    if ($scriptList.SelectedIndex -ge 0) {
-        $selectedCategory = if ($categoryCombo.SelectedIndex -le 0) { $null } else { $categoryCombo.SelectedItem }
-        $searchTerm = $searchBox.Text.ToLower()
-        
-        $filtered = $metadata.scripts | Where-Object {
-            ($selectedCategory -eq $null -or $_.category -eq $selectedCategory) -and
-            ($_.name.ToLower().Contains($searchTerm) -or $_.description.ToLower().Contains($searchTerm))
-        }
-        
-        $selectedScript = $filtered[$scriptList.SelectedIndex]
+    if ($scriptList.SelectedIndex -ge 0 -and $scriptList.SelectedIndex -lt $filteredScripts.Count) {
+        $selectedScript = $filteredScripts[$scriptList.SelectedIndex]
         
         $scriptNameLabel.Text = "📜 $($selectedScript.name)"
         $scriptNameLabel.ForeColor = $Colors.Primary
@@ -328,8 +324,8 @@ $scriptList.Add_SelectedIndexChanged({
 
 # Run button
 $runButton.Add_Click({
-    if ($selectedScript) {
-        $fullPath = Join-Path $ScriptsRoot $selectedScript.path
+    if ($selectedScript -and $selectedScript.path) {
+        $fullPath = Join-Path $ScriptsRoot $selectedScript.path.Replace("/", "\")
         
         if (Test-Path $fullPath) {
             $outputBox.Clear()
@@ -338,19 +334,33 @@ $runButton.Add_Click({
             $outputBox.AppendText("`r`n" + ("="*70) + "`r`n")
             
             try {
+                # Execute script and capture output
                 $output = & $fullPath 2>&1
-                foreach ($line in $output) {
-                    $outputBox.AppendText("$line`r`n")
+                if ($output) {
+                    foreach ($line in $output) {
+                        $outputBox.AppendText("$line`r`n")
+                    }
+                } else {
+                    $outputBox.AppendText("[*] Script executed with no output`r`n")
                 }
                 $outputBox.AppendText("`r`n" + ("="*70) + "`r`n")
                 $outputBox.AppendText("[✓] Script completed successfully`r`n")
             }
             catch {
                 $outputBox.AppendText("[✗] Error: $_`r`n")
+                $outputBox.AppendText("[✗] Stack: $($_.ScriptStackTrace)`r`n")
             }
             
             $outputBox.ScrollToCaret()
         }
+        else {
+            $outputBox.Clear()
+            $outputBox.AppendText("[✗] Script not found: $fullPath`r`n")
+        }
+    }
+    else {
+        $outputBox.Clear()
+        $outputBox.AppendText("[✗] No script selected`r`n")
     }
 })
 
