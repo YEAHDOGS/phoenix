@@ -23,3 +23,15 @@ $ActiveRules | Format-Table -AutoSize
 
 Write-Host "`n--- $($OnlineRules.Count) Fetched ASR Rules ---" -ForegroundColor Blue
 Write-Host "`--- $($ActiveRules.Count) ASR Rules found on this machine ---" -ForegroundColor Blue
+
+if ($ActiveRules.Count -eq 0) {
+    Write-Host "`n[Warning] No ASR rules are currently active on this machine. This may indicate that ASR is not configured or enabled." -ForegroundColor Red
+}
+
+if ($OnlineRules.Count -ne $ActiveRules.Count) {
+    Write-Host "`n[Warning] The number of ASR rules on this machine does not match the number of rules fetched from Microsoft. This may indicate missing or extra rules." -ForegroundColor Yellow
+}
+
+if ($OnlineRules.Count -eq $ActiveRules.Count) {
+    Write-Host "`n[Success] The number of ASR rules active on this machine matches the number of rules fetched from Microsoft." -ForegroundColor Green
+}
