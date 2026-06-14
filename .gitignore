@@ -12,3 +12,7 @@ win-install/drivers
 
 scripts/sys-info/data/
 scripts/sys-info/data/*
+
+# Isos
+*.iso
+qemu/data/*
