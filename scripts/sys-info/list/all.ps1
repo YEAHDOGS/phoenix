@@ -11,3 +11,5 @@
 . ./list/wmi/wmi.ps1
 . ./list/messaging-hosts.ps1
 . ./list/pipes.ps1
+. ./list/dism.ps1
+. ./list/dism-updates.ps1

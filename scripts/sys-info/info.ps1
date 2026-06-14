@@ -17,6 +17,8 @@ $AuditMenu = [ordered]@{
     "Path Vars"                      = { . "$PSScriptRoot/list/path.ps1" -t }
     "UEFI BIOS Vars"                 = { . "$PSScriptRoot/list/UEFI.ps1" }
     "Browser Native Messaging Hosts" = { . "$PSScriptRoot/list/messaging-hosts.ps1" -t }
+    "DISM"                           = { . "$PSScriptRoot/list/dism.ps1" -t }
+    "DISM-Updates"                   = { . "$PSScriptRoot/list/dism-updates.ps1" -t }
 }
 
 $title = "System Information"

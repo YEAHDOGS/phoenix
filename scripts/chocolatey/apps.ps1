@@ -330,6 +330,10 @@ $AppsGaming = @(
         Description = "PlayStation 2 emulator"
     },
     [PSCustomObject]@{
+        Package     = "RetroArch"
+        Description = "Multi-system emulator"
+    },
+    [PSCustomObject]@{
         Package     = "DS4Windows"
         Description = "Makes pairing and using DualShock4 controllers with Windows a bit easier"
     },
