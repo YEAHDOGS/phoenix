@@ -1,16 +1,17 @@
 # Define your 3 aliases
 $Aliases = [ordered]@{
-    "gpr"        = "Get-Process"
-    "strings"    = "C:\Users\Brando\Documents\.MY-DOCUMENTS\sysinternals\strings64.exe"
-    "bash"       = "C:\Users\Brando\AppData\Local\Programs\Git\bin\bash.exe"
-    "sh"         = "C:\Users\Brando\AppData\Local\Programs\Git\bin\sh.exe"
-    "file"       = "C:\Users\Brando\AppData\Local\Programs\Git\usr\bin\file.exe"
-    "head"       = "C:\Users\Brando\AppData\Local\Programs\Git\usr\bin\head.exe"
-    "sha512sum"  = "C:\Users\Brando\AppData\Local\Programs\Git\usr\bin\sha512sum.exe"
-    "sha256sum"  = "C:\Users\Brando\AppData\Local\Programs\Git\usr\bin\sha256sum.exe"
-    "gpg"        = "C:\Users\Brando\AppData\Local\Programs\Git\usr\bin\gpg.exe"
-    "yes"        = "C:\Users\Brando\AppData\Local\Programs\Git\usr\bin\yes.exe"
-    "git-fucked" = "C:\Users\Brando\Projects\get-it-goin\scripts\git\git-fucked.ps1"
+    "gpr"         = "Get-Process"
+    "strings"     = "C:\Users\Brando\Documents\.MY-DOCUMENTS\sysinternals\strings64.exe"
+    "bash"        = "C:\Users\Brando\AppData\Local\Programs\Git\bin\bash.exe"
+    "sh"          = "C:\Users\Brando\AppData\Local\Programs\Git\bin\sh.exe"
+    "file"        = "C:\Users\Brando\AppData\Local\Programs\Git\usr\bin\file.exe"
+    "head"        = "C:\Users\Brando\AppData\Local\Programs\Git\usr\bin\head.exe"
+    "sha512sum"   = "C:\Users\Brando\AppData\Local\Programs\Git\usr\bin\sha512sum.exe"
+    "sha256sum"   = "C:\Users\Brando\AppData\Local\Programs\Git\usr\bin\sha256sum.exe"
+    "gpg"         = "C:\Users\Brando\AppData\Local\Programs\Git\usr\bin\gpg.exe"
+    "yes"         = "C:\Users\Brando\AppData\Local\Programs\Git\usr\bin\yes.exe"
+    "git-fucked"  = "C:\Users\Brando\Projects\get-it-goin\scripts\git\git-fucked.ps1"
+    "delete-node" = "C:\Users\Brando\Projects\get-it-goin\scripts\tools\delete-node.ps1"
 }
 
 $NavFunctions = [ordered]@{
