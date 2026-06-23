@@ -41,7 +41,7 @@ function Invoke-GitHubCachePurge {
 
     # Push blank state up to force GitHub's head-pointer cache to break
     git commit --allow-empty -m "Purging remote history cache" --quiet
-    git push origin "temporary-purge-branch:$Branch" --force
+    git push --dry-run origin "temporary-purge-branch:$Branch" --force
 
     # Optional cooldown (used for Mode 3, skipped for Mode 4)
     if ($CooldownSeconds -gt 0) {
@@ -56,7 +56,7 @@ function Invoke-GitHubCachePurge {
     # Re-establish clean local tracking state back onto remote
     Write-Host "Restoring clean working directory graph to origin..." -ForegroundColor Green
     git checkout $Branch --quiet
-    git push origin $Branch --force
+    git push --dry-run origin $Branch --force
 
     # Clean up the local dummy tracking branch
     git branch -D temporary-purge-branch --quiet
@@ -82,9 +82,11 @@ Write-Host "1) It's just local (Committed, but NOT pushed yet)"
 Write-Host "2) It's in the cloud (Standard force-push history rewrite)"
 Write-Host "3) KILL IT WITH FIRE, NOW!!! (Wipe recent commits completely + 60s GitHub cache eviction)"
 Write-Host "4) SURGICAL STRIKE (Drop specific commit out of history, keep everything after, instant cache clear)"
-$Scope = Read-Host "Select an option (1-4)"
+Write-Host "5) CLEAN ROLLBACK (No sensitive data, safe history addition, standard push)"
+Write-Host "6) SWAP TO SPECIFIC COMMIT (Jump or hard-reset branch directly to a target SHA)"
+$Scope = Read-Host "Select an option (1-6)"
 
-if ($Scope -notmatch '^[1234]$') {
+if ($Scope -notmatch '^[123456]$') {
     Write-Host "Invalid response, exiting." -ForegroundColor Red
     Exit 1
 }
@@ -118,10 +120,10 @@ if ($Scope -eq "2") {
 
     Invoke-LocalReset -Count $CommitCount -HardWipe $Delete
         
-    git push origin $CurrentBranch --force-with-lease
+    git push --dry-run origin $CurrentBranch --force-with-lease
     if ($LASTEXITCODE -ne 0) {
         $Override = Read-Host "--force-with-lease failed. Force overwrite anyway? (y/N)"
-        if ($Override -match "^[yY](es)?$") { git push origin $CurrentBranch --force }
+        if ($Override -match "^[yY](es)?$") { git push --dry-run origin $CurrentBranch --force }
     }
 }
 
@@ -176,6 +178,80 @@ if ($Scope -eq "4") {
     Invoke-GitHubCachePurge -Branch $CurrentBranch -CooldownSeconds 0
     
     Write-Host "`n[✔] Surgical strike complete! History saved, secret eradicated." -ForegroundColor Green
+}
+
+# --- MODE 5: CLEAN ROLLBACK ---
+if ($Scope -eq "5") {
+    $CommitInput = Read-Host "How many commits back do you want to rollback? [Default: 1]"
+    $CommitCount = if ([string]::IsNullOrWhiteSpace($CommitInput)) { 1 } else { [int]$CommitInput }
+
+    Write-Host "`nPreparing clean rollback for the last $CommitCount commit(s)..." -ForegroundColor Yellow
+    git log -n $CommitCount --oneline --format="%C(cyan)%h %C(white)- %s"
+
+    $Confirm = Read-Host "`nAre you sure you want to revert these changes and push a rollback commit? (y/N)"
+    if ($Confirm -notmatch "^[yY](es)?$") { Write-Host "Aborting rollback."; Exit 1 }
+
+    Write-Host "`nUndoing changes locally via revert..." -ForegroundColor Cyan
+    git revert --no-commit "HEAD~$CommitCount..HEAD"
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "`n[!] Conflict detected during rollback. Please resolve manually or run 'git revert --abort'." -ForegroundColor Red
+        Exit 1
+    }
+
+    git commit -m "Rollback: Reverted last $CommitCount commit(s) due to issues" --quiet
+
+    Write-Host "Pushing clean history adjustment up to origin..." -ForegroundColor Green
+    git push --dry-run origin $CurrentBranch
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "`n[!] Push failed. You may need to pull incoming changes first." -ForegroundColor Red
+        Exit 1
+    }
+
+    Write-Host "`n[✔] Clean rollback complete! No history rewritten, shared branch remains safe." -ForegroundColor Green
+}
+
+# --- MODE 6: SWAP TO SPECIFIC COMMIT ---
+if ($Scope -eq "6") {
+    Write-Host "`n[➔] SWAP TARGET ACQUISITION [➔]" -ForegroundColor Magenta
+    $TargetCommit = Read-Host "Enter the Commit SHA (or branch name) you want to swap to"
+
+    if ([string]::IsNullOrWhiteSpace($TargetCommit)) {
+        Write-Host "Target cannot be empty. Aborting." -ForegroundColor Red
+        Exit 1
+    }
+
+    # Verify commit exists
+    $ValidSHA = git rev-parse --verify "${TargetCommit}^{commit}" 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Error: '$TargetCommit' is not a valid commit or reference." -ForegroundColor Red
+        Exit 1
+    }
+
+    Write-Host "`nTarget Found:" -ForegroundColor Cyan
+    git log -1 $ValidSHA --oneline --format="%C(cyan)%h %C(white)- %s (%cr) <%an>"
+
+    Write-Host "`nWhat action do you want to perform?" -ForegroundColor Yellow
+    Write-Host "1) Look only (Detached HEAD checkout - safe, leaves current branch alone)"
+    Write-Host "2) Hard reset (FORCE current branch root back to this commit - will lose uncommitted work!)"
+    $Action = Read-Host "Select action (1-2)"
+
+    if ($Action -eq "1") {
+        Write-Host "`nSwapping to commit $TargetCommit in read-only detached state..." -ForegroundColor Cyan
+        git checkout $ValidSHA
+    }
+    elseif ($Action -eq "2") {
+        $Confirm = Read-Host "`nType 'RESET' to force your current branch back to this exact commit"
+        if ($Confirm -ne "RESET") { Write-Host "Aborting hard reset."; Exit 1 }
+        
+        Write-Host "`nForcing current branch back to target..." -ForegroundColor Red
+        git reset --hard $ValidSHA
+    }
+    else {
+        Write-Host "Invalid action selected. Aborting." -ForegroundColor Red
+        Exit 1
+    }
 }
 
 # 5. Output the final Git status

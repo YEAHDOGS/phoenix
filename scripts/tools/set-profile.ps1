@@ -29,7 +29,7 @@ $NavFunctions = [ordered]@{
 Write-Host "Scanning system for user profiles..." -ForegroundColor Cyan
 
 # Find all actual user directories in C:\Users (excluding system paths like Public, All Users, Default)
-$ExcludeUsers = @('Public', 'Default', 'Default User', 'All Users', 'desktop.ini')
+$ExcludeUsers = @('Public', 'Default', 'Default User', 'All Users')
 $UserDirs = Get-ChildItem -Path "C:\Users" -Directory | 
 Where-Object { $_.Name -notin $ExcludeUsers }
 
@@ -38,10 +38,12 @@ $TargetPaths = @()
 
 foreach ($UserDir in $UserDirs) {
     $BaseDocPath = Join-Path -Path $UserDir.FullName -ChildPath "Documents\PowerShell"
+    $AnotherBaseDocPath = Join-Path -Path $UserDir.FullName -ChildPath "Documents\WindowsPowerShell"
     
     # Generate both native PowerShell and VS Code profile paths for this user
     $TargetPaths += Join-Path -Path $BaseDocPath -ChildPath "Microsoft.PowerShell_profile.ps1"
     $TargetPaths += Join-Path -Path $BaseDocPath -ChildPath "Microsoft.VSCode_profile.ps1"
+    $TargetPaths += Join-Path -Path $AnotherBaseDocPath -ChildPath "Microsoft.PowerShell_profile.ps1"
 }
 
 foreach ($ProfilePath in $TargetPaths) {
