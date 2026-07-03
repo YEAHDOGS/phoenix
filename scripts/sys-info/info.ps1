@@ -9,6 +9,7 @@ $AuditMenu = [ordered]@{
     "AppX"                           = { . "$PSScriptRoot/list/appx.ps1" -t }
     "COM"                            = { . "$PSScriptRoot/list/com.ps1" -t }
     "Users"                          = { . "$PSScriptRoot/list/users.ps1" -t }
+    "Notifications"                  = { . "$PSScriptRoot/list/notifications.ps1" -t }
     "WMI"                            = { . "$PSScriptRoot/list/wmi/wmi.ps1" -t }
     "Filters"                        = { . "$PSScriptRoot/list/filters.ps1" -t }
     "Pipes"                          = { . "$PSScriptRoot/list/pipes.ps1" -t }
