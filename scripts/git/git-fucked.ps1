@@ -84,9 +84,10 @@ Write-Host "3) KILL IT WITH FIRE, NOW!!! (Wipe recent commits completely + 60s G
 Write-Host "4) SURGICAL STRIKE (Drop specific commit out of history, keep everything after, instant cache clear)"
 Write-Host "5) CLEAN ROLLBACK (No sensitive data, safe history addition, standard push)"
 Write-Host "6) SWAP TO SPECIFIC COMMIT (Jump or hard-reset branch directly to a target SHA)"
-$Scope = Read-Host "Select an option (1-6)"
+Write-Host "7) Too many branches"
+$Scope = Read-Host "Select an option (1-7)"
 
-if ($Scope -notmatch '^[123456]$') {
+if ($Scope -notmatch '^[1234567]$') {
     Write-Host "Invalid response, exiting." -ForegroundColor Red
     Exit 1
 }
@@ -252,6 +253,148 @@ if ($Scope -eq "6") {
         Write-Host "Invalid action selected. Aborting." -ForegroundColor Red
         Exit 1
     }
+}
+
+# --- MODE 7: MASS DELETE BRANCHES ---
+if ($Scope -eq "7") {
+    Write-Host "`n[➔] BRANCH PURGE MATRIX ACQUISITION [➔]" -ForegroundColor Magenta
+
+    # Fetch latest remote references and clean up dead tracking refs
+    Write-Host "Syncing with GitHub remote references..." -ForegroundColor Cyan
+    git fetch origin --prune 2>$null
+
+    # Get current branch so we don't accidentally try to delete it locally
+    $CurrentBranch = (git branch --show-current).Trim()
+
+    # Get a definitive real-time list of branch names that currently exist on GitHub
+    $OnlineBranches = git ls-remote --heads origin | ForEach-Object {
+        if ($_ -match "refs/heads/(.+)") { $Matches[1].Trim() }
+    }
+
+    # Gather local branch data: Name, Last Commit Relative Time, and Remotes tracking info
+    $BranchRawData = git branch --format="%(refname:short)|%(committerdate:relative)|%(upstream)"
+    
+    $BranchList = [System.Collections.Generic.List[PSObject]]::new()
+    $Index = 1
+
+    foreach ($Line in $BranchRawData) {
+        if ([string]::IsNullOrWhiteSpace($Line)) { continue }
+        $Parts = $Line.Split('|')
+        $BName = $Parts[0].Trim()
+        $Age   = $Parts[1].Trim()
+        $Remote= $Parts[2].Trim()
+
+        # Skip the currently active branch from deletion selection
+        if ($BName -eq $CurrentBranch) { continue }
+
+        # Determine online availability status based strictly on the live GitHub snapshot
+        $StatusText = "Local Only"
+        $StatusColor = "Yellow"
+
+        if ($OnlineBranches -contains $BName) {
+            $StatusText = "Available Online"
+            $StatusColor = "Green"
+        } elseif (![string]::IsNullOrWhiteSpace($Remote)) {
+            # Upstream ref exists locally, but branch is missing from live GitHub query
+            $StatusText = "Deleted Online"
+            $StatusColor = "Red"
+        }
+
+        $BranchList.Add([PSCustomObject]@{
+            Index       = $Index
+            Name        = $BName
+            Age         = $Age
+            StatusText  = $StatusText
+            StatusColor = $StatusColor
+        })
+        $Index++
+    }
+
+    if ($BranchList.Count -eq 0) {
+        Write-Host "No other local branches available to delete. (Active branch: $CurrentBranch)" -ForegroundColor Yellow
+        Exit 0
+    }
+
+    # Display Menu UI Matrix
+    Write-Host "`nAvailable Local Branches for Purge:" -ForegroundColor Cyan
+    Write-Host ("{0,-5} {1,-30} {2,-20} {3,-15}" -f "ID", "Branch Name", "Last Activity", "GitHub Status") -ForegroundColor White
+    Write-Host ("{0,-5} {1,-30} {2,-20} {3,-15}" -f "--", "-----------", "-------------", "-------------") -ForegroundColor White
+
+    foreach ($B in $BranchList) {
+        Write-Host ("{0,-5} {1,-30} {2,-20} " -f $B.Index, $B.Name, $B.Age) -NoNewline
+        Write-Host $B.StatusText -ForegroundColor $B.StatusColor
+    }
+
+    Write-Host "`nEnter the IDs of the branches you want to delete (comma-separated, e.g., 1,3,4):" -ForegroundColor Yellow
+    $SelectionInput = Read-Host "Selection"
+
+    if ([string]::IsNullOrWhiteSpace($SelectionInput)) {
+        Write-Host "No selection made. Aborting." -ForegroundColor Red
+        Exit 1
+    }
+
+    # Parse inputs (supporting individual IDs and ranges like 3-5, 6, 8-12)
+    $SelectedIDs = [System.Collections.Generic.HashSet[string]]::new()
+    $RawTokens = $SelectionInput.Split(',') | ForEach-Object { $_.Trim() }
+
+    foreach ($Token in $RawTokens) {
+        if ($Token -match '^(\d+)-(\d+)$') {
+            # It's a range (e.g., 3-5)
+            $Start = [int]$Matches[1]
+            $End = [int]$Matches[2]
+            
+            # Ensure the range is valid, then loop through it
+            if ($Start -le $End) {
+                for ($i = $Start; $i -le $End; $i++) {
+                    [void]$SelectedIDs.Add($i.ToString())
+                }
+            }
+        } elseif ($Token -match '^\d+$') {
+            # It's a single ID (e.g., 6)
+            [void]$SelectedIDs.Add($Token)
+        }
+    }
+
+    $TargetsToDelete = [System.Collections.Generic.List[PSObject]]::new()
+    foreach ($ID in $SelectedIDs) {
+        $Match = $BranchList | Where-Object { $_.Index -eq $ID }
+        if ($Match) { $TargetsToDelete.Add($Match) }
+    }
+
+    if ($TargetsToDelete.Count -eq 0) {
+        Write-Host "No valid matching branch IDs selected. Aborting." -ForegroundColor Red
+        Exit 1
+    }
+
+    # Action Confirmation Display
+    Write-Host "`nSelected targets for extraction/purge:" -ForegroundColor Red
+    foreach ($T in $TargetsToDelete) {
+        Write-Host " ➔ $($T.Name) ($($T.Age))" -ForegroundColor White
+    }
+
+    Write-Host "`nHow do you want to handle unmerged changes?" -ForegroundColor Yellow
+    Write-Host "1) Safe Delete (-d : Aborts execution if branch contains unmerged work)"
+    Write-Host "2) Force Purge (-D : FORCE destroys branch irrespective of merge status!)"
+    $PurgeAction = Read-Host "Select action (1-2)"
+
+    $DeleteFlag = "-d"
+    if ($PurgeAction -eq "2") {
+        $Confirm = Read-Host "`nType 'PURGE' to verify lethal execution override"
+        if ($Confirm -ne "PURGE") { Write-Host "Aborting force purge."; Exit 1 }
+        $DeleteFlag = "-D"
+    } elseif ($PurgeAction -ne "1") {
+        Write-Host "Invalid action selected. Aborting." -ForegroundColor Red
+        Exit 1
+    }
+
+    # Execution Loop
+    Write-Host "`nExecuting branch purge pipeline..." -ForegroundColor Magenta
+    foreach ($Target in $TargetsToDelete) {
+        Write-Host "Deleting branch '$($Target.Name)'..." -ForegroundColor Cyan
+        git branch $DeleteFlag $($Target.Name)
+    }
+
+    Write-Host "`nPurge operation complete." -ForegroundColor Green
 }
 
 # 5. Output the final Git status

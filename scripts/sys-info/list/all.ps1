@@ -7,6 +7,7 @@
 . ./list/services.ps1
 . ./list/tasks.ps1
 . ./list/users.ps1
+. ./list/notifications.ps1
 . ./list/filters.ps1
 . ./list/wmi/wmi.ps1
 . ./list/messaging-hosts.ps1
