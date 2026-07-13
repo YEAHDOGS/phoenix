@@ -40,7 +40,7 @@ $metadata = Build-ScriptCatalog -ScriptsRoot $ScriptsRoot
 
 # Create main form
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "Get-It-Goin Script Launcher v3.0"
+$form.Text = "Phoenix Script Launcher v3.0"
 $form.Size = New-Object System.Drawing.Size(1400, 900)
 $form.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
 $form.MinimumSize = New-Object System.Drawing.Size(1000, 700)
@@ -71,7 +71,7 @@ $helpMenu.ForeColor = $Colors.TextLight
 $aboutItem = New-Object System.Windows.Forms.ToolStripMenuItem
 $aboutItem.Text = "About"
 $aboutItem.Add_Click({
-    [System.Windows.Forms.MessageBox]::Show("Get-It-Goin Script Launcher v3.0`n`nScripts: $($metadata.scripts.Count)`nCategories: 13","About") | Out-Null
+    [System.Windows.Forms.MessageBox]::Show("Phoenix Script Launcher v3.0`n`nScripts: $($metadata.scripts.Count)`nCategories: 13","About") | Out-Null
 })
 $helpMenu.DropDownItems.Add($aboutItem) | Out-Null
 $menuStrip.Items.Add($helpMenu) | Out-Null

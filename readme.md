@@ -1,4 +1,5 @@
 # Phoenix
+# Phoenix
 ## _Ways to secure, automate, diagnose, and streamline fresh Windows 11 and Android resets_
 
 [![Alice In Chains](https://img.youtube.com/vi/kq9MBnX00hs/maxresdefault.jpg)](https://youtu.be/kq9MBnX00hs)
@@ -87,7 +88,7 @@ The launcher provides:
 
 ### Manual Execution
 
-For now, the ASR Scripts work well. Simply clone this repo, and run one of the main scripts in Get-It-Goin/scripts/asr/
+For now, the ASR Scripts work well. Simply clone this repo, and run one of the main scripts in phoenix/scripts/asr/
 - check-asr-rules.ps1 : Fetches rules from Microsoft and verifies if they are enabled on your machine
 - add-all-asr-rules.ps1 : Fetches and adds all available ASR Rules in Block mode. I highly recommend running this script on every Windows machine you own
 - add-asr-rule.ps1 : Adds an ASR Rule in Block mode given a GUID
@@ -100,7 +101,7 @@ All actions blocked by these ASR rules are notified via Windows Security and vie
 
 Go to the ASR scripts folder and run check-asr-rules.ps1, it will display a list of all MS ASR rules present on their website, then report that you have 0 of them active
 ```powershell
-cd .\get-it-goin\scripts\asr
+cd .\phoenix\scripts\asr
 .\check-asr-rules.ps1
 ```
 
@@ -117,7 +118,7 @@ Afterwards, check again to confirm they are now active
 There is a script that lists all installed and active drivers on the machine. It lists the version, installed date, associated PnP device, and more. There are also scripts to list all apps and services found in the registry. They will export the data as .csv files.
 
 ```powershell
-cd .\get-it-goin\scripts\sys-info
+cd .\phoenix\scripts\sys-info
 .\info.ps1
 ```
 
@@ -125,7 +126,7 @@ There are some scripts to fetch, and install Windows Updates manually using the 
 
 Fetch and list all incoming update info without installing any of them
 ```powershell
-cd .\get-it-goin\scripts\get-windows-updates
+cd .\phoenix\scripts\get-windows-updates
 .\fetch-updates.ps1
 ```
 
