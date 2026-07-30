@@ -16,6 +16,7 @@ $Aliases = [ordered]@{
     "create-app"  = "C:\Users\Brando\Projects\phoenix\scripts\tools\create-app.ps1"
     "shred"       = "C:\Users\Brando\Projects\phoenix\scripts\tools\shred.ps1"
     "file-shift"  = "C:\Users\Brando\Projects\phoenix\scripts\tools\file-shift.ps1"
+    "claude"      = "C:\Users\BigMan\.local\bin\claude.exe"
 }
 
 $NavFunctions = [ordered]@{
