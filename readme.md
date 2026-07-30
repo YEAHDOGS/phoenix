@@ -135,6 +135,24 @@ Install the specific update that you want with its ID (replace the ID below)
 .\install.ps1 a32ca1d0-ddd4-486b-b708-d941db4f1101
 ```
 
+### Process Zombies (Task Killer Arcade Game)
+
+An interactive 2D arcade game built directly in PowerShell WinForms. Running processes on your machine are converted into zombie enemies (with health/size scaling based on their actual RAM footprint). Shoot them with two hands on the keyboard to reclaim RAM (points) and clear your system memory!
+
+- **Safe Mode**: Emulates the task killing (safe for all system tests).
+- **Real Kill Mode**: Actually terminates the corresponding application processes on your machine when you destroy their zombies. Protected processes (like `explorer.exe`, `svchost.exe`, and `pwsh.exe`) are excluded from termination to prevent accidental OS crashes.
+- **Controls**:
+  - **Left Hand**: `WASD` to move your CPU Core.
+  - **Right Hand**: `Arrow Keys` to aim and shoot bullets.
+  - **R Key**: Force Garbage Collection (reclaims thread pool ammo).
+  - **1 - 4 Keys**: Purchase hardware upgrades (CPU overclock, expanded bit width, firewall shields, and BSOD waves nukes) using reclaimed RAM.
+
+Run the game:
+```powershell
+cd .\scripts\tools
+.\process-zombies.ps1
+```
+
 ## License
 
 MIT
