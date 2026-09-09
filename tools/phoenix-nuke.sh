@@ -120,6 +120,25 @@ EOF
 #===============================================================================
 # enumeration
 #===============================================================================
+# parse_lsblk_pairs <line> -- fill the LP assoc array with KEY=VALUE pairs
+# from one `lsblk -P` output line. This parser NEVER evals: model/serial
+# strings come from device firmware, and a USB device can report arbitrary
+# bytes -- a hostile MODEL='Evil"; $(rm -rf /); echo "' must parse as data,
+# never execute. Handles util-linux -P escaping (\" and \\) on the way in.
+declare -A LP
+parse_lsblk_pairs() {
+    local line="$1"
+    LP=()
+    while [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)=\"(([^\"\\]|\\.)*)\"(.*)$ ]]; do
+        local key="${BASH_REMATCH[1]}" val="${BASH_REMATCH[2]}"
+        line="${BASH_REMATCH[4]}"
+        # unescape util-linux -P sequences: \\ -> \ first, then \" -> "
+        val="${val//\\\\/\\}"
+        val="${val//\\\"/\"}"
+        LP["$key"]="$val"
+    done
+}
+
 # parent_disk <partition-or-disk> -> /dev/<disk>
 parent_disk() {
     local node="$1" pk
@@ -188,27 +207,30 @@ enumerate() {
     D_COUNT=0
     local line dev model serial size tran rm rota type media flags reason
     while IFS= read -r line; do
-        # shellcheck disable=SC1091
-        eval "$line"   # sets NAME MODEL SERIAL SIZE TRAN RM ROTA TYPE
-        [[ "${TYPE:-}" == "disk" ]] || continue
-        # NOTE: PATH is deliberately NOT in the column list -- eval would turn
-        # PATH=/dev/... into a shell assignment and clobber the real PATH.
-        # The device node is rebuilt from NAME instead.
-        dev="/dev/${NAME:?}"
-        [[ -z "$dev" ]] && continue
-        model="${MODEL:-unknown}"
-        serial="${SERIAL:-unknown}"
-        media="$(classify_media "${TRAN:-?}" "${ROTA:-0}")"
+        # Parse the lsblk -P line with the eval-free parser. Model/serial
+        # values come from device firmware and are UNTRUSTED input --
+        # parsing them with `eval` would let a hostile USB device execute
+        # arbitrary shell. parse_lsblk_pairs extracts KEY="VALUE" pairs
+        # as pure data.
+        parse_lsblk_pairs "$line"
+        [[ "${LP[TYPE]:-}" == "disk" ]] || continue
+        # NOTE: the device node is rebuilt from NAME instead of trusting a
+        # PATH column -- keeps $PATH (the shell's) out of firmware data.
+        dev="/dev/${LP[NAME]:-}"
+        [[ -z "${LP[NAME]:-}" ]] && continue
+        model="${LP[MODEL]:-unknown}"
+        serial="${LP[SERIAL]:-unknown}"
+        media="$(classify_media "${LP[TRAN]:-?}" "${LP[ROTA]:-0}")"
         flags=""; reason=""
         isprot=0
         for p in "${prot[@]}"; do [[ "$p" == "$dev" ]] && { isprot=1; break; }; done
         if (( isprot == 1 )); then
             flags="BOOT-USB"; reason="boot-device"
-        elif [[ "${TRAN:-}" == "usb" || "${RM:-0}" == "1" ]]; then
+        elif [[ "${LP[TRAN]:-}" == "usb" || "${LP[RM]:-0}" == "1" ]]; then
             flags="USB"; reason="usb-device"
         fi
         D_DEV+=("$dev"); D_MODEL+=("$model"); D_SERIAL+=("$serial")
-        D_SIZE+=("$SIZE"); D_TRAN+=("${TRAN:-?}"); D_MEDIA+=("$media")
+        D_SIZE+=("${LP[SIZE]:-0}"); D_TRAN+=("${LP[TRAN]:-?}"); D_MEDIA+=("$media")
         D_FLAGS+=("$flags"); D_PROT+=("$reason")
         D_COUNT=$((D_COUNT+1))
     done < <(lsblk -P -b -d -o NAME,MODEL,SERIAL,SIZE,TRAN,RM,ROTA,TYPE -e 7,11 2>/dev/null || true)
