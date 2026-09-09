@@ -74,6 +74,7 @@ backup_require_source() {
     BACKUP_DEV="$(nuke_target_field "$inv" "$id" dev)"
     BACKUP_SIZE_BYTES="$(nuke_target_field "$inv" "$id" size_bytes)"
     BACKUP_SIZE_HUMAN="$(nuke_target_field "$inv" "$id" size_human)"
+    export BACKUP_SERIAL BACKUP_MODEL BACKUP_DEV BACKUP_SIZE_BYTES BACKUP_SIZE_HUMAN
     [[ -n "$BACKUP_DEV" && -n "$BACKUP_SIZE_BYTES" ]] \
         || { echo "[backup-gates] REFUSED: disk [$id] is missing dev/size fields." >&2; return 1; }
     echo "[backup-gates] source OK: [$id] $BACKUP_MODEL SN $BACKUP_SERIAL ($BACKUP_SIZE_HUMAN)"
@@ -166,8 +167,9 @@ backup_image_disk() {
     printf '%s  %s\n' "$sha" "$(basename "$img")" > "$img.sha256"
 
     # Re-read the hash file (independent verify pass) -- the proof binds it.
+    # The sidecar names the basename, so verify from the destination dir.
     local verify
-    verify="$(sha256sum -c "$img.sha256" 2>/dev/null)" \
+    verify="$(cd "$dest" && sha256sum -c "$(basename "$img").sha256" 2>/dev/null)" \
         || { echo "[backup-gates] FAILED: post-write hash verification failed." >&2; return 1; }
 
     local img_size
