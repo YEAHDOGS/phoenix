@@ -15,10 +15,11 @@
 #   3. Never auto-select: no default target, ever.
 #   4. Boot-USB guard: the booted USB (and any disk with mounted partitions)
 #      is structurally refused -- not a warning, a hard block.
-#   5. Typed confirmation: operator must type the target's serial (or
-#      "NUKE <serial>") on a real terminal, not Y/N. Piped/scripted stdin is
-#      refused structurally -- `echo $serial | ...` can never arm a wipe.
-#      Logged with timestamp.
+#   5. Typed confirmation, TWO factors: operator must type the target's
+#      exact serial AND the exact size as displayed (e.g. "SATATEST001
+#      931.5 GB", or "NUKE <serial> <size>") on a real terminal, not Y/N.
+#      Piped/scripted stdin is refused structurally -- `echo $serial | ...`
+#      can never arm a wipe. Logged with timestamp.
 #   6. Method per media (NIST 800-88): HDD -> nwipe (Clear);
 #      SATA SSD -> ATA Secure Erase (Purge); NVMe -> nvme format --ses=1
 #      (Purge); firmware purge unsupported -> nwipe fallback, logged warning.
@@ -94,7 +95,8 @@ Methods per media (NIST 800-88, see docs/NUKE-SAFETY.md):
 
 RULES: no flags = enumerate only. No default target. The boot USB and any
 disk with mounted partitions are refused structurally. Arming requires
-typing the target disk's serial number. Full log is written to the USB.
+typing the target disk's serial AND displayed size (two factors) on a real
+terminal. Full log is written to the USB.
 VM-ONLY TESTING. NEVER test destructive paths on bare metal.
 EOF
 }
@@ -376,28 +378,33 @@ do_nvme_purge() {  # do_nvme_purge <dev> ; falls back to sanitize, then nwipe
     do_nwipe "$dev" "dodshort"
 }
 
-# typed_confirmation <serial> -> 0 if the operator types the target's exact
-# serial (or "NUKE <serial>") on a REAL terminal. Piped or scripted stdin is
-# refused structurally: arming must be a deliberate human action at the
-# console, so `echo $serial | Invoke-Nuke.sh --nuke ...` can never arm a wipe.
-# A plain "yes"/"y" can never match a serial either -- Y/N is not accepted.
+# typed_confirmation <serial> <sizehuman> -> 0 if the operator types the
+# target's exact serial AND exact size as displayed (e.g. "SATATEST001
+# 931.5 GB", or "NUKE <serial> <size>") on a REAL terminal. Two independent
+# identity tokens -- a slip that produces the wrong serial must also produce
+# the wrong size to arm the wrong disk. Piped or scripted stdin is refused
+# structurally: arming must be a deliberate human action at the console, so
+# `echo $serial | Invoke-Nuke.sh --nuke ...` can never arm a wipe.
+# A plain "yes"/"y" can never match either token -- Y/N is not accepted.
 typed_confirmation() {
-    local serial="$1"
+    local serial="$1" sizehuman="$2"
     if [[ ! -t 0 ]]; then
         log "REFUSED: confirmation stdin is not a terminal -- piped or scripted"
-        log "input cannot arm a wipe. Type the serial at the console."
-        echo "Refused: the serial must be typed on a real console (stdin is not a TTY)." >&2
+        log "input cannot arm a wipe. Type the serial AND size at the console."
+        echo "Refused: the serial and size must be typed on a real console (stdin is not a TTY)." >&2
         return 1
     fi
     local answer typed
-    read -r -p "Type the disk serial to arm ('$serial') or 'NUKE $serial': " answer
+    read -r -p "Type the disk serial AND size to arm ('$serial $sizehuman') or 'NUKE $serial $sizehuman': " answer
     typed="$answer"
     if [[ "$typed" =~ ^[Nn][Uu][Kk][Ee][[:space:]]+(.+)$ ]]; then
         typed="${BASH_REMATCH[1]}"
     fi
-    # trim whitespace
-    typed="$(echo "$typed" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-    [[ "$typed" == "$serial" ]]
+    # strip CR (pty line discipline turns \n into \r\n; do it with tr -d so
+    # the result does not depend on the locale's idea of [[:space:]]), then
+    # trim leading/trailing whitespace and collapse internal runs to one space
+    typed="$(printf '%s' "$typed" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | tr -s ' ')"
+    [[ "$typed" == "$serial $sizehuman" ]]
 }
 
 #===============================================================================
@@ -457,22 +464,22 @@ arm_and_nuke() {
     echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     echo "  Device : $dev"
     echo "  Model  : $model"
-    echo "  Serial : $serial"
-    echo "  Size   : $(human_size "$size")"
+    echo "  Serial : $serial            <-- confirmation token 1"
+    echo "  Size   : $(human_size "$size")              <-- confirmation token 2"
     echo "  Media  : $media  (bus: $tran)"
     echo "  Method : $method   [NIST 800-88: $nist]"
     echo ""
     echo "  This is NOT recoverable. There is no undo."
     echo ""
 
-    # --- typed confirmation: serial (or "NUKE <serial>"), never Y/N,
+    # --- typed confirmation: serial AND size (two factors), never Y/N,
     # --- on a real TTY, never piped ---
-    if ! typed_confirmation "$serial"; then
-        log "ABORTED by operator: typed confirmation did not match serial (or stdin was not a TTY)."
+    if ! typed_confirmation "$serial" "$(human_size "$size")"; then
+        log "ABORTED by operator: typed confirmation did not match serial+size (or stdin was not a TTY)."
         echo "Aborted. Confirmation did not match. Nothing was destroyed."
         exit 2
     fi
-    log "CONFIRMED: operator typed serial '$serial' at $(ts) -- destruction ARMED."
+    log "CONFIRMED: operator typed serial+size ('$serial $(human_size "$size")') at $(ts) -- destruction ARMED."
 
     # --- final abort window ---
     if (( NO_COUNTDOWN == 0 )); then
