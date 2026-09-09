@@ -22,3 +22,9 @@ win-install/staging/
 
 # Phoenix toolkit staging (build-time binaries, never commit)
 staging/
+
+# Phoenix USB key files carry REAL install-time passwords in reversible form.
+# They must never be committed -- the config writers refuse git-tree writes
+# without --force for exactly this reason (BOOT-ARCHITECTURE.md §5).
+phoenix-config.json
+phoenix-config*.json
