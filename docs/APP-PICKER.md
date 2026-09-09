@@ -60,6 +60,29 @@ Run from anywhere on a machine with PowerShell:
 .\New-AppInstallScript.ps1 -UseDefaults -ChocoSource 'C:\Phoenix\Feed' -OutFile app-install.ps1
 ```
 
+### Linux-side twin (`tools/New-AppInstallScript.sh`)
+
+The build machine may be Linux (Brandon's clean room is as likely to be a
+penguin as a window). The bash twin is a drop-in replacement for the
+PowerShell generator — same selection rules, same fail-closed guards, same
+emitted `app-install.ps1`:
+
+```bash
+./tools/New-AppInstallScript.sh --use-defaults --output win-install/staging/app-install.ps1
+./tools/New-AppInstallScript.sh --packages GoogleChrome,Steam,VLC
+./tools/New-AppInstallScript.sh --use-defaults --choco-source 'C:\Phoenix\Feed' --output app-install.ps1
+```
+
+Byte-parity trick: the twin **extracts its template from the `.ps1`'s own
+here-string** instead of carrying a copy, then applies the PS emission rules
+exactly (CRLF-joined package block, placeholder substitution, `exit 0` +
+CRLF ending). One source of truth — a template edit in the `.ps1` can never
+drift from the twin. Parity is machine-checked by
+`tests/tools/test-app-install-twin.sh` (24/24 green; full suite green),
+which byte-diffs the twin against an independent python reference port for
+both selection modes and asserts the fail-closed guards (mutual exclusion,
+empty selection, package-name regex, missing catalog).
+
 The emitted `app-install.ps1` is self-contained:
 
 1. **Bootstraps Chocolatey** if `choco` is missing (online install from
