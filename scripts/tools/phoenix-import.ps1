@@ -94,5 +94,15 @@ function Invoke-PhoenixScript {
     )
     $path = Import-PhoenixScript -Script $Script -Ref $Ref -VerifySignature:$VerifySignature -Offline:$Offline
     Write-Host "[phoenix@$($script:PhoenixCommit)] $Script $($Args -join ' ')" -ForegroundColor DarkGray
-    & $path @Args
+    # Turn a flat token list ('-Disks','1,2','-Do','Iso','-NoGui') into named + positional arguments
+    $named = @{}; $positional = @()
+    for ($i = 0; $i -lt $Args.Count; $i++) {
+        $tok = [string]$Args[$i]
+        if ($tok -match '^-([A-Za-z][\w]*)$') {
+            $name = $Matches[1]
+            if ($i + 1 -lt $Args.Count -and ([string]$Args[$i+1]) -notmatch '^-[A-Za-z]') { $val = [string]$Args[$i+1]; $named[$name] = $(if ($val -match ',') { $val -split ',' } else { $val }); $i++ }
+            else { $named[$name] = $true }
+        } else { $positional += $Args[$i] }
+    }
+    & $path @named @positional
 }
