@@ -16,7 +16,10 @@ Read these before touching anything. Every phase below enforces them.
 
 1. **Never wipe before a VERIFIED image exists.** A backup you haven't verified is
    not a backup — it's a hope. The nuke phase must refuse to run without proof of a
-   verified image.
+   verified image. This is enforced in code, not just documented: `Invoke-Nuke.sh
+   --nuke` requires `--image-proof <file>` (Step 2.5) whose `source_serial` binds
+   it to the target disk. `--skip-image-gate` exists for true emergencies only
+   (typed `NUKE WITHOUT BACKUP` on a real console, logged).
 2. **Keep the infected image quarantined for forensics.** Label it clearly
    (`QUARANTINE-INFECTED-<date>`), store it on Castle's 10TB drive, and never mount
    it on a production machine. It is evidence, not a restore source.
@@ -74,6 +77,15 @@ Verify every ISO with the repo's checker before it touches the stick:
    ```powershell
    .\tools\Build-PhoenixUsb.ps1 -UsbDrive "E:" -IsoDir ".\iso-staging" `
      -ComputerName "BRANDON-PC" -Username "brandon"
+   ```
+
+   On a **Linux** clean machine, the bash twin does the same job (reads the
+   same JSON hash sidecar):
+
+   ```bash
+   ./tools/Build-PhoenixUsb.sh --usb-mount /media/phoenix --iso-dir ./iso-staging \
+     --iso-hashes ./iso-staging/phoenix-iso-hashes.json \
+     --computer-name BRANDON-PC --username brandon
    ```
 
    It verifies Ventoy is present, copies the ISO set with hash checks, writes
@@ -198,21 +210,44 @@ and — if the build supports it — open the image in Image Explorer / run the
 > fails, re-run the backup. Do not proceed to Phase 3 on a failed image.**
 > The gate is: **verified image or no wipe.**
 
-**Step 2.5 — Take a separate data-only backup.**
+**Step 2.5 — Write the image-proof manifest.**
+The nuke phase will not arm without machine-readable proof of the verified
+image (runbook invariant 1, enforced in code). From the Backup environment
+(or any Linux shell with the USB mounted), record it:
+
+```bash
+./tools/New-ImageProof.sh \
+  --image-name laptop-fulldisk-2026-09-09 \
+  --image-path /media/usb-target/laptop-fulldisk-2026-09-09 \
+  --source-serial <serial-of-the-imaged-disk> \
+  --source-dev /dev/nvme0n1 \
+  --sha256 <64-hex-checksum-of-the-image> \
+  --verified --verified-by brandon \
+  --out /media/phoenix-usb/phoenix-logs/
+```
+
+`--verified` asserts YOU watched the backup tool's integrity check pass in
+Step 2.4 — without it the manifest records `verified=NO` and the nuke gate
+rejects it. The `source_serial` binds the proof to the disk it images: a
+proof for disk A cannot arm a wipe of disk B. Keep the `.proof` file on the
+Phoenix USB; you'll pass it to `Invoke-Nuke.sh --image-proof` in Phase 3.
+
+**Step 2.6 — Take a separate data-only backup.**
 Copy your user data (Documents, Desktop, Downloads triage, Ableton projects,
 `~/.ssh`, configs, photos) to a **second, separate location** from the full
 image. Belt and suspenders: this is what you actually restore from in Phase 4.
 > Treat this folder as **dirty**. The full-disk image is the quarantine archive;
 > the data backup is for selective restore only, after scanning.
 
-**Step 2.6 — Quarantine and copy.**
+**Step 2.7 — Quarantine and copy.**
 Rename the full image `QUARANTINE-INFECTED-<date>`. Move the external drive to a
 **clean machine** and copy the image onto Castle's 10TB drive for long-term
 storage — the copy must be initiated from the clean side, never over the network
 from the infected laptop. The infected machine stays air-gapped until it is wiped.
 
 **Phase 2 exit gate:** verified full-disk image exists in two places (external
-drive + Castle copy in progress or done) AND a separate data-only backup exists.
+drive + Castle copy in progress or done) AND an **image-proof manifest** exists
+on the Phoenix USB (Step 2.5) AND a separate data-only backup exists.
 Only then may Phase 3 begin.
 
 ---
@@ -221,7 +256,7 @@ Only then may Phase 3 begin.
 
 **Step 3.1 — Confirm the exit gate.** Before anything destructive:
 - [ ] Verified full-disk image exists (Step 2.4 green)
-- [ ] Image copied/quarantined (Step 2.6)
+- [ ] Image copied/quarantined (Step 2.7)
 - [ ] BitLocker recovery key in hand (Step 0.6, if applicable)
 - [ ] Account credentials in hand (Step 0.7)
 - [ ] **Media type identified** (HDD vs SSD/NVMe — determines the sanitize
@@ -239,7 +274,12 @@ reach wear-levelled, overprovisioned, or remapped blocks. The rule:
 > The interlocked nuke UX has landed as `tools/Invoke-Nuke.sh` (bash, runs in
 > the Linux boot env — typed confirmation, disk enumeration by model/serial/
 > size, never auto-selects a target, method-per-media per BOOT-ARCHITECTURE.md
-> §8). Until it is exercised in the QEMU test plan (docs/NUKE-TEST-PLAN.md),
+> §8). Arming **requires** `--image-proof <file>` — the manifest written in
+> Step 2.5 — and the proof's `source_serial` must match the nuke target
+> (invariant 1, enforced in code; see `docs/NUKE-SAFETY.md` interlock 11).
+> The only bypass is `--skip-image-gate`, which demands typing
+> `NUKE WITHOUT BACKUP` on a real console and is logged — true emergencies
+> only. Until it is exercised in the QEMU test plan (docs/NUKE-TEST-PLAN.md),
 > the ShredOS
 > manual flow is the only wipe path — match the target disk's serial to the
 > physical drive with your own eyes, twice.
@@ -281,7 +321,7 @@ USB, and configure a scheduled **entire-computer** backup job targeting Castle's
 makes the *next* emergency a restore instead of a crisis.
 
 **Step 4.5 — Restore data selectively.**
-From the **data-only** backup (Step 2.5), copy back what you need — and scan it
+From the **data-only** backup (Step 2.6), copy back what you need — and scan it
 with Defender first. Restore files, not installers; reinstall applications fresh
 from their sources. **Never boot or "restore" the quarantined full-disk image**
 except on an isolated forensics setup.

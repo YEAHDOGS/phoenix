@@ -35,6 +35,7 @@ the module never relies on overwrite alone for flash media — see §3.
 | 8 | **Abort window** | 5-second countdown after arming (Ctrl-C aborts; `--no-countdown` only for scripted VM tests). |
 | 9 | **Identity re-check** | The serial is re-read immediately before execution; if it changed, the run aborts. |
 | 10 | **No bare `--autonuke`** | nwipe's `--autonuke` (wipe-everything mode) is never invoked without an explicit, guard-passed device. |
+| 11 | **Image-proof gate** | `--nuke` refuses without `--image-proof <file>`: a valid `phoenix-image-proof/1` manifest (written by `tools/New-ImageProof.sh` in the Backup phase) with `verified=YES`, a 64-hex sha256, a positive image size, and a `source_serial` that **matches the nuke target** — a proof for disk A cannot arm a wipe of disk B. This is runbook invariant 1 ("verified image or no wipe") enforced in code, not just documentation. `--skip-image-gate` is the emergency escape hatch: it requires typing `NUKE WITHOUT BACKUP` on a real TTY (piped input refused) and is logged. |
 
 ## 3. NIST 800-88 mapping (Rev. 1, guidance baseline)
 
@@ -94,6 +95,6 @@ physical destruction; the media can never be used again.
 
 1. I am booted from the Phoenix USB; the table shows my boot USB as BOOT-USB.
 2. The target row's serial matches the physical label on the drive I intend to destroy.
-3. I have a verified backup of anything on that disk I might want (Backup module).
+3. I have a verified backup of anything on that disk I might want (Backup module) — and the **image-proof manifest** for it is on this USB (`--image-proof`).
 4. I typed the serial — not Y, not Enter — and the log recorded it.
 5. I understand the method and its NIST level from the table above.
