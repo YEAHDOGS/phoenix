@@ -99,7 +99,7 @@ find_config() {
     for mp in /mnt /media /run/media /media/usb /mnt/usb; do
         if [[ -f "$mp/phoenix-config.json" ]]; then echo "$mp/phoenix-config.json"; return; fi
     done
-    [[ -f "./phoenix-config.json" ]] && { echo "./phoenix-config.json"; return; }
+    if [[ -f "./phoenix-config.json" ]]; then echo "./phoenix-config.json"; return; fi
     return 1
 }
 
@@ -108,9 +108,18 @@ load_config() {
     if cfg="$(find_config)"; then
         CONFIG_FOUND=1
         CONFIG_USED="$cfg"
-        CFG_SCHEMA="$(jget "$cfg" schemaVersion)";  [[ -z "$CFG_SCHEMA" ]] && CFG_SCHEMA="?"
-        CFG_NAME="$(jget "$cfg" computerName)";      [[ -z "$CFG_NAME" ]]   && CFG_NAME="?"
-        CFG_OS="$(jget "$cfg" family)";              [[ -z "$CFG_OS" ]]     && CFG_OS="?"
+        CFG_SCHEMA="$(jget "$cfg" schemaVersion)"
+        CFG_NAME="$(jget "$cfg" computerName)"
+        CFG_OS="$(jget "$cfg" family)"
+        if [[ -z "$CFG_SCHEMA" ]]; then CFG_SCHEMA="?"; fi
+        if [[ -z "$CFG_NAME" ]];   then CFG_NAME="?";   fi
+        if [[ -z "$CFG_OS" ]];     then CFG_OS="?";     fi
+        if [[ "$CFG_SCHEMA$CFG_NAME$CFG_OS" == "???" && -s "$cfg" ]]; then
+            # None of the known keys parsed out of a non-empty file: it is
+            # not a phoenix-config.json (or it is corrupt). Warn, continue
+            # unconfigured -- never fail the menu over a bad config.
+            echo "[$PROG] WARNING: '$cfg' does not look like a phoenix-config.json (no known keys found) -- unconfigured mode." >&2
+        fi
     fi
 }
 
@@ -255,9 +264,9 @@ main() {
 
     if [[ -n "$CHOICE" ]]; then
         show_menu
-        dispatch "$CHOICE" "${nuke_args[@]}"
-        local rc=$?
-        (( rc == 2 )) && return 0
+        local rc=0
+        dispatch "$CHOICE" "${nuke_args[@]}" || rc=$?
+        if (( rc == 2 )); then return 0; fi
         return "$rc"
     fi
 
@@ -267,9 +276,9 @@ main() {
         printf 'phoenix> '
         if ! IFS= read -r line; then echo ""; return 0; fi
         line="$(echo "$line" | tr -d '[:space:]')"
-        [[ -z "$line" ]] && continue
-        dispatch "$line" "${nuke_args[@]}"
-        rc=$?
+        if [[ -z "$line" ]]; then continue; fi
+        rc=0
+        dispatch "$line" "${nuke_args[@]}" || rc=$?
         if (( rc == 2 )); then return 0; fi
         echo ""
     done
