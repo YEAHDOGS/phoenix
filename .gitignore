@@ -16,3 +16,6 @@ scripts/sys-info/data/*
 # Isos
 *.iso
 qemu/data/*
+
+# Phoenix toolkit staging (build-time binaries, never commit)
+staging/
