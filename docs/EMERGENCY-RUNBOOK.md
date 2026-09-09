@@ -97,9 +97,9 @@ Verify every ISO with the repo's checker before it touches the stick:
    > [VERIFY] The **Phoenix WinPE ISO is not built yet** (needs the ADK build
    > in BOOT-ARCHITECTURE.md §4). Until it lands, the TOOLKIT menu entry is
    > absent — Reinstall/Analyze/Backup/Nuke all work without it. The `$OEM$`
-   > folder (Specialize.ps1 / DefaultUser.ps1) **does not exist in this repo
-   > yet** either (see `VISION.md` Phase 3); until it lands, place post-install
-   > scripts manually or run them after first logon.
+   > post-install hooks (Specialize.ps1 / DefaultUser.ps1 / FirstLogon.ps1)
+   > **now exist** in `oem/` and both stager twins copy them to the USB root
+   > automatically (fail-closed if missing).
 3. Add your drivers to `phoenix\$WinPEDriver$` on the USB if the laptop needs
    them (network/storage drivers especially — test on the QEMU path if unsure).
 
@@ -310,8 +310,11 @@ machine (you'll thank Phase-0 Brandon).
 Run the repo's Chocolatey flow (`scripts/chocolatey/install-chocolatey-online.ps1`,
 then `scripts/chocolatey/apps.ps1` driven by `data/choco-install/apps.json` —
 Chrome, Steam, Ableton, and the rest of your app picker list).
-> [VERIFY] The unattended `$OEM$` hook (Specialize.ps1/DefaultUser.ps1) doesn't
-> exist in the repo yet — until it does, this step runs manually at first logon.
+> The unattended `$OEM$` hook now exists in the repo (`oem/$OEM$/$$/Setup/Scripts/FirstLogon.ps1`,
+> staged onto the USB by both `Build-PhoenixUsb` twins): on first logon it installs apps
+> **offline-first** from the USB's `cache/apps/*.nupkg` with zero network, and only goes
+> online with an explicit `-AllowOnline` opt-in. If the stager built your stick without an
+> app cache, this step runs manually at first logon as before.
 > Network access is fine now: the machine is clean.
 
 **Step 4.4 — Install Veeam Agent and set up scheduled backups.**
