@@ -260,4 +260,7 @@ schema is the down payment). The honest constraints, stated plainly:
   (backup-phase image-proof writer; bash-native, the Linux boot side is the
   only side that needs it) have landed. Remaining parity ports per script,
   `tools/<name>.ps1` ↔ `tools/<name>.sh`, contract-identical behavior —
-  tracked as its own workstream.
+  tracked as its own workstream. The image-proof minter pair is complete:
+  `tools/New-ImageProof.sh` (Linux backup side) + `tools/New-ImageProof.ps1`
+  (Windows/WinPE side) emit byte-compatible `phoenix-image-proof/1`
+  manifests; the nuke gate accepts either.

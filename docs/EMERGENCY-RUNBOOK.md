@@ -254,6 +254,9 @@ the USB mounted), record it:
   --verified --verified-by brandon \
   --out /media/phoenix-usb/phoenix-logs/
 ```
+(On a Windows/WinPE machine the exact-parity twin `tools\New-ImageProof.ps1`
+writes the same manifest with `-ImageName`, `-ImagePath`, `-SourceSerial`,
+`-Sha256`, `-Verified`, etc. — the Linux nuke gate accepts either.)
 
 `--verified` asserts YOU watched the backup tool's integrity check pass in
 Step 2.4 — without it the manifest records `verified=NO` and the nuke gate
