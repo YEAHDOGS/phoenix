@@ -194,16 +194,25 @@ Only then may Phase 3 begin.
 - [ ] Account credentials in hand (Step 0.7)
 
 **Step 3.2 — Follow the nuke module's interlocked flow.**
-`tools/Invoke-Nuke.ps1` (built by a separate worker) implements the safety flow:
-disk enumeration showing **model / serial / size** for every detected disk, a
-**typed confirmation** (no single-keystroke "y"), and it **never auto-selects**
-a target. Do a dry run first if the module supports it. Match the serial number
-to the physical drive with your own eyes.
-> [VERIFY] **The nuke module has not landed in this repo yet.** Do not execute
-> Phase 3 until `tools/Invoke-Nuke.ps1` is present and you have read its flow.
-> Until then, the answer file's own diskpart wipe (Phase 4, Step 4.1) is the only
-> wipe path — it targets DISK 0 with no confirmation, so triple-check boot order
-> and that the USB target disks are disconnected.
+`tools/Invoke-Nuke.sh` (bash — the wipe runs in the Linux boot environment,
+so there is deliberately no `.ps1`) implements the safety flow:
+
+- **Dry-run default:** no flags (or `--whatif`) only enumerates disks and exits.
+- **Explicit enumeration:** numbered table of model / serial / size / bus / media class.
+- **Structural refusals:** the boot USB and any disk with mounted partitions are refused, hard.
+- **Two-factor typed confirmation, real TTY only:** type the target's exact **serial AND the exact size as displayed** (e.g. `SATATEST001 931.5 GB`, or `NUKE <serial> <size>`). Piped or scripted input is refused — `echo $serial | ...` can never arm a wipe.
+- **Abort window:** 5-second countdown after arming (Ctrl-C aborts).
+- **Identity re-check:** the serial is re-read immediately before execution; if it changed, the run aborts.
+- **Method per media (NIST 800-88):** HDD → nwipe DoD 5220.22-M; SATA SSD → ATA Secure Erase; NVMe → `nvme format --ses=1`.
+- **Full log** written to the USB.
+
+Do a dry run first (`Invoke-Nuke.sh` with no flags). Match the serial number to the physical drive with your own eyes before typing anything.
+> **Branch note:** the nuke module is being built on the nuke workstream branch
+> and is not in every worktree yet. Before executing Phase 3, confirm
+> `tools/Invoke-Nuke.sh` is present on your USB and read its `--help`. If it
+> isn't there yet, the answer file's own diskpart wipe (Phase 4, Step 4.1) is
+> the only wipe path — it targets DISK 0 with no confirmation, so triple-check
+> boot order and disconnect all USB target disks first.
 
 **Step 3.3 — Sanity re-check post-wipe.** After the wipe completes, boot
 Rescuezilla again and confirm the disk reads as unpartitioned/empty. A wipe you
