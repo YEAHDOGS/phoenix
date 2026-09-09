@@ -12,7 +12,9 @@
 #      + Windows auto_install wiring to /autounattend.xml).
 #   4. Writes phoenix-config.json (schema v1) to the USB root.
 #   5. Stages the Phoenix toolbox (scripts/ + tools/, *.ps1 and *.sh alike).
-#   6. Writes phoenix/manifest.json with SHA-256 of everything staged.
+#   6. Stages the $OEM$ tree (oem/$OEM$) at the USB root: the unattended
+#      post-install hooks autounattend.xml invokes (fail-closed if missing).
+#   7. Writes phoenix/manifest.json with SHA-256 of everything staged.
 #
 # USAGE:
 #   Build-PhoenixUsb.sh --usb-mount /media/phoenix --iso-dir ./iso-staging \
@@ -211,6 +213,26 @@ PY
     say "config: $out"
 }
 
+# --- 4b. stage the $OEM$ tree (unattended post-install hooks) ------------------
+# autounattend.xml invokes C:\Windows\Setup\Scripts\{Specialize,DefaultUser,
+# FirstLogon}.ps1. Windows Setup picks those up from $OEM$\$$\Setup\Scripts\
+# at the USB root automatically. Fail closed: a USB whose answer file calls
+# hooks that aren't there silently skips post-install -- worse than no USB.
+stage_oem() {
+    local oem_src="$REPO/oem/"'$OEM$'
+    [[ -d "$oem_src" ]] || die \
+        'Missing oem/$OEM$ in the repo. The $OEM$ tree holds the unattended post-install hooks (Specialize/DefaultUser/FirstLogon) that autounattend.xml invokes. Stager refuses to ship without them.'
+    if (( DRY_RUN == 0 )); then
+        mkdir -p "$USB_MOUNT/"'$OEM$'
+        cp -rf "$oem_src/." "$USB_MOUNT/"'$OEM$'/
+        local n
+        n="$(find "$USB_MOUNT/"'$OEM$' -type f -name '*.ps1' | wc -l)"
+        say '$OEM$ staged: '"$n"' hook scripts.'
+    else
+        say '(dry-run) would stage the $OEM$ tree from '"$oem_src"
+    fi
+}
+
 # --- 4. stage toolbox + write manifest.json ------------------------------------
 stage_toolbox() {
     local phoenix_dir="$USB_MOUNT/phoenix"
@@ -271,6 +293,7 @@ PY
 stage_isos
 write_ventoy_json
 write_config
+stage_oem
 stage_toolbox
 
 echo ""
