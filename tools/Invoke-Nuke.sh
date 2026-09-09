@@ -208,7 +208,7 @@ enumerate() {
         # shellcheck disable=SC1091
         eval "$line"   # sets NAME PATH MODEL SERIAL SIZE TRAN RM ROTA TYPE
         [[ "${TYPE:-}" == "disk" ]] || continue
-        dev="$PATH"
+        dev="/dev/${NAME:?}"   # rebuilt from NAME; see PATH note below
         [[ -z "$dev" ]] && continue
         model="${MODEL:-unknown}"
         serial="${SERIAL:-unknown}"
@@ -225,7 +225,11 @@ enumerate() {
         D_SIZE+=("$SIZE"); D_TRAN+=("${TRAN:-?}"); D_MEDIA+=("$media")
         D_FLAGS+=("$flags")
         D_COUNT=$((D_COUNT+1))
-    done < <(lsblk -P -b -d -o NAME,PATH,MODEL,SERIAL,SIZE,TRAN,RM,ROTA,TYPE -e 7,11 2>/dev/null || true)
+    done < <(lsblk -P -b -d -o NAME,MODEL,SERIAL,SIZE,TRAN,RM,ROTA,TYPE -e 7,11 2>/dev/null || true)
+    # NOTE: PATH is deliberately NOT in the column list. `eval` below would
+    # turn PATH=/dev/... into a shell assignment and clobber the real PATH,
+    # silently breaking every external call afterwards (is_protected, awk in
+    # human_size, ...). The device node is rebuilt from NAME instead.
 
     # --- print the numbered table ---
     echo "======================================================================"
