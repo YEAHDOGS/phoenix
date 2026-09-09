@@ -20,8 +20,9 @@
 #      default-yes, no piped/scripted input (stdin must be a TTY), and disks
 #      with no readable serial can never be armed.
 #
-# This library contains NO destructive primitive (no nwipe/hdparm/nvme/dd).
-# It only reads: lsblk, /proc/cmdline, /proc/mounts, and the config file.
+# This library contains NO destructive primitive -- it never invokes any
+# wipe, erase, format, or raw-write tool. It only reads: lsblk,
+# /proc/cmdline, /proc/mounts, and the config file.
 # Source it; do not execute it:
 #   source "$REPO/tools/lib/phoenix-disk-inventory.sh"
 #   pdi_enumerate            # fills PDI_* arrays, sets PDI_COUNT
