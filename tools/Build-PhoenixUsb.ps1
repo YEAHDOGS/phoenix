@@ -183,13 +183,26 @@ if ([string]::IsNullOrEmpty($Password)) { throw "Password is required: unattend 
 
 $config = [ordered]@{
     schemaVersion = 1
-    computerName  = $ComputerName
-    username      = $Username
-    password      = $Password
-    timezone      = $Timezone
-    edition       = $Edition
-    productKey    = $ProductKey
-    apps          = $Apps
+    machine       = [ordered]@{
+        computerName = $ComputerName
+        timezone     = $Timezone
+    }
+    credentials   = [ordered]@{
+        username = $Username
+        password = $Password
+    }
+    os            = [ordered]@{
+        family     = "windows"
+        edition    = $Edition
+        productKey = $ProductKey
+        answerFile = [ordered]@{
+            disableWPBT       = $true
+            partitionLayout   = "gpt-uefi"
+        }
+    }
+    # OS-agnostic app list: the config GUI owns richer entries; the stager
+    # maps bare choco ids to {id, source}. Future blades add their sources.
+    apps          = @($Apps | ForEach-Object { [ordered]@{ id = $_; source = "choco" } })
 }
 $configPath = Join-Path $usbRoot "phoenix-config.json"
 if ($PSCmdlet.ShouldProcess($configPath, "Write phoenix-config.json")) {
@@ -200,6 +213,8 @@ if ($PSCmdlet.ShouldProcess($configPath, "Write phoenix-config.json")) {
 # 4. Stage the Phoenix toolbox + tools, write manifest.json
 # ---------------------------------------------------------------------------
 # The repo root is the script's parent dir (tools/Build-PhoenixUsb.ps1).
+# Bash twins (tools/<name>.sh, BOOT-ARCHITECTURE.md section 9.3) ride along
+# automatically -- the whole scripts/ tree is copied, *.ps1 and *.sh alike.
 $repoRoot = Split-Path (Split-Path $MyInvocation.MyCommand.Path -Parent) -Parent
 $phoenixDir = Join-Path $usbRoot "phoenix"
 foreach ($d in @("scripts", "tools", "WinPE")) {
