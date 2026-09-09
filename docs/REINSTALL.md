@@ -57,17 +57,20 @@ make that structurally impossible, not merely unlikely.
 
 A disk passes `reinstall_require_target_blank` iff ALL of:
 
-- `parttable` field of its `phoenix-disk-inventory/1` record is
-  `unknown` or `none` (no GPT/MBR signature detected),
-- it exposes zero partitions in the enumeration,
-- the first 1 MiB of the raw device reads all zeros (checked via the
-  mocked `REINSTALL_BLKPROBE` hook in tests; via `dd if=… bs=1M count=1`
-  piped to a zero-check on the boot side — read-only, no writes).
+- it exposes no mounted partitions in the `phoenix-disk-inventory/1`
+  enumeration (a wiped disk has nothing to mount),
+- its `partition_hash` in `disk-fingerprints.json` (written by the same
+  `Get-DiskInventory.sh --save-state` enumeration run, so the two records
+  cannot disagree about the disk) equals the all-zeros constant
+  `sha256:30e14955…fcb58` — the SHA-256 of 1 MiB of zero bytes,
+- it has a readable serial (no serial = no target card to confirm against).
 
 Zero-fill of the first megabyte is what the Nuke flow produces
 (`Invoke-Nuke.sh` wipes partition metadata + leading sectors); a disk
 with a live partition table can never satisfy this gate, even if its
 partitions were somehow hidden from enumeration. Belt and suspenders.
+The gate also refuses when the fingerprint file is missing or the serial
+has no fingerprint record — no probe, no install.
 
 ## 4. Usage
 

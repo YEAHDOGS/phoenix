@@ -8,7 +8,8 @@
 #
 #   source tools/lib/nuke-interlock.sh
 #   source tools/lib/reinstall-gates.sh
-#   reinstall_require_target_blank    INV ID        # disk is provably blank
+#   reinstall_require_target_blank    INV ID FP        # disk is provably blank
+#                                             (FP = disk-fingerprints.json)
 #   reinstall_require_artifacts       UNATTEND ISO  # answer file + ISO staged
 #   reinstall_require_config_match    CFG UNATTEND ISO  # staged files match config
 #   reinstall_require_chain_of_custody STATE SERIAL     # backup+nuke on record
@@ -57,11 +58,30 @@ sys.exit(1)
 EOF
 }
 
-# reinstall_require_target_blank <inventory.json> <id>
+# reinstall_target_fingerprint <fingerprints.json> <serial> -- print the
+# partition_hash recorded for a serial (the first-1MiB probe).
+reinstall_target_fingerprint() {
+    python3 - "$1" "$2" <<'EOF'
+import json, sys
+fp = json.load(open(sys.argv[1]))
+serial = sys.argv[2]
+for d in fp["disks"]:
+    if str(d.get("serial")) == serial:
+        v = d.get("partition_hash")
+        print("" if v is None else v)
+        sys.exit(0)
+sys.exit(1)
+EOF
+}
+
+# reinstall_require_target_blank <inventory.json> <id> <fingerprints.json>
 # The target must be provably blank: readable serial, nothing mounted, and the
-# first-1MiB hash equals the all-zeros constant (i.e. the Nuke flow blanked it).
+# first-1MiB hash recorded in the fingerprint file equals the all-zeros
+# constant (i.e. the Nuke flow blanked it). The inventory carries identity;
+# the fingerprints carry the zero-probe -- both come from one enumeration run
+# (Get-DiskInventory.sh --save-state), so they cannot disagree about the disk.
 reinstall_require_target_blank() {
-    local inv="$1" id="$2"
+    local inv="$1" id="$2" fp="$3"
     local serial mounted phash
 
     serial="$(reinstall_target_field "$inv" "$id" serial)" \
@@ -75,7 +95,12 @@ reinstall_require_target_blank() {
         echo "[reinstall] REFUSED: disk [$id] has mounted partitions; a blank disk has none." >&2
         return 1
     fi
-    phash="$(reinstall_target_field "$inv" "$id" partition_hash)"
+    if [[ ! -f "$fp" ]]; then
+        echo "[reinstall] REFUSED: no fingerprint file $fp -- rerun the enumeration with --save-state." >&2
+        return 1
+    fi
+    phash="$(reinstall_target_fingerprint "$fp" "$serial")" \
+        || { echo "[reinstall] REFUSED: serial $serial has no fingerprint record." >&2; return 1; }
     if [[ "$phash" != "$REINSTALL_BLANK_HASH" ]]; then
         echo "[reinstall] REFUSED: disk [$id] first-1MiB hash is not all-zeros." >&2
         echo "[reinstall]   The disk still carries partition/filesystem metadata -- it was not nuked." >&2

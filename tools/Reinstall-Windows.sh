@@ -73,14 +73,14 @@ source "$LIB"
 
 if [[ -z "$INV_FILE" ]]; then
     INV_FILE="$STATE/disk-inventory.json"
-    "$ENUM" --save-state "$STATE" --json-out "$INV_FILE" >/dev/null
+    "$ENUM" --save-state "$STATE" > "$INV_FILE"
 fi
 
 SERIAL="$(reinstall_target_field "$INV_FILE" "$DISK_ID" serial)"
 [[ -n "$SERIAL" ]] || { echo "[$PROG] no disk with id $DISK_ID." >&2; exit 1; }
 MODEL="$(reinstall_target_field "$INV_FILE" "$DISK_ID" model)"
 
-reinstall_require_target_blank    "$INV_FILE" "$DISK_ID"
+reinstall_require_target_blank    "$INV_FILE" "$DISK_ID" "$STATE/disk-fingerprints.json"
 reinstall_require_artifacts       "$UNATTEND" "$ISO"
 reinstall_require_config_match    "$CONFIG" "$UNATTEND" "$ISO"
 reinstall_require_chain_of_custody "$STATE" "$SERIAL"
