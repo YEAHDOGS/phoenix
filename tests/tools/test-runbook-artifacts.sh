@@ -25,6 +25,10 @@ pass "runbook exists"
 #--- Phase 0/4 repo artifacts every step depends on ------------------------------
 REQUIRED=(
     "scripts/checksum/check.ps1"                    # Step 0.2: ISO hash verify
+    "scripts/checksum/check.sh"                     # Step 0.2: Linux twin
+    "scripts/checksum/compare.sh"                   # Step 2.4/2.6: manifest verify
+    "scripts/emergency/Send-ImageToCastle.ps1"      # Step 2.6: Castle copy (Win)
+    "scripts/emergency/Send-ImageToCastle.sh"       # Step 2.6: Castle copy (Linux)
     "win-install/autounattend.xml"                  # Steps 0.3, 4.1: unattended install
     "win-install/README.md"                         # Step 0.3: install sequence
     "scripts/chocolatey/install-chocolatey-online.ps1"  # Step 4.3
@@ -63,7 +67,29 @@ for kw in "serial" "TTY" "dry-run" "NIST 800-88"; do
     fi
 done
 
-#--- honest gap flags: the $OEM$ folder is known-missing, must stay flagged ----
+#--- Phase 2.6 names the real copy-verify scripts, not vibes -------------------
+for kw in "Send-ImageToCastle" "image-proof.txt" "PHOENIX_CASTLE_TARGET"; do
+    if grep -q "$kw" "$RUNBOOK"; then
+        pass "runbook wires Step 2.6 to: $kw"
+    else
+        fail "runbook wires Step 2.6 to: $kw" \
+            "the Castle copy must be a concrete executable step, not a hand-wave"
+    fi
+done
+
+#--- the typed confirmation must be the REAL pair (serial + model) ---------------
+if grep -q 'serial AND the exact size' "$RUNBOOK"; then
+    fail "runbook confirmation pair is serial+model, not serial+size" \
+        "NUKE-SAFETY.md gates on typed serial AND model; size is display-only"
+else
+    pass "runbook documents serial+model typed confirmation"
+fi
+if grep -q 'serial and model EXACTLY as shown' "$RUNBOOK"; then
+    pass "runbook shows the exact confirmation transcript"
+else
+    fail "runbook shows the exact confirmation transcript" \
+        "operator must see the real prompt format before arming"
+fi
 if grep -q '\$OEM\$' "$RUNBOOK" && grep -q '\[VERIFY\]' "$RUNBOOK"; then
     pass "\$OEM\$ gap is honestly flagged [VERIFY]"
 else
