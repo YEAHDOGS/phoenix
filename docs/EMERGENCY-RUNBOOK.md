@@ -236,11 +236,11 @@ reach wear-levelled, overprovisioned, or remapped blocks. The rule:
   all available from a Linux shell), then nwipe as a supplement if desired.
 - **Unknown media:** treat as SSD.
 
-> [VERIFY] The interlocked nuke UX (`tools/Invoke-Nuke.ps1` — typed confirmation,
-> disk enumeration by model/serial/size, never auto-selects a target) is built by
-> a separate worker and **has not landed in this repo yet**. Whoever builds it
-> must encode the method-per-media rule above (BOOT-ARCHITECTURE.md §8): detect
-> the media type and refuse nwipe-only on SSDs. Until it lands, the ShredOS
+> The interlocked nuke UX has landed as `tools/Invoke-Nuke.sh` (bash, runs in
+> the Linux boot env — typed confirmation, disk enumeration by model/serial/
+> size, never auto-selects a target, method-per-media per BOOT-ARCHITECTURE.md
+> §8). Until it is exercised in the QEMU test plan (docs/NUKE-TEST-PLAN.md),
+> the ShredOS
 > manual flow is the only wipe path — match the target disk's serial to the
 > physical drive with your own eyes, twice.
 

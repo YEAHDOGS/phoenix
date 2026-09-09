@@ -191,9 +191,11 @@ Per NIST 800-88 Purge, the nuke step must pick the method by media type:
 - **Unknown / can't confirm media type:** treat as SSD. The destructive
   path must fail closed toward the stronger method.
 
-Whoever builds the nuke UX (`tools/Invoke-Nuke.ps1`, separate worker) must
-encode this: detect media type, refuse nwipe-only on SSDs, and keep the
-typed-confirmation + serial-number interlock from the runbook.
+The nuke module has landed as `tools/Invoke-Nuke.sh` (bash, Linux boot env —
+deliberate: nwipe/hdparm/nvme-cli are Linux-only, and the destruction
+interlocks must live where the destruction happens; see docs/NUKE-SAFETY.md).
+It already encodes this: detects media type, refuses nwipe-only on SSDs, and
+keeps the typed-confirmation + serial-number interlock from the runbook.
 
 ## 9. Build flow
 
