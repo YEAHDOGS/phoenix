@@ -44,6 +44,17 @@ export interface WindowsPlatformOptions {
   driverProfile: string;
 }
 
+export interface PhoenixBackupConfig {
+  /** Direct-attached USB target for the full-disk image (air-gapped, Phase 2) */
+  imageTargetPath: string;
+  /** Quarantine folder label pattern for the infected image, e.g. QUARANTINE-INFECTED-<date> */
+  quarantineLabel: string;
+  /** Long-term copy target on Castle (SMB share/path) for the quarantined image */
+  castleTarget: string;
+  /** The boot menu must refuse NUKE without proof of a verified image */
+  requireVerifiedImage: boolean;
+}
+
 export interface PhoenixConfig {
   version: 1;
   platform: 'windows'; // | 'macos' | 'linux' - future blades
@@ -53,6 +64,7 @@ export interface PhoenixConfig {
     timeZone: string;
     locale: string;
   };
+  backup: PhoenixBackupConfig;
   platformOptions: {
     windows?: WindowsPlatformOptions;
     macos?: Record<string, unknown>; // future blade
