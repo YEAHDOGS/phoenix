@@ -113,6 +113,19 @@ countdown**.
 Expect: abort, exit code `130`/non-zero, log records the arming + the abort,
 target image unchanged. (Proves the countdown is a real abort window.)
 
+### T6b — `phoenix-nuke-guard.sh` arming gate (no VM needed)
+The boot menu's NUKE path is fronted by `tools/phoenix-nuke-guard.sh`, which
+contains NO destructive primitive: it only validates operator intent and hands
+a validated `/dev` path to the real nuke tool via `--exec`. Contract: dry-run
+is the default (enumerate only); with `--nuke` the operator must TYPE the
+exact device path (row numbers, serials, prefixes, wildcards refused), then
+type the exact confirmation phrase `NUKE /dev/sdX` (case-sensitive, exact);
+disks backing `/`, `/boot`, `/boot/efi` or named by kernel cmdline `root=` are
+refused unless `--override-boot-protection`; confirmation requires a real
+terminal. Covered by `tests/tools/test-phoenix-nuke-guard.sh` (59 cases:
+hostile firmware payloads parsed as data, exact-dev resolution, exact-phrase
+aborts, boot/mounted refusal, override WARNING, `--exec` handoff).
+
 ### T7 — Destructive run on a throwaway image (SATA, nwipe path)
 1. Write a known pattern: `sudo dd if=/dev/urandom of=/dev/sdX bs=1M count=100`
    (use the *enumerated* row for `target_sata.raw` — triple-check via serial/size).
