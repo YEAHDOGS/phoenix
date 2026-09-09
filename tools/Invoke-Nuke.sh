@@ -16,7 +16,9 @@
 #   4. Boot-USB guard: the booted USB (and any disk with mounted partitions)
 #      is structurally refused -- not a warning, a hard block.
 #   5. Typed confirmation: operator must type the target's serial (or
-#      "NUKE <serial>"), not Y/N. Logged with timestamp.
+#      "NUKE <serial>") on a real terminal, not Y/N. Piped/scripted stdin is
+#      refused structurally -- `echo $serial | ...` can never arm a wipe.
+#      Logged with timestamp.
 #   6. Method per media (NIST 800-88): HDD -> nwipe (Clear);
 #      SATA SSD -> ATA Secure Erase (Purge); NVMe -> nvme format --ses=1
 #      (Purge); firmware purge unsupported -> nwipe fallback, logged warning.
@@ -374,6 +376,30 @@ do_nvme_purge() {  # do_nvme_purge <dev> ; falls back to sanitize, then nwipe
     do_nwipe "$dev" "dodshort"
 }
 
+# typed_confirmation <serial> -> 0 if the operator types the target's exact
+# serial (or "NUKE <serial>") on a REAL terminal. Piped or scripted stdin is
+# refused structurally: arming must be a deliberate human action at the
+# console, so `echo $serial | Invoke-Nuke.sh --nuke ...` can never arm a wipe.
+# A plain "yes"/"y" can never match a serial either -- Y/N is not accepted.
+typed_confirmation() {
+    local serial="$1"
+    if [[ ! -t 0 ]]; then
+        log "REFUSED: confirmation stdin is not a terminal -- piped or scripted"
+        log "input cannot arm a wipe. Type the serial at the console."
+        echo "Refused: the serial must be typed on a real console (stdin is not a TTY)." >&2
+        return 1
+    fi
+    local answer typed
+    read -r -p "Type the disk serial to arm ('$serial') or 'NUKE $serial': " answer
+    typed="$answer"
+    if [[ "$typed" =~ ^[Nn][Uu][Kk][Ee][[:space:]]+(.+)$ ]]; then
+        typed="${BASH_REMATCH[1]}"
+    fi
+    # trim whitespace
+    typed="$(echo "$typed" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+    [[ "$typed" == "$serial" ]]
+}
+
 #===============================================================================
 # arming + destruction
 #===============================================================================
@@ -439,17 +465,10 @@ arm_and_nuke() {
     echo "  This is NOT recoverable. There is no undo."
     echo ""
 
-    # --- typed confirmation: serial (or "NUKE <serial>"), never Y/N ---
-    local answer
-    read -r -p "Type the disk serial to arm ('$serial') or 'NUKE $serial': " answer
-    local typed="$answer"
-    if [[ "$typed" =~ ^[Nn][Uu][Kk][Ee][[:space:]]+(.+)$ ]]; then
-        typed="${BASH_REMATCH[1]}"
-    fi
-    # trim whitespace
-    typed="$(echo "$typed" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-    if [[ "$typed" != "$serial" ]]; then
-        log "ABORTED by operator: typed confirmation did not match serial."
+    # --- typed confirmation: serial (or "NUKE <serial>"), never Y/N,
+    # --- on a real TTY, never piped ---
+    if ! typed_confirmation "$serial"; then
+        log "ABORTED by operator: typed confirmation did not match serial (or stdin was not a TTY)."
         echo "Aborted. Confirmation did not match. Nothing was destroyed."
         exit 2
     fi
