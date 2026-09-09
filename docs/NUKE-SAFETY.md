@@ -109,6 +109,13 @@ Reinstall flow:
 - `tools/Invoke-PhoenixNuke.ps1` — Windows side (WinPE / staging machine)
 - `tools/phoenix-nuke.sh` — Linux rescue side (exact rule parity with the .ps1)
 
+The menu pair `tools/phoenix-menu.sh` / `tools/Invoke-PhoenixMenu.ps1`
+is the in-environment dispatcher for this module: once booted into a
+rescue environment, choice `[3] NUKE` prints the operator checklist
+(§6) and execs the nuke tool with the arguments given after `--`
+(`--choice 3 -- --nuke 2`); `PHOENIX_MENU_TEST=1` prints the dispatch
+line instead of exec'ing. The menu itself is never destructive.
+
 Contract (both): dry-run is the default (enumerate only); identifiers are
 row number, device node, or exact serial — wildcards are never resolved and
 ambiguous identifiers (e.g. duplicated serials) fail closed; arming requires
