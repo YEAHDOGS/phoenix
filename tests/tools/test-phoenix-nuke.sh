@@ -32,9 +32,18 @@
 #     (pty), correct double-confirmation reaches the block-device gate
 #     (audit CONFIRMED, dd never invoked), audit record fields present
 #     (timestamp, disk id, mode, operator confirmation), --help, bad flag.
+#     IMAGE-PROOF GATE (runbook invariant 1): --nuke with no proof refused;
+#     gate precedes the boot-protection check; bad-format / unverified /
+#     bad-sha256 / zero-size / serial-mismatch / unknown-serial proofs all
+#     refused; valid proof passes (IMAGE-PROOF audit record) and arming
+#     continues; --skip-image-gate piped refused, pty exact phrase proceeds
+#     (WARNING audit), wrong phrase aborts; proof beats the skip flag.
 #   PARITY (static): the .ps1 exposes the same flags, gates, and audit modes
 #     as the .sh (pwsh is not installed here, so the .ps1 is checked
-#     structurally; behavioral tests run against the .sh twin).
+#     structurally; behavioral tests run against the .sh twin). KNOWN GAP:
+#     Invoke-PhoenixNuke.ps1 has no image-proof gate yet -- the .sh now
+#     implements runbook invariant 1 (mirroring Invoke-Nuke.sh); the .ps1
+#     twin still needs it.
 #
 # Deliberately NOT covered here (VM-only, see docs/NUKE-TEST-PLAN.md):
 #   actual destruction against a real block device. Those need QEMU
@@ -303,7 +312,112 @@ else
     pass "pty: 'NUKE <serial>' rejected (only the exact identifier is accepted)"
 fi
 
+#--- check_image_proof: proof-manifest validation (sourced function) --------------
+# Fixture proofs: valid + every refusal class. A proof is the machine-readable
+# form of runbook invariant 1 ("verified image or no wipe"); the serial
+# binding stops a proof for disk A from arming a wipe of disk B.
+echo "== check_image_proof unit tests (proof-manifest validation) =="
+HEX64="$(printf 'a%.0s' {1..64})"
+mkdir -p "$T/proofs"
+write_proof() { # write_proof <file> <format> <verified> <sha256> <serial> <size>
+    { printf 'format=%s\n' "$2"; printf 'source_serial=%s\n' "$5"
+      printf 'image_size_bytes=%s\n' "$6"; printf 'sha256=%s\n' "$4"
+      printf 'verified=%s\n' "$3"; printf '# comment lines and blank lines ignored\n'; } > "$T/proofs/$1"
+}
+cpv() { # cpv <name> <serial> -> rc of check_image_proof on fixture <name> for <serial>
+    local rc
+    if check_image_proof "$T/proofs/$1" "$2" >/dev/null 2>&1; then rc=0; else rc=$?; fi
+    echo "$rc"
+}
+write_proof good.proof  phoenix-image-proof/1 YES "$HEX64" SATATEST001 1000204886016
+write_proof badfmt.proof phoenix-proof/9 YES "$HEX64" SATATEST001 1000204886016
+write_proof unver.proof phoenix-image-proof/1 NO  "$HEX64" SATATEST001 1000204886016
+write_proof badhex.proof phoenix-image-proof/1 YES "ZZZZ" SATATEST001 1000204886016
+write_proof zerosz.proof phoenix-image-proof/1 YES "$HEX64" SATATEST001 0
+write_proof others.proof phoenix-image-proof/1 YES "$HEX64" SDDTEST004 250059350016
+write_proof noser.proof  phoenix-image-proof/1 YES "$HEX64" unknown 1000204886016
+# per-target valid proofs so the gate passes and later gates get tested
+write_proof usbboot.proof phoenix-image-proof/1 YES "$HEX64" USBTEST002 32000000000
+write_proof usb.proof     phoenix-image-proof/1 YES "$HEX64" USBTEST005 16000000000
+write_proof dup.proof     phoenix-image-proof/1 YES "$HEX64" DUP111     1000204886016
+[[ "$(cpv good.proof SATATEST001)" == "0" ]] && pass "valid proof accepted" || fail "valid proof accepted"
+[[ "$(cpv good.proof SDDTEST004)" != "0" ]] && pass "proof bound to a different serial refused" || fail "proof bound to a different serial refused"
+[[ "$(cpv badfmt.proof SATATEST001)" != "0" ]] && pass "unknown format refused" || fail "unknown format refused"
+[[ "$(cpv unver.proof SATATEST001)" != "0" ]] && pass "verified=NO refused" || fail "verified=NO refused"
+[[ "$(cpv badhex.proof SATATEST001)" != "0" ]] && pass "malformed sha256 refused" || fail "malformed sha256 refused"
+[[ "$(cpv zerosz.proof SATATEST001)" != "0" ]] && pass "zero size refused" || fail "zero size refused"
+[[ "$(cpv noser.proof SATATEST001)" != "0" ]] && pass "unknown source_serial refused" || fail "unknown source_serial refused"
+# refusal reasons go to stderr (evidence, not silence)
+out="$(check_image_proof "$T/proofs/others.proof" SATATEST001 2>&1)" || true
+[[ "$out" == *"SDDTEST004"* && "$out" == *"cannot arm a different disk"* ]] \
+    && pass "serial-mismatch refusal names the binding" \
+    || fail "serial-mismatch refusal names the binding" "got: $(echo "$out" | head -c 200)"
+# missing file refuses
+if check_image_proof "$T/proofs/does-not-exist" SATATEST001 >/dev/null 2>&1; then
+    fail "missing proof file refused"
+else
+    pass "missing proof file refused"
+fi
+# hostile values stay data: a serial field containing $(...) must never execute
+rm -f "$T/proof-evil-marker"
+write_proof evil.proof phoenix-image-proof/1 YES "$HEX64" 'x$(touch "'"$T"'/proof-evil-marker")' 1000204886016
+# the hostile string is the SAME string written into the file: a literal
+# comparison must match (rc 0) -- the security property is that no command
+# runs, not that the string differs.
+if check_image_proof "$T/proofs/evil.proof" 'x$(touch "'"$T"'/proof-evil-marker")' >/dev/null 2>&1; then
+    pass "hostile serial compares literally (matched, not executed)"
+else
+    fail "hostile serial literal comparison" "identical strings did not match"
+fi
+[[ ! -e "$T/proof-evil-marker" ]] \
+    && pass "proof parser never executes field payloads" \
+    || fail "proof parser never executes field payloads" "INJECTION LIVE"
+
+#--- typed_skip_image_gate: piped input can never skip the image gate ------------
+echo "== typed_skip_image_gate: piped input cannot skip (unit) =="
+if printf 'NUKE WITHOUT BACKUP\n' | typed_skip_image_gate >/dev/null 2>&1; then
+    fail "typed_skip_image_gate refuses piped phrase"
+else
+    pass "typed_skip_image_gate refuses piped phrase"
+fi
+# wrong phrase on piped stdin also refuses (the tty check fires first, but
+# the exact-match requirement is covered on the pty below)
+if printf 'y\n' | typed_skip_image_gate >/dev/null 2>&1; then
+    fail "typed_skip_image_gate refuses piped 'y'"
+else
+    pass "typed_skip_image_gate refuses piped 'y'"
+fi
+
+#--- typed_skip_image_gate on a REAL pty: only the exact phrase arms ------------
+pty_skip() { # pty_skip <line> -> rc of typed_skip_image_gate on a real pty
+    local child="$T/pty-skip.sh"
+    { declare -f typed_skip_image_gate
+      printf 'typed_skip_image_gate\n'; } > "$child"
+    printf '%s\n' "$1" | script -qec "bash $child" /dev/null >/dev/null 2>&1
+}
+if pty_skip 'NUKE WITHOUT BACKUP'; then
+    pass "pty: exact 'NUKE WITHOUT BACKUP' phrase arms the skip"
+else
+    fail "pty: exact 'NUKE WITHOUT BACKUP' phrase arms the skip"
+fi
+for bad in 'nuke without backup' 'NUKEWITHOUTBACKUP' 'yes'; do
+    if pty_skip "$bad"; then
+        fail "pty: skip phrase '$bad' rejected"
+    else
+        pass "pty: skip phrase '$bad' rejected"
+    fi
+done
+# bash `read` trims trailing IFS whitespace, so a trailing space still
+# matches -- same leniency as typed_confirm_twice's explicit sed trim.
+# Documented, not a weakening: only the EXACT phrase (mod whitespace) arms.
+if pty_skip 'NUKE WITHOUT BACKUP '; then
+    pass "pty: trailing-space phrase still matches (read trims IFS whitespace)"
+else
+    fail "pty: trailing-space phrase still matches (read trims IFS whitespace)"
+fi
+
 echo "== integration tests (mocked lsblk + mocked dd subprocess) =="
+PROOFS="$T/proofs"   # fixture manifests built in the unit section above
 # run_case <name> <expected-exit> <expected-substring> [script args...]
 # stdin comes from /dev/null unless CASE_STDIN is set.
 run_case() {
@@ -343,17 +457,17 @@ grep -Eq '\[[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z\] mode=ENUMER
 grep -q 'SATATEST001' "$auditf" && grep -q 'USBTEST005' "$auditf" \
     && pass "K3 audit lists disk serials" \
     || fail "K3 audit lists disk serials"
-# K4: boot USB (row 2) refused structurally.
-run_case "K4 boot-USB refused" 1 "self-protected" --nuke 2
+# K4: boot USB (row 2) refused structurally (gate passes with its own proof).
+run_case "K4 boot-USB refused" 1 "self-protected" --image-proof "$PROOFS/usbboot.proof" --nuke 2
 auditf="$(ls "$T"/logs-K4*boot-USB*refused/phoenix-nuke-audit-*.log)"
 grep -q 'mode=REFUSED' "$auditf" && grep -q 'serial=USBTEST002' "$auditf" \
     && grep -q "reason='boot-device'" "$auditf" \
     && pass "K4 audit REFUSED has disk id + reason" \
     || fail "K4 audit REFUSED has disk id + reason"
-# K5: mounted data disk (row 4) refused (mounted => protected).
-run_case "K5 mounted-disk refused" 1 "self-protected" --nuke 4
-# K6: spare USB stick (row 5) refused WITHOUT the override flag.
-run_case "K6 usb-disk refused without override" 1 "self-protected" --nuke 5
+# K5: mounted data disk (row 4) refused (mounted => protected; gate passes).
+run_case "K5 mounted-disk refused" 1 "self-protected" --image-proof "$PROOFS/others.proof" --nuke 4
+# K6: spare USB stick (row 5) refused WITHOUT the override flag (gate passes).
+run_case "K6 usb-disk refused without override" 1 "self-protected" --image-proof "$PROOFS/usb.proof" --nuke 5
 # K7: spare USB stick (row 5) passes the guard WITH --override-boot-protection
 # (on a real pty, confirmation succeeds); the override is logged as a
 # WARNING, and the next gate (not a block device on the host) is what fires.
@@ -373,7 +487,7 @@ pty_case() { # pty_case <name> <line1> <line2> <exp-exit> <exp-sub> [args...]
         fail "$name" "expected exit $exp_exit + '$exp_sub'; got exit $rc; output: $(echo "$out" | head -c 400)"
     fi
 }
-pty_case "K7 usb-disk override passes guard" "USBTEST005" "USBTEST005" 1 "not a block device" --override-boot-protection --nuke 5
+pty_case "K7 usb-disk override passes guard" "USBTEST005" "USBTEST005" 1 "not a block device" --image-proof "$PROOFS/usb.proof" --override-boot-protection --nuke 5
 auditf="$(ls "$T"/logs-K7*override*passes*guard/phoenix-nuke-audit-*.log)"
 grep -q 'mode=WARNING' "$auditf" && grep -q 'boot-protection-overridden' "$auditf" \
     && pass "K7 audit logs the override as WARNING" \
@@ -390,21 +504,90 @@ run_case "K10 out-of-range row refused" 1 "REFUSED" --nuke 99
 # K11: duplicated-serial fixture: serial id is an ambiguity refusal...
 MOCK_DUPS=1 run_case "K11a dup serial id refused" 1 "ambiguous" --nuke DUP111
 # ...and arming by row is refused at the dup-serial gate (identity failure).
-MOCK_DUPS=1 run_case "K11b dup serial arm refused" 1 "multiple disks" --nuke 1
+MOCK_DUPS=1 run_case "K11b dup serial arm refused" 1 "multiple disks" --image-proof "$PROOFS/dup.proof" --nuke 1
 # K12: pty, correct serial typed twice on an unprotected disk: confirmation
 #      succeeds (audit CONFIRMED), then the block-device gate fires (fixture
 #      paths are not block devices on the host) -- dd is never reached.
-pty_case "K12 double-confirm reaches block-device gate" "SATATEST001" "SATATEST001" 1 "not a block device" --nuke 1
+pty_case "K12 double-confirm reaches block-device gate" "SATATEST001" "SATATEST001" 1 "not a block device" --image-proof "$PROOFS/good.proof" --nuke 1
 auditf="$(ls "$T"/logs-K12*double-confirm*/phoenix-nuke-audit-*.log)"
 grep -q 'mode=CONFIRMED' "$auditf" && grep -q "typed1='SATATEST001' typed2='SATATEST001'" "$auditf" \
     && pass "K12 audit CONFIRMED records operator confirmation" \
     || fail "K12 audit CONFIRMED records operator confirmation"
 # K13: pty, mistyped second confirmation aborts (exit 2), dd never invoked.
-pty_case "K13 mistyped second prompt aborts" "SATATEST001" "SATATEST00X" 2 "Aborted" --nuke 1
+pty_case "K13 mistyped second prompt aborts" "SATATEST001" "SATATEST00X" 2 "Aborted" --image-proof "$PROOFS/good.proof" --nuke 1
 # K14: --help exits 0.
 run_case "K14 help" 0 "Usage" --help
 # K15: unknown flag exits 1.
 run_case "K15 bad flag" 1 "Unknown option" --bogus
+
+echo "== integration: image-proof gate (runbook invariant 1) =="
+# PROOFS already defined at the top of the integration section
+# K17: --nuke with NO proof and NO skip flag refuses (gate is mandatory).
+run_case "K17 nuke without proof refused" 1 "requires --image-proof" --nuke 1
+auditf="$(ls "$T"/logs-K17*nuke*without*proof*refused/phoenix-nuke-audit-*.log)"
+grep -q "mode=REFUSED" "$auditf" && grep -q "reason='no-image-proof'" "$auditf" \
+    && pass "K17 audit REFUSED records reason=no-image-proof" \
+    || fail "K17 audit REFUSED records reason=no-image-proof"
+# K18: gate runs FIRST -- a boot-protected target (row 2) without a proof is
+# refused for the MISSING PROOF, not for being self-protected.
+run_case "K18 gate precedes boot-protection check" 1 "requires --image-proof" --nuke 2
+# K19: bad-format proof refused.
+run_case "K19 bad-format proof refused" 1 "unknown/missing format" --image-proof "$PROOFS/badfmt.proof" --nuke 1
+# K20: unverified (verified=NO) proof refused.
+run_case "K20 unverified proof refused" 1 "not VERIFIED" --image-proof "$PROOFS/unver.proof" --nuke 1
+# K21: malformed sha256 refused.
+run_case "K21 bad-sha256 proof refused" 1 "valid 64-hex sha256" --image-proof "$PROOFS/badhex.proof" --nuke 1
+# K22: zero-size proof refused.
+run_case "K22 zero-size proof refused" 1 "positive image_size_bytes" --image-proof "$PROOFS/zerosz.proof" --nuke 1
+# K23: proof bound to a DIFFERENT disk's serial refused.
+run_case "K23 serial-mismatch proof refused" 1 "cannot arm a different disk" --image-proof "$PROOFS/others.proof" --nuke 1
+# K24: valid proof passes the gate; with stdin redirected, the double-typed
+# confirmation then refuses (exit 2, aborted) -- gate evidence is audited.
+run_case "K24 valid proof passes gate, tty-refusal aborts" 2 "Aborted" --image-proof "$PROOFS/good.proof" --nuke 1
+auditf="$(ls "$T"/logs-K24*valid*proof*passes*/phoenix-nuke-audit-*.log)"
+grep -q 'mode=IMAGE-PROOF' "$auditf" && grep -q "serial=SATATEST001" "$auditf" \
+    && pass "K24 audit IMAGE-PROOF records the gate pass" \
+    || fail "K24 audit IMAGE-PROOF records the gate pass"
+# K25: pty, valid proof + correct double-typed serial reaches the
+# block-device gate (fixture paths are not block devices on the host).
+pty_case "K25 valid proof + pty confirm reaches block-device gate" "SATATEST001" "SATATEST001" 1 "not a block device" --image-proof "$PROOFS/good.proof" --nuke 1
+auditf="$(ls "$T"/logs-K25*valid*proof*pty*/phoenix-nuke-audit-*.log)"
+grep -q 'mode=IMAGE-PROOF' "$auditf" && grep -q 'mode=CONFIRMED' "$auditf" \
+    && pass "K25 audit has IMAGE-PROOF and CONFIRMED records" \
+    || fail "K25 audit has IMAGE-PROOF and CONFIRMED records"
+# K26: --skip-image-gate with piped stdin refuses (needs a real console).
+run_case "K26 skip-gate piped refuses" 1 "real console" --skip-image-gate --nuke 1
+# K27: pty, --skip-image-gate + exact phrase + correct serial proceeds past
+# the gate (logged WARNING); the block-device gate then fires. 3 input lines.
+pty_skip_case() { # pty_skip_case <name> <skip-line> <l1> <l2> <exp-exit> <exp-sub> [args...]
+    local name="$1" sl="$2" l1="$3" l2="$4" exp_exit="$5" exp_sub="$6"; shift 6
+    local child="$T/pty-skip-int.sh" logdir="$T/logs-$name" out rc
+    mkdir -p "$logdir"
+    printf 'export PATH=%q:"$PATH"\n' "$MOCKBIN" > "$child"
+    printf 'exec bash %q --log-dir %q --no-countdown %s\n' "$SH" "$logdir" "$*" >> "$child"
+    chmod +x "$child"
+    out="$(printf '%s\n%s\n%s\n' "$sl" "$l1" "$l2" | PATH="$MOCKBIN:$PATH" timeout 20 \
+        script -qec "$child" /dev/null 2>&1)" && rc=0 || rc=$?
+    if (( rc == exp_exit )) && [[ "$out" == *"$exp_sub"* ]]; then
+        pass "$name (exit $rc)"
+    else
+        fail "$name" "expected exit $exp_exit + '$exp_sub'; got exit $rc; output: $(echo "$out" | head -c 400)"
+    fi
+}
+pty_skip_case "K27 skip-gate typed phrase proceeds" "NUKE WITHOUT BACKUP" "SATATEST001" "SATATEST001" 1 "not a block device" --skip-image-gate --nuke 1
+auditf="$(ls "$T"/logs-K27*skip-gate*typed*phrase*proceeds/phoenix-nuke-audit-*.log)"
+grep -q 'mode=WARNING' "$auditf" && grep -q "reason='image-proof-gate-skipped'" "$auditf" \
+    && pass "K27 audit WARNING records the gate skip" \
+    || fail "K27 audit WARNING records the gate skip"
+# K28: pty, --skip-image-gate with a WRONG phrase aborts (exit 1).
+pty_skip_case "K28 skip-gate wrong phrase aborts" "yes" "SATATEST001" "SATATEST001" 1 "not confirmed" --skip-image-gate --nuke 1
+# K29: --skip-image-gate + valid proof together: the proof wins, no skip
+# prompt is needed -- gate passes on the proof alone.
+run_case "K29 proof wins over skip flag" 2 "Aborted" --image-proof "$PROOFS/good.proof" --skip-image-gate --nuke 1
+auditf="$(ls "$T"/logs-K29*proof*wins*over*skip*flag/phoenix-nuke-audit-*.log)"
+grep -q 'mode=IMAGE-PROOF' "$auditf" && ! grep -q 'image-proof-gate-skipped' "$auditf" \
+    && pass "K29 audit shows proof gate, no skip" \
+    || fail "K29 audit shows proof gate, no skip"
 
 # K16: dd was NEVER invoked in any path above.
 if [[ -f "$DD_MARKER" ]]; then
