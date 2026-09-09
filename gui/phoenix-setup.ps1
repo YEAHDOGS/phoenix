@@ -1,22 +1,28 @@
-#Requires -Version 5.0
+﻿#Requires -Version 5.0
 
 <#
 .SYNOPSIS
-    Phoenix USB Builder - WinForms wizard for building Phoenix install USBs.
+    Phoenix USB Builder - library loaded by the WinForms script launcher.
 
 .DESCRIPTION
-    Builder-side GUI for the Phoenix project. Runs on a CONNECTED Windows
-    machine and produces a Phoenix USB whose boot menu offers the 4 options:
-    Analyze / Backup / Nuke / Reinstall.
+    Builder-side GUI for the Phoenix project. Normally opened from the
+    launcher via File -> "USB Builder..." (scripts/tools/gui-launcher.ps1
+    dot-sources this file and calls Show-PhoenixBuilder). Running this file
+    directly also opens the builder (dev convenience).
 
-    This is a SEPARATE product from scripts/tools/gui-launcher.ps1 (the
-    live-machine tweak tool). This app never runs installer modules on the
-    build machine - it collects a setup, calls the generator modules
-    (tools/New-UnattendXml.ps1, tools/New-AppInstallScript.ps1), and stages
-    the USB via tools/Stage-Usb.ps1.
+    Architecture (founder decision): this GUI runs on a WORKING Windows
+    machine. It stages Ventoy ISOs onto the USB and writes phoenix-config.json
+    (apps selection, username/password, answer-file options). The boot side
+    reads that config and runs HEADLESS - there is no GUI in WinPE.
 
-    SECURITY: passwords are held as SecureString, never written to the log,
-    and converted to plaintext only inside the generator at XML-write time.
+    Ventoy renders the 4-option boot menu from the staged ISOs:
+      Analyze   -> SystemRescue      Backup -> Rescuezilla
+      Nuke      -> ShredOS (nwipe)   Reinstall -> Windows installer ISO + Phoenix WinPE
+
+    SECURITY: passwords are held as SecureString in the GUI and never written
+    to the log. They are written PLAINTEXT into phoenix-config.json because
+    autounattend.xml and the headless side require it - treat them as
+    throwaway install-time credentials, changed after first logon.
 
 .NOTES
     Static review only so far - no PowerShell on the Linux dev VM.
@@ -44,37 +50,42 @@ $script:UnattendGenPath  = Join-Path $RepoRoot 'tools\New-UnattendXml.ps1'
 $script:AppScriptGenPath = Join-Path $RepoRoot 'tools\New-AppInstallScript.ps1'
 $script:StagerPath       = Join-Path $RepoRoot 'tools\Stage-Usb.ps1'
 
-# The 4 boot-menu modules. The builder GUI stages them; the on-USB WinPE menu
-# (reading usb-staging/modules.json) is what actually presents them at boot.
+# The 4 boot options. Ventoy (on the USB) renders the boot menu; the GUI's
+# job is staging one ISO per option plus phoenix-config.json. The boot side
+# runs headless - there is deliberately no GUI in WinPE.
 $script:BootModules = @(
     @{
         Name = 'Analyze'
-        Description = 'Hardware inventory, driver report, and readiness check on the target machine.'
+        IsoLabel = 'SystemRescue'
+        Description = 'SystemRescue ISO: hardware analysis, full graphical file manager, shell.'
         DefaultIncluded = $true
         Dangerous = $false
     },
     @{
         Name = 'Backup'
-        Description = 'Full-machine image + data backup before any destructive step.'
+        IsoLabel = 'Rescuezilla'
+        Description = 'Rescuezilla ISO: full-machine image backup before anything destructive.'
         DefaultIncluded = $true
         Dangerous = $false
     },
     @{
         Name = 'Nuke'
-        Description = 'Secure wipe of the target disk. IRREVERSIBLE. Requires its own typed confirmation on-device.'
+        IsoLabel = 'ShredOS'
+        Description = 'ShredOS ISO (nwipe): secure disk wipe. IRREVERSIBLE. nwipe keeps its own on-device confirmations.'
         DefaultIncluded = $false
         Dangerous = $true
     },
     @{
         Name = 'Reinstall'
-        Description = 'Unattended Windows install from the generated answer file + staged apps.'
+        IsoLabel = 'WinPE + Win ISO'
+        Description = 'Windows installer ISO + Phoenix WinPE payload: headless install driven by phoenix-config.json.'
         DefaultIncluded = $true
         Dangerous = $false
     }
 )
 
 # Dark theme, matching scripts/tools/gui-launcher.ps1 conventions
-$script:Colors = @{
+$script:BuilderColors = @{
     Primary    = [System.Drawing.Color]::FromArgb(41, 128, 185)
     Secondary  = [System.Drawing.Color]::FromArgb(52, 152, 219)
     Background = [System.Drawing.Color]::FromArgb(236, 240, 241)
@@ -156,7 +167,7 @@ function New-SetupLabel {
     $l.Height = 40
     $style = if ($Bold) { [System.Drawing.FontStyle]::Bold } else { [System.Drawing.FontStyle]::Regular }
     $l.Font = New-Object System.Drawing.Font('Segoe UI', $Size, $style)
-    $l.ForeColor = $script:Colors.Text
+    $l.ForeColor = $script:BuilderColors.Text
     return $l
 }
 
@@ -177,8 +188,8 @@ function New-SetupButton {
     $b.Location = New-Object System.Drawing.Point($X, $Y)
     $b.Size = New-Object System.Drawing.Size($Width, $Height)
     $b.Font = New-Object System.Drawing.Font('Segoe UI', 10, [System.Drawing.FontStyle]::Bold)
-    $b.BackColor = $script:Colors.Primary
-    $b.ForeColor = $script:Colors.White
+    $b.BackColor = $script:BuilderColors.Primary
+    $b.ForeColor = $script:BuilderColors.White
     $b.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
     return $b
 }
@@ -231,6 +242,74 @@ function Test-GeneratorScripts {
     return $missing
 }
 
+function Test-VentoyDrive {
+    <#
+    .SYNOPSIS
+        Verify the target drive is a Ventoy USB (ventoy/ directory present).
+        The builder stages ISOs onto Ventoy; it does not install Ventoy itself.
+    #>
+    param([string]$DriveLetter)
+    $ventoyDir = Join-Path ($DriveLetter.TrimEnd('\') + '\') 'ventoy'
+    return (Test-Path $ventoyDir)
+}
+
+function Write-PhoenixConfig {
+    <#
+    .SYNOPSIS
+        Write phoenix-config.json to the USB. This is THE handoff to the
+        headless boot side: WinPE reads it and runs without user interaction.
+
+        The password is written PLAINTEXT - unavoidable, because
+        autounattend.xml requires it and WinPE cannot use the build
+        machine's DPAPI key. Policy: throwaway install-time credentials,
+        changed after first logon (stated on the wizard Review page).
+    #>
+    param([string]$DriveLetter)
+
+    $plainPassword = $null
+    try {
+        $ptr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($script:Setup.Password)
+        $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
+    }
+    finally {
+        if ($ptr -ne [IntPtr]::Zero) {
+            [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)
+        }
+    }
+
+    $config = [ordered]@{
+        version      = 1
+        computerName = $script:Setup.ComputerName
+        username     = $script:Setup.Username
+        password     = $plainPassword
+        timeZone     = $script:Setup.TimeZone
+        edition      = $script:Setup.Edition
+        productKey   = $script:Setup.ProductKey
+        locale       = $script:Setup.Options.Locale
+        options      = [ordered]@{
+            skipOobe      = [bool]$script:Setup.Options.SkipOobe
+            disableWpbt   = [bool]$script:Setup.Options.DisableWpbt
+            stageUpdates  = [bool]$script:Setup.Options.StageUpdates
+            driverProfile = [string]$script:Setup.Options.DriverProfile
+        }
+        apps    = @($script:Setup.Apps)
+        modules = @($script:Setup.Modules | ForEach-Object { $_.ToLower() })
+    }
+
+    $phoenixDir = Join-Path ($DriveLetter.TrimEnd('\') + '\') 'phoenix'
+    if (-not (Test-Path $phoenixDir)) {
+        New-Item -ItemType Directory -Path $phoenixDir -Force | Out-Null
+    }
+    $configPath = Join-Path $phoenixDir 'phoenix-config.json'
+    ($config | ConvertTo-Json -Depth 5) | Set-Content -Path $configPath -Encoding UTF8
+
+    # Shrink the plaintext window: clear locals holding the password.
+    $plainPassword = $null
+    $config['password'] = $null
+
+    return $configPath
+}
+
 function Invoke-PhoenixBuild {
     <#
     .SYNOPSIS
@@ -239,6 +318,26 @@ function Invoke-PhoenixBuild {
         parameters and reports progress.
     #>
     param([string]$TargetDrive)
+
+    $driveLetter = $TargetDrive.TrimEnd('\') + '\'
+
+    # Module selection is read from the main-form checkboxes here so both
+    # build entry points (wizard Review page, BUILD USB button) agree.
+    $script:Setup.Modules = @(
+        $script:ModuleCheckboxes.Keys | Where-Object { $script:ModuleCheckboxes[$_].Checked }
+    )
+
+    if (-not (Test-VentoyDrive $driveLetter)) {
+        Write-SetupLog "Target $driveLetter is not a Ventoy USB (no ventoy/ directory)." 'Error'
+        [System.Windows.Forms.MessageBox]::Show(
+            "The target drive does not look like a Ventoy USB.`n`n" +
+            "Prepare the USB with Ventoy first, then build again.",
+            'Not a Ventoy drive',
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Warning
+        ) | Out-Null
+        return
+    }
 
     $missing = Test-GeneratorScripts
     if ($missing.Count -gt 0) {
@@ -279,18 +378,22 @@ function Invoke-PhoenixBuild {
         Write-SetupLog 'App install script written.' 'Success' @{ Path = $appScriptPath }
 
         if (Test-Path $script:StagerPath) {
-            Write-SetupLog "Staging USB on $TargetDrive ..." 'Info'
+            Write-SetupLog "Staging ISOs onto $driveLetter ..." 'Info'
             . $script:StagerPath
             Stage-Usb -Setup $script:Setup `
                       -IncludeModules $script:Setup.Modules `
                       -UnattendXmlPath $unattendPath `
                       -AppScriptPath $appScriptPath `
-                      -TargetDrive $TargetDrive
-            Write-SetupLog 'USB build complete.' 'Success'
+                      -TargetDrive $driveLetter
         }
         else {
-            Write-SetupLog 'Stage-Usb.ps1 not present yet - stopping after generation.' 'Warn'
+            Write-SetupLog 'Stage-Usb.ps1 not present yet - skipping ISO staging.' 'Warn'
         }
+
+        Write-SetupLog 'Writing phoenix-config.json (headless boot handoff)...' 'Info'
+        $configPath = Write-PhoenixConfig -DriveLetter $driveLetter
+        Write-SetupLog 'phoenix-config.json written.' 'Success' @{ Path = $configPath }
+        Write-SetupLog 'USB build complete.' 'Success'
     }
     catch {
         Write-SetupLog "Build failed: $($_.Exception.Message)" 'Error'
@@ -499,8 +602,7 @@ function Update-ReviewPage {
         "Skip OOBE     : $($script:Setup.Options.SkipOobe)`r`n" +
         "Disable WPBT  : $($script:Setup.Options.DisableWpbt)`r`n" +
         "Stage updates : $($script:Setup.Options.StageUpdates)`r`n`r`n" +
-        "Boot modules to stage:`r`n$mods`r`n`r`n" +
-        "Apps to install:`r`n$apps"
+        "ISOs to stage (Ventoy boot menu):`r`n$mods`r`n`r`n" +        "Apps to install:`r`n$apps"
 }
 
 function Collect-WizardPage {
@@ -584,7 +686,7 @@ function Show-SetupWizard {
     $wiz.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
     $wiz.MaximizeBox = $false
     $wiz.MinimizeBox = $false
-    $wiz.BackColor = $script:Colors.Background
+    $wiz.BackColor = $script:BuilderColors.Background
 
     # TabControl with hidden tabs = wizard pages
     $tabs = New-Object System.Windows.Forms.TabControl
@@ -603,7 +705,7 @@ function Show-SetupWizard {
     $btnBack = New-SetupButton '< Back' 150 435 110
     $btnNext = New-SetupButton 'Next >' 270 435 110
     $btnCancel = New-SetupButton 'Cancel' 390 435 110
-    $btnCancel.BackColor = $script:Colors.Text
+    $btnCancel.BackColor = $script:BuilderColors.Text
     $wiz.Controls.Add($btnBack)
     $wiz.Controls.Add($btnNext)
     $wiz.Controls.Add($btnCancel)
@@ -628,7 +730,8 @@ function Show-SetupWizard {
             }
             $wiz.DialogResult = [System.Windows.Forms.DialogResult]::OK
             $wiz.Close()
-            Invoke-PhoenixBuild -TargetDrive $drive
+            $wizDriveLetter = ($drive -split ' ')[0]
+            Invoke-PhoenixBuild -TargetDrive $wizDriveLetter
         }
         else {
             $tabs.SelectedIndex++
@@ -651,30 +754,30 @@ function Get-RemovableDrives {
         ForEach-Object { '{0} ({1})' -f $_.Name.TrimEnd('\'), $_.VolumeLabel }
 }
 
-function Show-MainForm {
+function Show-PhoenixBuilder {
     $form = New-Object System.Windows.Forms.Form
     $form.Text = 'Phoenix - USB Builder'
     $form.Size = New-Object System.Drawing.Size(1000, 700)
     $form.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
     $form.MinimumSize = New-Object System.Drawing.Size(900, 600)
-    $form.BackColor = $script:Colors.Background
+    $form.BackColor = $script:BuilderColors.Background
     $form.Icon = [System.Drawing.SystemIcons]::Application
 
     # Header
     $header = New-Object System.Windows.Forms.Panel
     $header.Dock = [System.Windows.Forms.DockStyle]::Top
     $header.Height = 70
-    $header.BackColor = $script:Colors.DarkBg
+    $header.BackColor = $script:BuilderColors.DarkBg
     $title = New-Object System.Windows.Forms.Label
     $title.Text = 'PHOENIX - USB Builder'
     $title.Font = New-Object System.Drawing.Font('Segoe UI', 16, [System.Drawing.FontStyle]::Bold)
-    $title.ForeColor = $script:Colors.Secondary
+    $title.ForeColor = $script:BuilderColors.Secondary
     $title.AutoSize = $true
     $title.Location = New-Object System.Drawing.Point(15, 8)
     $subtitle = New-Object System.Windows.Forms.Label
-    $subtitle.Text = 'Build a bootable USB offering: Analyze / Backup / Nuke / Reinstall'
+    $subtitle.Text = 'Stage Ventoy ISOs + phoenix-config.json  |  Analyze / Backup / Nuke / Reinstall'
     $subtitle.Font = New-Object System.Drawing.Font('Segoe UI', 10)
-    $subtitle.ForeColor = $script:Colors.TextLight
+    $subtitle.ForeColor = $script:BuilderColors.TextLight
     $subtitle.AutoSize = $true
     $subtitle.Location = New-Object System.Drawing.Point(15, 40)
     $header.Controls.Add($title)
@@ -686,32 +789,39 @@ function Show-MainForm {
     $tilesPanel.Dock = [System.Windows.Forms.DockStyle]::Top
     $tilesPanel.Height = 200
     $tilesPanel.Padding = New-Object System.Windows.Forms.Padding(15)
-    $tilesPanel.BackColor = $script:Colors.Background
+    $tilesPanel.BackColor = $script:BuilderColors.Background
 
     $script:ModuleCheckboxes = @{}
     foreach ($mod in $script:BootModules) {
         $tile = New-Object System.Windows.Forms.Panel
         $tile.Size = New-Object System.Drawing.Size(220, 170)
-        $tile.BackColor = $script:Colors.White
+        $tile.BackColor = $script:BuilderColors.White
         $tile.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
         $tile.Margin = New-Object System.Windows.Forms.Padding(6)
 
         $nameLabel = New-Object System.Windows.Forms.Label
         $nameLabel.Text = $mod.Name.ToUpper()
         $nameLabel.Font = New-Object System.Drawing.Font('Segoe UI', 13, [System.Drawing.FontStyle]::Bold)
-        $nameLabel.ForeColor = $(if ($mod.Dangerous) { $script:Colors.Accent } else { $script:Colors.Primary })
+        $nameLabel.ForeColor = $(if ($mod.Dangerous) { $script:BuilderColors.Accent } else { $script:BuilderColors.Primary })
         $nameLabel.Location = New-Object System.Drawing.Point(12, 10)
         $nameLabel.AutoSize = $true
+
+        $isoLabel = New-Object System.Windows.Forms.Label
+        $isoLabel.Text = $mod.IsoLabel
+        $isoLabel.Font = New-Object System.Drawing.Font('Segoe UI', 9, [System.Drawing.FontStyle]::Italic)
+        $isoLabel.ForeColor = $script:BuilderColors.Text
+        $isoLabel.Location = New-Object System.Drawing.Point(12, 36)
+        $isoLabel.AutoSize = $true
 
         $descLabel = New-Object System.Windows.Forms.Label
         $descLabel.Text = $mod.Description
         $descLabel.Font = New-Object System.Drawing.Font('Segoe UI', 9)
-        $descLabel.ForeColor = $script:Colors.Text
-        $descLabel.Location = New-Object System.Drawing.Point(12, 42)
-        $descLabel.Size = New-Object System.Drawing.Size(196, 80)
+        $descLabel.ForeColor = $script:BuilderColors.Text
+        $descLabel.Location = New-Object System.Drawing.Point(12, 58)
+        $descLabel.Size = New-Object System.Drawing.Size(196, 66)
 
         $chk = New-Object System.Windows.Forms.CheckBox
-        $chk.Text = 'Include on USB'
+        $chk.Text = 'Stage ISO'
         $chk.Checked = $mod.DefaultIncluded
         $chk.Font = New-Object System.Drawing.Font('Segoe UI', 10, [System.Drawing.FontStyle]::Bold)
         $chk.Location = New-Object System.Drawing.Point(12, 130)
@@ -727,12 +837,13 @@ function Show-MainForm {
                     $sender.Checked = $false
                 }
                 else {
-                    Write-SetupLog 'Nuke module staged (NOT executed). On-device typed confirmation still required.' 'Warn'
+                    Write-SetupLog 'ShredOS ISO staged (NOT executed). nwipe keeps its own on-device confirmations.' 'Warn'
                 }
             }
         }.GetNewClosure())
 
         $tile.Controls.Add($nameLabel)
+        $tile.Controls.Add($isoLabel)
         $tile.Controls.Add($descLabel)
         $tile.Controls.Add($chk)
         $tilesPanel.Controls.Add($tile)
@@ -749,19 +860,33 @@ function Show-MainForm {
     $driveLabel = New-Object System.Windows.Forms.Label
     $driveLabel.Text = 'USB drive:'
     $driveLabel.Font = New-Object System.Drawing.Font('Segoe UI', 10, [System.Drawing.FontStyle]::Bold)
-    $driveLabel.ForeColor = $script:Colors.Text
+    $driveLabel.ForeColor = $script:BuilderColors.Text
     $driveLabel.AutoSize = $true
     $driveLabel.Location = New-Object System.Drawing.Point(15, 18)
 
-    $script:cmbDrive = New-SetupCombo 110 15 220
+    $script:cmbDrive = New-SetupCombo 110 15 200
     Get-RemovableDrives | ForEach-Object { $script:cmbDrive.Items.Add($_) | Out-Null }
     if ($script:cmbDrive.Items.Count -gt 0) { $script:cmbDrive.SelectedIndex = 0 }
 
-    $btnNewSetup = New-SetupButton 'New Setup...' 350 12 140
+    $btnVerifyVentoy = New-SetupButton 'Verify Ventoy' 320 12 130
+    $btnVerifyVentoy.BackColor = $script:BuilderColors.Text
+    $btnVerifyVentoy.Add_Click({
+        $d = $script:cmbDrive.SelectedItem
+        if (-not $d) { return }
+        $dl = ($d -split ' ')[0]
+        if (Test-VentoyDrive $dl) {
+            Write-SetupLog "Ventoy confirmed on $dl." 'Success'
+        }
+        else {
+            Write-SetupLog "$dl is not a Ventoy USB (no ventoy/ directory)." 'Error'
+        }
+    })
+
+    $btnNewSetup = New-SetupButton 'New Setup...' 460 12 130
     $btnNewSetup.Add_Click({ Show-SetupWizard })
 
-    $btnOpenSetup = New-SetupButton 'Open Setup...' 500 12 140
-    $btnOpenSetup.BackColor = $script:Colors.Text
+    $btnOpenSetup = New-SetupButton 'Open Setup...' 600 12 130
+    $btnOpenSetup.BackColor = $script:BuilderColors.Text
     $btnOpenSetup.Add_Click({
         $dlg = New-Object System.Windows.Forms.OpenFileDialog
         $dlg.Filter = 'Phoenix setup (*.phoenix.json)|*.phoenix.json'
@@ -771,12 +896,9 @@ function Show-MainForm {
         }
     })
 
-    $btnBuild = New-SetupButton 'BUILD USB' 660 12 160 36
-    $btnBuild.BackColor = $script:Colors.Success
+    $btnBuild = New-SetupButton 'BUILD USB' 740 12 140 36
+    $btnBuild.BackColor = $script:BuilderColors.Success
     $btnBuild.Add_Click({
-        $script:Setup.Modules = @(
-            $script:ModuleCheckboxes.Keys | Where-Object { $script:ModuleCheckboxes[$_].Checked }
-        )
         $drive = $script:cmbDrive.SelectedItem
         if (-not $drive) {
             [System.Windows.Forms.MessageBox]::Show('Select a target USB drive first.',
@@ -785,9 +907,12 @@ function Show-MainForm {
             return
         }
         $driveLetter = ($drive -split ' ')[0]
-        $confirmMsg = "Build Phoenix USB on $driveLetter ?`n`nModules: $($script:Setup.Modules -join ', ')"
-        if ($script:Setup.Modules -contains 'Nuke') {
-            $confirmMsg += "`n`nWARNING: the NUKE module will be staged on this USB."
+        $stagedNow = @(
+            $script:ModuleCheckboxes.Keys | Where-Object { $script:ModuleCheckboxes[$_].Checked }
+        )
+        $confirmMsg = "Build Phoenix USB on $driveLetter ?`n`nISOs: $($stagedNow -join ', ')"
+        if ($stagedNow -contains 'Nuke') {
+            $confirmMsg += "`n`nWARNING: the ShredOS (nwipe) ISO will be staged on this USB."
         }
         $go = [System.Windows.Forms.MessageBox]::Show($confirmMsg, 'Confirm USB build',
             [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
@@ -803,6 +928,7 @@ function Show-MainForm {
 
     $ctrlPanel.Controls.Add($driveLabel)
     $ctrlPanel.Controls.Add($script:cmbDrive)
+    $ctrlPanel.Controls.Add($btnVerifyVentoy)
     $ctrlPanel.Controls.Add($btnNewSetup)
     $ctrlPanel.Controls.Add($btnOpenSetup)
     $ctrlPanel.Controls.Add($btnBuild)
@@ -816,7 +942,7 @@ function Show-MainForm {
     $logLabel = New-Object System.Windows.Forms.Label
     $logLabel.Text = 'Build log (passwords are never written here)'
     $logLabel.Font = New-Object System.Drawing.Font('Segoe UI', 9, [System.Drawing.FontStyle]::Italic)
-    $logLabel.ForeColor = $script:Colors.Text
+    $logLabel.ForeColor = $script:BuilderColors.Text
     $logLabel.AutoSize = $true
     $logLabel.Dock = [System.Windows.Forms.DockStyle]::Top
 
@@ -826,8 +952,8 @@ function Show-MainForm {
     $script:LogBox.ScrollBars = [System.Windows.Forms.ScrollBars]::Vertical
     $script:LogBox.Dock = [System.Windows.Forms.DockStyle]::Fill
     $script:LogBox.Font = New-Object System.Drawing.Font('Consolas', 9)
-    $script:LogBox.BackColor = $script:Colors.DarkBg
-    $script:LogBox.ForeColor = $script:Colors.TextLight
+    $script:LogBox.BackColor = $script:BuilderColors.DarkBg
+    $script:LogBox.ForeColor = $script:BuilderColors.TextLight
 
     $logPanel.Controls.Add($script:LogBox)
     $logPanel.Controls.Add($logLabel)
@@ -849,4 +975,9 @@ if ($SetupFile) {
     Write-SetupLog "Preloading setup file is stubbed in this scaffold." 'Warn' @{ File = $SetupFile }
 }
 
-Show-MainForm
+# Dot-sourced by scripts/tools/gui-launcher.ps1 (File -> USB Builder...),
+# which calls Show-PhoenixBuilder. Running this file directly opens the
+# builder too (dev convenience).
+if ($MyInvocation.InvocationName -ne '.') {
+    Show-PhoenixBuilder
+}
