@@ -263,4 +263,8 @@ schema is the down payment). The honest constraints, stated plainly:
   tracked as its own workstream. The image-proof minter pair is complete:
   `tools/New-ImageProof.sh` (Linux backup side) + `tools/New-ImageProof.ps1`
   (Windows/WinPE side) emit byte-compatible `phoenix-image-proof/1`
-  manifests; the nuke gate accepts either.
+  manifests; the nuke gate accepts either. The data-backup pair is complete:
+  `tools/phoenix-data-backup.sh` (Linux backup side) + `tools/New-PhoenixDataBackup.ps1`
+  (WinPE side) emit the same `phoenix-data-backup/1` manifest with the same
+  dirty-data contract (executables skipped unless opted in, per-file SHA-256,
+  scan-before-restore marker).
