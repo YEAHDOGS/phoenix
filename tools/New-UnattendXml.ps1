@@ -111,6 +111,9 @@ param(
     [Parameter()]
     [string]$OutputPath = (Join-Path $PSScriptRoot '..\win-install\staging\autounattend.xml'),
 
+    [Parameter()]
+    [switch]$EnableDeveloperMode,
+
     [switch]$Force
 )
 
@@ -244,6 +247,21 @@ $content = $content.Replace('{{EDITION_NAME}}', $Edition)
 $content = $content.Replace('{{ACCOUNT_NAME}}', (Get-XmlEscaped $Username))
 $content = $content.Replace('{{ACCOUNT_PASSWORD_B64}}', $adminB64)
 
+# --- optional Developer Mode section (specialize, RunSynchronous order 6) ----
+if ($EnableDeveloperMode) {
+    # First line inherits the template's 4-tab indent; the rest is explicit.
+    $devModeBlock = "<RunSynchronousCommand wcm:action=`"add`">`n" +
+                    "`t`t`t`t`t<Order>6</Order>`n" +
+                    "`t`t`t`t`t<Path>reg.exe add `"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock`" /v AllowDevelopmentWithoutDevLicense /t REG_DWORD /d 1 /f</Path>`n" +
+                    "`t`t`t`t`t<Description>Enable Windows Developer Mode (sideloading, symlinks without elevation)</Description>`n" +
+                    "`t`t`t`t</RunSynchronousCommand>"
+    $content = $content.Replace('{{DEV_MODE_XML}}', $devModeBlock)
+}
+else {
+    # Remove the token's whole line so no blank indented line is left behind.
+    $content = [regex]::Replace($content, '(?m)^\t*{{DEV_MODE_XML}}\r?\n', '')
+}
+
 # --- safety: no token may survive -------------------------------------------
 $leftover = [regex]::Match($content, '\{\{[A-Z_]+\}\}')
 if ($leftover.Success) {
@@ -271,6 +289,7 @@ Write-Host "Wrote $OutputPath"
 Write-Host "  Computer : $ComputerName"
 Write-Host "  Admin    : $Username (Administrators, AutoLogon x1)"
 if ($StandardUsername -ne '') { Write-Host "  Standard : $StandardUsername (Users)" }
+Write-Host "  Dev mode : $(if ($EnableDeveloperMode) { 'ENABLED (specialize, order 6)' } else { 'off' })"
 Write-Host "  Timezone : $TimeZone"
 Write-Host "  Edition  : $Edition"
 Write-Host ""
