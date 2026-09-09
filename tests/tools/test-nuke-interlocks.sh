@@ -187,6 +187,56 @@ tr() { # tr <id> <expected-idx-or-FAIL>
 tr 1 0; tr 2 1; tr SATATEST001 0; tr USBTEST002 1
 tr /dev/sda 0; tr /dev/sdb 1; tr 0 FAIL; tr 3 FAIL; tr 99 FAIL; tr bogus FAIL
 
+#--- serial ambiguity: duplicated serials refuse, never first-match-wins --------
+# A1: fixture with two disks reporting the SAME serial (VM clone / dup firmware).
+D_DEV=(/dev/sda /dev/sdb); D_MODEL=(A B); D_SERIAL=(DUP111 DUP111)
+D_SIZE=(100 100); D_TRAN=(sata sata); D_MEDIA=(HDD HDD); D_FLAGS=("" "")
+D_COUNT=2
+[[ "$(serial_count DUP111)" == "2" ]] && pass "serial_count(DUP111)=2" \
+    || fail "serial_count(DUP111)" "expected 2, got '$(serial_count DUP111)'"
+[[ "$(serial_count NOSUCH)" == "0" ]] && pass "serial_count(NOSUCH)=0" \
+    || fail "serial_count(NOSUCH)" "expected 0"
+# A2: serial-based selection of a duplicated serial is refused (not resolved
+#     to the first disk).
+tr DUP111 FAIL
+# A3: refusal message names the ambiguity (stdout to stderr, mentions disks).
+out="$(resolve_id "DUP111" 2>&1)" || true
+if [[ "$out" == *"ambiguous"* ]]; then
+    pass "resolve_id(DUP111) refusal explains ambiguity"
+else
+    fail "resolve_id(DUP111) refusal explains ambiguity" "message lacks 'ambiguous'"
+fi
+# A4: row number and /dev node still resolve mechanically...
+tr 1 0; tr /dev/sda 0; tr /dev/sdb 1
+# A5: ...but arming them is refused structurally: typed confirmation of a
+#     duplicated serial cannot prove WHICH disk was meant.
+if refuse_dup_serial "DUP111" /dev/sda >/dev/null 2>&1; then
+    fail "refuse_dup_serial(DUP111) refuses"
+else
+    pass "refuse_dup_serial(DUP111) refuses"
+fi
+out="$(refuse_dup_serial "DUP111" /dev/sda 2>&1)" || true
+if [[ "$out" == *"MULTIPLE disks"* ]]; then
+    pass "refuse_dup_serial(DUP111) names candidate disks"
+else
+    fail "refuse_dup_serial(DUP111) names candidate disks"
+fi
+# A6: unique serials are NOT refused -- normal arming path unaffected.
+D_DEV=(/dev/sda /dev/sdb); D_SERIAL=(SATATEST001 USBTEST002); D_COUNT=2
+tr SATATEST001 0
+refuse_dup_serial "SATATEST001" /dev/sda >/dev/null 2>&1 \
+    && pass "refuse_dup_serial(unique) allows" \
+    || fail "refuse_dup_serial(unique) allows" "unique serial was refused"
+# A7: empty/unknown serials pass through to the (separate) no-serial refusal.
+D_DEV=(/dev/sda /dev/sdb); D_SERIAL=(unknown unknown); D_COUNT=2
+refuse_dup_serial "unknown" /dev/sda >/dev/null 2>&1 \
+    && pass "refuse_dup_serial(unknown) defers to no-serial gate" \
+    || fail "refuse_dup_serial(unknown) defers to no-serial gate"
+# restore the unit-test fixture used by later sections
+D_DEV=(/dev/sda /dev/sdb); D_MODEL=(A B); D_SERIAL=(SATATEST001 USBTEST002)
+D_SIZE=(1 2); D_TRAN=(sata usb); D_MEDIA=(HDD "USB HDD"); D_FLAGS=("" "BOOT-USB")
+D_COUNT=2
+
 #--- typed_confirmation: pipe-fed input can never arm (the TTY interlock) -----
 echo "== typed_confirmation: piped input cannot arm (unit) =="
 # U1: the CORRECT serial, piped, is refused -- stdin is not a terminal.
