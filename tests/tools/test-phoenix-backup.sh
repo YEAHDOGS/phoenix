@@ -113,6 +113,49 @@ run "gzip backup exits 0" 0 -- B --out "$OUT6" --proof-out "$TMP/proofs6" --comp
 [[ "$(manifest_val "$OUT6/backup.manifest" stream_sha512)" == "$DISK_SHA" ]] \
     && pass "gzip round-trip stream hash matches disk" || fail "gzip round-trip"
 
+# T9: defaults + auto-selection contract -------------------------------------------
+# zstd verdict: 'auto' must pick the strongest compressor actually present;
+# the manifest + state record what ran, and chunk_mib defaults to 512.
+EXPECTED_COMP="none"
+command -v gzip >/dev/null 2>&1 && EXPECTED_COMP="gzip"
+command -v zstd >/dev/null 2>&1 && EXPECTED_COMP="zstd"
+OUT9="$TMP/img9"
+run "default run exits 0" 0 -- "$TOOL" --source "$DISK" --source-serial "$SERIAL" \
+    --allow-file --out "$OUT9" --proof-out "$TMP/proofs9" --operator tester
+[[ "$(manifest_val "$OUT9/backup.manifest" chunk_mib)" == "512" ]] \
+    && pass "default chunk_mib=512 recorded in manifest" || fail "chunk_mib default 512"
+[[ "$(manifest_val "$OUT9/backup.manifest" chunk_count)" == "1" ]] \
+    && pass "3.5MiB / 512MiB chunks = 1" || fail "default chunk count"
+[[ "$(manifest_val "$OUT9/backup.manifest" compressor)" == "$EXPECTED_COMP" ]] \
+    && pass "auto picks strongest available compressor ($EXPECTED_COMP)" || fail "auto compressor selection"
+[[ "$(manifest_val "$OUT9/backup.manifest" stream_sha512)" == "$DISK_SHA" ]] \
+    && pass "default-run stream hash matches disk" || fail "default-run stream hash"
+grep -q "^compressor=$EXPECTED_COMP$" "$OUT9/.phoenix-backup.state" \
+    && pass "resume state binds the picked compressor" || fail "state compressor binding"
+grep -q "^chunk_mib=512$" "$OUT9/.phoenix-backup.state" \
+    && pass "resume state records chunk_mib" || fail "state chunk_mib"
+# mismatched compressor on resume is a hard failure (chunks don't mix)
+run "compressor change vs state fails" 1 -- "$TOOL" --source "$DISK" \
+    --source-serial "$SERIAL" --allow-file --out "$OUT9" --proof-out "$TMP/proofs9b" \
+    --compressor none --operator tester
+# zstd requested but absent fails closed (no silent fallback)
+if command -v zstd >/dev/null 2>&1; then
+    run "explicit zstd path works when installed" 0 -- B --compressor zstd \
+        --out "$TMP/img9z" --proof-out "$TMP/proofs9z"
+    ls "$TMP"/img9z/chunk-*.img.zst >/dev/null 2>&1 \
+        && pass "zstd chunks carry .zst extension" || fail "zstd chunk extension"
+else
+    run "explicit zstd fails closed when absent" 1 -- B --compressor zstd --out "$TMP/img9z"
+fi
+# chunk_mib validation gate
+run "--chunk-mib 0 fails" 1 -- B --chunk-mib 0 --out "$TMP/o9a"
+run "--chunk-mib abc fails" 1 -- B --chunk-mib abc --out "$TMP/o9b"
+# PS twin: compressor default is DISM's own; manifest records dism-wim
+grep -q "compressor=dism-wim" "$TWIN" \
+    && pass "twin records compressor=dism-wim" || fail "twin compressor record"
+grep -q "\[ValidateSet('Max','Fast','None')\]" "$TWIN" \
+    && pass "twin documents dism compression set" || fail "twin compression set"
+
 # T7: structural parity with the WinPE twin (no pwsh on this box -- grep contract) --
 [[ -f "$TWIN" ]] && pass "WinPE twin exists" || fail "WinPE twin exists"
 for key in 'format=phoenix-backup/1' 'stream_sha512' 'source_serial' 'image_name' \
