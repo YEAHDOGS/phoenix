@@ -106,23 +106,44 @@ WinPE add-on. Steps:
 The WinPE WIM is rebuilt whenever the script bundle changes; the
 `phoenix/WinPE/` folder holds the build notes so it's reproducible.
 
-## 5. `phoenix-config.json` schema
+## 5. `phoenix-config.json` schema (OS-agnostic from day one)
 
-Written to the **USB root** by the config GUI running on a **working
-Windows machine** (sibling worker's domain — never build GUI for WinPE).
-Boot-side scripts read it headless: the WinPE startup hook and the answer
-file generator both consume this one file.
+Written to the **USB root** by the config GUI — a **Svelte 5 + Tauri 2**
+desktop app (sibling worker owns the app itself; this doc treats it as the
+config producer). Founder-validated pick: Tauri ships ~3–30 MB binaries vs
+Electron's 150–250 MB, ~50–100 MB RAM vs 200–500 MB, and it's cross-platform —
+the same GUI shell can drive future macOS/Linux blades.
+
+Boot-side scripts read the config headless: the WinPE startup hook and the
+answer-file generator consume this one file today; future blades consume the
+same file tomorrow. **Schema rule:** plain OS-agnostic JSON — no Windows-only
+assumptions baked into the top-level keys. Windows-specific options live under
+`os.answerFile` where non-Windows blades ignore them.
 
 ```jsonc
 {
   "schemaVersion": 1,
-  "computerName": "BRANDON-PC",
-  "username": "brandon",
-  "password": "correct-horse-battery-staple",   // see security note below
-  "timezone": "Central Standard Time",
-  "edition": "Professional",
-  "productKey": "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX", // or null for digital license
-  "apps": ["googlechrome", "steam", "ableton-live-trial"]  // choco package ids
+  "machine": {
+    "computerName": "BRANDON-PC",
+    "timezone": "Central Standard Time"
+  },
+  "credentials": {
+    "username": "brandon",
+    "password": "correct-horse-battery-staple"   // see security note below
+  },
+  "os": {
+    "family": "windows",          // "windows" today; "linux" / "macos" later
+    "edition": "Professional",
+    "productKey": "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",  // or null for digital license
+    "answerFile": {               // windows-only; ignored by other blades
+      "disableWPBT": true,
+      "partitionLayout": "gpt-uefi"
+    }
+  },
+  "apps": [
+    { "id": "googlechrome", "source": "choco" },
+    { "id": "steam",        "source": "choco" }
+  ]
 }
 ```
 
@@ -176,18 +197,25 @@ typed-confirmation + serial-number interlock from the runbook.
 
 ## 9. Build flow
 
-Two halves, split by design:
+Three halves, split by design:
 
-1. **Config GUI (working Windows machine, sibling worker):** form-driven
-   `phoenix-config.json` + `autounattend.xml` generation, machine
-   profiles, app picker. Writes to the Ventoy stick's exFAT partition,
-   which is plain-readable.
+1. **Config GUI — Svelte 5 + Tauri 2 app (sibling worker owns it):** form-driven
+   `phoenix-config.json` + `autounattend.xml` generation, machine profiles, app
+   picker. Writes to the Ventoy stick's exFAT partition, which is plain-readable.
 2. **`tools/Build-PhoenixUsb.ps1` (this repo):** stages a Ventoy-prepared
    USB — verifies Ventoy is present, copies the ISO set with hash checks,
    writes `ventoy/ventoy.json` (menu aliases + auto-install), writes
    `phoenix-config.json` from parameters, stages scripts/tools, writes
    `manifest.json`. Static review only so far — **Windows testing required**
    before it touches a real stick.
+3. **Bash twins (new workstream, tracked separately):** every Phoenix
+   PowerShell script gets a bash equivalent for the Linux rescue side —
+   `tools/<name>.ps1` ↔ `tools/<name>.sh`, same behavior, two implementations.
+   Windows-side stays PowerShell, Linux-side is bash. This is mechanical parity
+   work, not a rewrite of the Windows side: port behavior, keep the contract
+   (inputs, outputs, exit codes) identical so the config and runbook work
+   against either. The stager copies both trees (`phoenix/scripts/` carries
+   `*.ps1` + `*.sh` side by side).
 
 ## 10. Rejected alternatives (and why)
 
@@ -199,7 +227,23 @@ Two halves, split by design:
   Cannot image a disk. (Documented here because it keeps coming up.)
 - **GUI in WinPE:** founder veto. WinPE is headless scripts + Explorer++.
 
-## 11. Open items
+## 12. Cross-platform future (honest constraint)
+
+Don't build macOS/Linux blades now — but design for them (§5's OS-agnostic
+schema is the down payment). The honest constraints, stated plainly:
+
+- **The Ventoy multi-boot USB is a PC thing.** Apple Silicon Macs will not
+  boot it, full stop. Mac support later is a **separate blade** (Apple's
+  `startosinstall` / MDM path), not the same stick. Don't pretend the USB
+  covers Macs.
+- **A Linux reinstall blade can reuse the Ventoy stick later.** Drop a distro
+  ISO in `ISOs/`, add a menu alias, drive it from the same
+  `phoenix-config.json` (`os.family: "linux"`) — the bash twins (§9.3) are the
+  execution layer for that blade. No new boot architecture needed.
+- The Tauri config GUI is cross-platform from day one, so the same app
+  produces configs for all future blades.
+
+## 13. Open items
 
 - Phoenix WinPE ISO is not built yet (needs the ADK build on a clean
   machine — §4 is the recipe).
@@ -209,3 +253,6 @@ Two halves, split by design:
   test against the generated `autounattend.xml`.
 - Bootable AV rescue ISO for the ANALYZE entry is the forensics worker's
   call — the menu has room for it whenever it lands.
+- Bash twins (§9.3) are unstarted: no `.sh` counterparts exist yet. Tracked as
+  its own workstream — parity ports per script, `tools/<name>.ps1` ↔
+  `tools/<name>.sh`, contract-identical behavior.
