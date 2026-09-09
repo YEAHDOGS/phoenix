@@ -30,7 +30,7 @@ the module never relies on overwrite alone for flash media — see §3.
 | 3 | **Never auto-select** | No default target. `<id>` must be a row number, `/dev` node, by-id path, or serial. |
 | 4 | **Boot-USB guard** | The booted USB is detected (mounted partitions + `/proc/cmdline` root device) and **refused structurally** — the script exits, it does not warn-and-continue. |
 | 5 | **Mounted-disk guard** | Any disk with a mounted partition is refused. You cannot nuke live media. |
-| 6 | **Serial-required confirmation** | Arming requires typing the target's exact serial (or `NUKE <serial>`). Y/N is not accepted. Disks without a readable serial are refused. |
+| 6 | **Serial-required confirmation** | Arming requires typing the target's exact serial (or `NUKE <serial>`) on a **real terminal** — stdin must be a TTY, so piped or scripted input (`echo $serial \| Invoke-Nuke.sh --nuke ...`) is refused structurally. Y/N is not accepted. Disks without a readable serial are refused. |
 | 7 | **Confirmation logging** | The typed confirmation is written to the USB log with a UTC timestamp before anything destructive runs. |
 | 8 | **Abort window** | 5-second countdown after arming (Ctrl-C aborts; `--no-countdown` only for scripted VM tests). |
 | 9 | **Identity re-check** | The serial is re-read immediately before execution; if it changed, the run aborts. |
