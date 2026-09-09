@@ -255,6 +255,9 @@ schema is the down payment). The honest constraints, stated plainly:
   test against the generated `autounattend.xml`.
 - Bootable AV rescue ISO for the ANALYZE entry is the forensics worker's
   call — the menu has room for it whenever it lands.
-- Bash twins (§9.3) are unstarted: no `.sh` counterparts exist yet. Tracked as
-  its own workstream — parity ports per script, `tools/<name>.ps1` ↔
-  `tools/<name>.sh`, contract-identical behavior.
+- Bash twins (§9.3) are underway: `tools/Build-PhoenixUsb.sh` (Linux USB
+  stager, parity with `Build-PhoenixUsb.ps1`) and `tools/New-ImageProof.sh`
+  (backup-phase image-proof writer; bash-native, the Linux boot side is the
+  only side that needs it) have landed. Remaining parity ports per script,
+  `tools/<name>.ps1` ↔ `tools/<name>.sh`, contract-identical behavior —
+  tracked as its own workstream.
