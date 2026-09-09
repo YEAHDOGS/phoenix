@@ -97,7 +97,17 @@ WinPE add-on. Steps:
 4. While mounted, inject Phoenix: copy `phoenix/scripts/` and the extracted
    **Explorer++** into the WIM (e.g. `X:\phoenix\`), and set the startup
    hook (`winpeshl.ini` or `Startnet.cmd`) to scan mounted drives for
-   `\phoenix-config.json` at USB root and launch the Phoenix menu.
+   `\phoenix-config.json` at USB root and launch the Phoenix menu —
+   `tools/Invoke-PhoenixMenu.ps1` (WinPE side) / `tools/phoenix-menu.sh`
+   (Linux rescue side). The menu pair is the in-environment
+   Analyze/Backup/Nuke/Reinstall dispatcher: it reads
+   `phoenix-config.json` headlessly (no jq — plain text parsing on Linux,
+   `ConvertFrom-Json` in WinPE), parses only the non-sensitive fields
+   (`schemaVersion`, `machine.computerName`, `os.family` — the
+   install-time password is never printed, echoed, or logged), and hands
+   Nuke off to the nuke tools, which enforce their own interlocks. The
+   menu itself is never destructive. Regression suite:
+   `tests/tools/test-phoenix-menu.sh` (53 cases).
 5. `MakeWinPEMedia /ISO C:\WinPE_amd64 C:\staging\phoenix-winpe.iso`,
    then drop it in `ISOs/` on the Ventoy stick.
 6. Increase scratch space (`/Set-ScratchSpace`) if the PowerShell tooling
