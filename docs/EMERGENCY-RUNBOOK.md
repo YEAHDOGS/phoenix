@@ -49,6 +49,16 @@ Download the ISO from Microsoft, then verify it with the repo's checker:
 .\scripts\checksum\check.ps1 -Path .\Win11_24H2_English_x64.iso
 ```
 
+On a Linux clean machine, the bash twin emits the same manifest contract:
+
+```bash
+./scripts/checksum/check.sh Win11_24H2_English_x64.iso --out iso-manifest.csv
+```
+
+(Both twins hash SHA-256 and share the `Path,Hash` CSV contract, so a manifest
+written by either side verifies with the other side's comparer:
+`compare.sh` ↔ `compare.ps1`'s `Confirm-Integrity`.)
+
 > [VERIFY] `scripts/checksum/check.ps1` computes **SHA-256**, not SHA-512. Microsoft
 > publishes SHA-256 hashes for Windows 11 ISOs, so check.ps1 works as-is against
 > the official published hash — **match the algorithm to whatever hash your ISO
@@ -160,7 +170,20 @@ to completion; a failing disk can take hours.
 Let Rescuezilla's post-backup check complete. Then independently confirm: the
 image files exist on the target, sizes are plausible (compressed but non-trivial),
 and — if the build supports it — open the image in Image Explorer / run the
-"check image" step.
+"check image" step. Additionally, write a SHA-256 manifest of the image **now**,
+while the target is still attached to the air-gapped machine, so the later
+Castle copy (Step 2.6) can be proven bit-identical. From a Linux shell on the
+Rescuezilla desktop (target mounted at e.g. `/mnt/usb`):
+
+```bash
+./scripts/checksum/check.sh /mnt/usb/laptop-fulldisk-2026-09-09 \
+    --out /mnt/usb/laptop-fulldisk-2026-09-09.manifest.csv
+./scripts/checksum/compare.sh /mnt/usb/laptop-fulldisk-2026-09-09.manifest.csv
+# expected tail:  -- N/N verified --
+```
+
+Keep the manifest file next to the image. It is the fingerprint the nuke gate
+compares against after the copy.
 > [VERIFY] Exact menu labels for the image-check step vary by Rescuezilla version.
 > Minimum bar: files present, sizes sane, post-backup check green. **If the check
 > fails, re-run the backup. Do not proceed to Phase 3 on a failed image.**
@@ -177,7 +200,28 @@ image. Belt and suspenders: this is what you actually restore from in Phase 4.
 Rename the full image `QUARANTINE-INFECTED-<date>`. Move the external drive to a
 **clean machine** and copy the image onto Castle's 10TB drive for long-term
 storage — the copy must be initiated from the clean side, never over the network
-from the infected laptop. The infected machine stays air-gapped until it is wiped.
+from the infected laptop. Use the repo's copy-verify script, which fingerprints
+the image, copies it, re-fingerprints the copy, and **fails closed** on any
+mismatch (a bad copy reports failure; it never reports success):
+
+```bash
+# on the CLEAN machine -- set once, e.g. in ~/.profile
+export PHOENIX_CASTLE_TARGET=/mnt/castle/quarantine   # <-- real share path goes here
+./scripts/emergency/Send-ImageToCastle.sh \
+    -i /mnt/usb/laptop-fulldisk-2026-09-09
+```
+
+Windows twin (same contract, robocopy instead of rsync):
+
+```powershell
+$env:PHOENIX_CASTLE_TARGET = "\\CASTLE\quarantine"   # <-- real share path goes here
+.\scripts\emergency\Send-ImageToCastle.ps1 -ImageDir E:\laptop-fulldisk-2026-09-09
+```
+
+The script requires you to type `CLEAN` on a real terminal (piped input is
+refused), writes the copy to `QUARANTINE-INFECTED-<date>/` under the target, and
+leaves `image-proof.txt` beside it — the fingerprint record Phase 3's nuke gate
+checks. Also re-run the manifest from Step 2.4 against the copy; both must agree.
 
 **Phase 2 exit gate:** verified full-disk image exists in two places (external
 drive + Castle copy in progress or done) AND a separate data-only backup exists.
@@ -195,24 +239,43 @@ Only then may Phase 3 begin.
 
 **Step 3.2 — Follow the nuke module's interlocked flow.**
 `tools/Invoke-Nuke.sh` (bash — the wipe runs in the Linux boot environment,
-so there is deliberately no `.ps1`) implements the safety flow:
+so there is deliberately no `.ps1`) implements the safety flow, specified in
+`docs/NUKE-SAFETY.md` (nuke workstream branch) and enforced by the interlock
+library:
 
 - **Dry-run default:** no flags (or `--whatif`) only enumerates disks and exits.
+  Always run this first and match the target serial to the physical drive with
+  your own eyes (see Appendix D for what the enumeration output looks like and
+  which columns you are reading).
 - **Explicit enumeration:** numbered table of model / serial / size / bus / media class.
 - **Structural refusals:** the boot USB and any disk with mounted partitions are refused, hard.
-- **Two-factor typed confirmation, real TTY only:** type the target's exact **serial AND the exact size as displayed** (e.g. `SATATEST001 931.5 GB`, or `NUKE <serial> <size>`). Piped or scripted input is refused — `echo $serial | ...` can never arm a wipe.
+- **Two-factor typed confirmation, real TTY only:** type the target's exact
+  **serial AND model exactly as shown** on the printed target card, e.g.
+  `S5YBNJ0R123456A Samsung SSD 870 EVO 1TB` (or `NUKE S5YBNJ0R123456A Samsung SSD 870 EVO 1TB`).
+  Case-sensitive, full string, no Y/N prompts anywhere. Piped or scripted input
+  is refused — `echo $serial | ...` can never arm a wipe.
+- **Analyze-first fingerprint gate:** the boot menu's Analyze entry must run
+  before Nuke unlocks — it snapshots each disk's serial/model/size plus a
+  SHA-256 of the first 1 MiB (partition table + bootloader) into
+  `disk-fingerprints.json`. A disk swapped after Analyze fails the hash check
+  at arm time.
 - **Abort window:** 5-second countdown after arming (Ctrl-C aborts).
 - **Identity re-check:** the serial is re-read immediately before execution; if it changed, the run aborts.
 - **Method per media (NIST 800-88):** HDD → nwipe DoD 5220.22-M; SATA SSD → ATA Secure Erase; NVMe → `nvme format --ses=1`.
+- **Image-proof gate:** the nuke refuses to arm without `image-proof.txt` from
+  Step 2.6 (runbook invariant 1: no verified image, no wipe). If the gate
+  complains, you skipped a backup step — go back.
 - **Full log** written to the USB.
 
 Do a dry run first (`Invoke-Nuke.sh` with no flags). Match the serial number to the physical drive with your own eyes before typing anything.
 > **Branch note:** the nuke module is being built on the nuke workstream branch
-> and is not in every worktree yet. Before executing Phase 3, confirm
-> `tools/Invoke-Nuke.sh` is present on your USB and read its `--help`. If it
-> isn't there yet, the answer file's own diskpart wipe (Phase 4, Step 4.1) is
-> the only wipe path — it targets DISK 0 with no confirmation, so triple-check
-> boot order and disconnect all USB target disks first.
+> and is not in every worktree yet. Before executing Phase 3, stage onto your
+> USB from that branch: `tools/Invoke-Nuke.sh`, `tools/Get-DiskInventory.sh`
+> (+ `.ps1` twin), `tools/lib/nuke-interlock.sh`, `tools/Confirm-NukeTarget.ps1`,
+> and `docs/NUKE-SAFETY.md` — then read `--help` on the USB before arming
+> anything. If those files aren't staged yet, the answer file's own diskpart
+> wipe (Phase 4, Step 4.1) is the only wipe path — it targets DISK 0 with no
+> confirmation, so triple-check boot order and disconnect all USB target disks first.
 
 **Step 3.3 — Sanity re-check post-wipe.** After the wipe completes, boot
 Rescuezilla again and confirm the disk reads as unpartitioned/empty. A wipe you
@@ -286,7 +349,10 @@ Microsoft/Google "My Devices" pages for the unknown devices that started this.
 1. Which machine is the **clean machine** for Phase 0? (Prep must not touch the
    infected laptop; if there's no second machine, say so — that changes the plan.)
 2. Where exactly is Castle's 10TB target — SMB share name/path, and which
-   credentials? Needed for the Veeam scheduled job in Step 4.4.
+   credentials? Needed for the Veeam scheduled job in Step 4.4. Until answered,
+   Step 2.6 uses the `PHOENIX_CASTLE_TARGET` env var (e.g.
+   `export PHOENIX_CASTLE_TARGET=/mnt/castle/quarantine`) — set it to the real
+   path before the run.
 3. Are the Phoenix USB and Rescuezilla USB already on hand, or do they need to be
    bought? (Sizes: ≥16 GB and ≥2 GB.)
 4. Is the infected laptop's disk BitLocker-encrypted? (Determines whether
@@ -294,3 +360,85 @@ Microsoft/Google "My Devices" pages for the unknown devices that started this.
 5. Should the Analyze/Backup/Nuke/Reinstall **menu** be built into the Phoenix USB
    before this run, or are the manual phases in this runbook sufficient for
    this week's emergency?
+
+## Appendix D — Disk enumeration examples (what you're reading)
+
+All outputs below are **EXAMPLES** — fictional serials. Your screen will show
+your real disks. The columns that matter for the interlock are **serial** and
+**model**: the typed confirmation in Phase 3 must match them exactly as shown.
+
+**Linux — the raw inventory source** (`lsblk -dno NAME,MODEL,SERIAL,SIZE,TRAN,RM -P`,
+what `tools/Get-DiskInventory.sh` parses):
+
+```
+NAME="sda" MODEL="Samsung SSD 870 EVO 1TB" SERIAL="S5YBNJ0R123456A" SIZE="931.5G" TRAN="sata" RM="0"
+NAME="sdb" MODEL="SanDisk Ultra USB 3.0"   SERIAL="4C530001234567890123"        SIZE="57.3G"  TRAN="usb"  RM="1"
+NAME="nvme0n1" MODEL="WD Black SN850X 1TB" SERIAL="234567890123"                SIZE="931.5G" TRAN="nvme" RM="0"
+```
+
+**Linux — the structured contract** (`./tools/Get-DiskInventory.sh`, same shape
+as the `.ps1` twin; this is what the confirmation gate reads — never your memory):
+
+```json
+[
+  {
+    "id": 1,
+    "dev": "/dev/sda",
+    "model": "Samsung SSD 870 EVO 1TB",
+    "serial": "S5YBNJ0R123456A",
+    "size_bytes": 1000204886016,
+    "size_human": "931.5 GiB",
+    "transport": "SATA",
+    "removable": false,
+    "mounted": false,
+    "media": "ssd"
+  },
+  {
+    "id": 2,
+    "dev": "/dev/sdb",
+    "model": "SanDisk Ultra USB 3.0",
+    "serial": "4C530001234567890123",
+    "size_bytes": 61505273856,
+    "size_human": "57.3 GiB",
+    "transport": "USB",
+    "removable": true,
+    "mounted": true,
+    "media": "usb"
+  }
+]
+```
+
+Note disk 2 (`/dev/sdb`, the boot USB): `"mounted": true` — it is **listed but
+structurally refused** as a nuke target. The menu shows it greyed out on purpose;
+hiding it would invite "where did my disk go?" workarounds.
+
+**NVMe detail** (`nvme list` — confirms the serial the interlock will re-read
+immediately before execution):
+
+```
+Node             SN                   Model                Namespace Usage
+/dev/nvme0n1     234567890123         WD Black SN850X 1TB  1         931.51 GB
+```
+
+**Windows — the same inventory from the WinPE side** (`Get-Disk | Format-Table`):
+
+```
+Number FriendlyName          SerialNumber       Size BusType
+------ ------------          ------------       ---- -------
+0      Samsung SSD 870 EVO   S5YBNJ0R123456A    931 GB SATA
+1      SanDisk Ultra USB 3.0 4C530001234567890123 57 GB USB
+```
+
+**What the typed confirmation looks like** (Phase 3, Step 3.2 — real TTY only):
+
+```
+TARGET: [1] Samsung SSD 870 EVO 1TB  SN S5YBNJ0R123456A  931.5 GiB
+Type the serial and model EXACTLY as shown to arm the wipe:
+> S5YBNJ0R123456A Samsung SSD 870 EVO 1TB
+```
+
+Physical cross-check before typing: the serial on the drive's label (or in the
+laptop's BIOS/UEFI storage page) must match the `SERIAL`/`SerialNumber` column
+above. If the on-screen serial doesn't match the hardware you intend to wipe,
+**stop** — the fingerprint gate (§4 of `docs/NUKE-SAFETY.md`) will also refuse a
+disk that changed since the Analyze snapshot, but your eyes are the first gate.
