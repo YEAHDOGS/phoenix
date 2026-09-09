@@ -282,4 +282,12 @@ schema is the down payment). The honest constraints, stated plainly:
   (WinPE side) — the Analyze/Backup/Nuke/Reinstall dispatcher that reads
   `phoenix-config.json` headlessly (no jq) and hands Nuke to the nuke tools;
   the menu itself is never destructive (53-case suite
-  `tests/tools/test-phoenix-menu.sh`).
+  `tests/tools/test-phoenix-menu.sh`). The quarantine-copy tool landed:
+  `tools/phoenix-quarantine-copy.sh` (runbook Step 2.7, Linux clean-machine
+  side) copies a verified image to direct-attached long-term storage into a
+  `QUARANTINE-INFECTED-<date>/` layout, refuses unverified images and network
+  filesystems, and re-verifies every chunk on the target (32-case suite
+  `tests/tools/test-phoenix-quarantine-copy.sh`). Its Windows twin
+  (`New-PhoenixQuarantineCopy.ps1`) is the next step; the
+  `phoenix-quarantine-copy/1` manifest schema in the tool header is the
+  contract it must emit.

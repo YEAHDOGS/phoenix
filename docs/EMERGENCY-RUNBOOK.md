@@ -322,11 +322,43 @@ by default, and hashes every file:
 > Treat this folder as **dirty**. The full-disk image is the quarantine archive;
 > the data backup is for selective restore only, after scanning.
 
-**Step 2.7 — Quarantine and copy.**
-Rename the full image `QUARANTINE-INFECTED-<date>`. Move the external drive to a
-**clean machine** and copy the image onto Castle's 10TB drive for long-term
-storage — the copy must be initiated from the clean side, never over the network
-from the infected laptop. The infected machine stays air-gapped until it is wiped.
+**Step 2.7 — Quarantine and copy (scripted path, preferred).**
+Move the external drive to a **clean machine** (never the infected laptop —
+this tool runs from the clean side) and copy the verified image onto Castle's
+10TB drive, straight into the quarantine layout:
+
+```bash
+./tools/phoenix-quarantine-copy.sh \
+  --source /media/usb-target/laptop-fulldisk-2026-09-09 \
+  --target /media/castle-10tb \
+  --date 2026-09-09 \
+  --operator brandon
+```
+
+- Fail-closed: it refuses to copy unless the image has machine-readable proof
+  of verification — a `phoenix-backup/1` manifest with `verify=PASS` (the
+  scripted Step 2.3 path mints this automatically), or `--image-proof <file>`
+  pointing at a `phoenix-image-proof/1` manifest with `verified=YES` (the
+  Rescuezilla GUI path — mint it in Step 2.5 first).
+- It refuses network filesystems (nfs/cifs/smb/sshfs/UNC) — the quarantine
+  copy goes to a **direct-attached** drive only, same air-gap principle as
+  the imaging step.
+- Every chunk is re-verified on the target after the copy (per-chunk SHA-512
+  from the backup state file, then the whole-stream SHA-512 and chunk-set
+  SHA-256 against the manifest — the same verification the imager itself
+  runs). `quarantine-copy.manifest` records `verify=PASS` only when all checks
+  pass. The copy is resumable: re-run skips already-verified chunks and
+  re-copies mismatched ones.
+- It writes the image to `<target>/QUARANTINE-INFECTED-<date>/<image-name>/`
+  and copies the manifest/state/proof alongside it for the forensics paper
+  trail.
+
+> Manual alternative: rename the full image `QUARANTINE-INFECTED-<date>`,
+> move the external drive to a clean machine, and copy it onto Castle's 10TB
+> drive — the copy must be initiated from the clean side, never over the
+> network from the infected laptop. You lose the post-copy re-verification
+> and the copy manifest — the scripted path is strongly preferred.
+> The infected machine stays air-gapped until it is wiped.
 
 **Phase 2 exit gate:** verified full-disk image exists in two places (external
 drive + Castle copy in progress or done) AND an **image-proof manifest** exists
