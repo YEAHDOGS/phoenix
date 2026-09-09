@@ -16,7 +16,9 @@
          aliases + Windows auto_install wiring to /autounattend.xml.
       4. Writes phoenix-config.json (schema v1) to the USB root.
       5. Stages the Phoenix PowerShell toolbox under phoenix/scripts/.
-      6. Writes phoenix/manifest.json with SHA-256 of everything staged.
+      6. Stages the $OEM$ tree (oem/$OEM$) at the USB root: the unattended
+         post-install hooks autounattend.xml invokes (fail-closed if missing).
+      7. Writes phoenix/manifest.json with SHA-256 of everything staged.
 
     STATUS: scaffold. Static review only -- NOT yet run on Windows. Windows
     testing required before it touches a real stick.
@@ -233,6 +235,26 @@ if ((Test-Path $toolboxSrc) -and $PSCmdlet.ShouldProcess("$phoenixDir\scripts", 
 # [VERIFY] autounattend.xml generation from phoenix-config.json is the config
 # GUI's job (sibling worker). Until it lands, place win-install/autounattend.xml
 # at the USB root manually.
+
+# ---------------------------------------------------------------------------
+# 4b. Stage the $OEM$ tree (unattended post-install hooks)
+# ---------------------------------------------------------------------------
+# autounattend.xml invokes C:\Windows\Setup\Scripts\{Specialize,DefaultUser,
+# FirstLogon}.ps1. Windows Setup picks those up from $OEM$\$$\Setup\Scripts\
+# at the USB root automatically. Fail closed: a USB whose answer file calls
+# hooks that aren't there silently skips post-install -- worse than no USB.
+$oemSrc = Join-Path $repoRoot "oem"
+if (-not (Test-Path (Join-Path $oemSrc '$OEM$'))) {
+    throw ("Missing 'oem/`$OEM$' in the repo. The `$OEM$ tree holds the " +
+           "unattended post-install hooks (Specialize/DefaultUser/FirstLogon) " +
+           "that autounattend.xml invokes. Stager refuses to ship without them.")
+}
+$oemDest = Join-Path $usbRoot '$OEM$'
+if ($PSCmdlet.ShouldProcess('$OEM$', "Stage `$OEM$ post-install hooks on Phoenix USB")) {
+    Copy-Item -Path (Join-Path $oemSrc '$OEM$') -Destination $oemDest -Recurse -Force:$Force
+    $hookCount = (Get-ChildItem -Path $oemDest -Recurse -File -Filter "*.ps1" | Measure-Object).Count
+    Write-Verbose "`$OEM$ staged: $hookCount hook scripts."
+}
 
 $manifest = [ordered]@{
     builtAt       = (Get-Date).ToString("o")
