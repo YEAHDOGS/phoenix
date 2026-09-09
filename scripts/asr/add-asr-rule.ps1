@@ -17,19 +17,33 @@ if ($args.Count -lt 2 -or $args[0] -notin $ValidActions) {
 # Fetch online ASR Rules from Microsoft
 . ./fetch-asr-rules.ps1
 
+$validGuids = @()
+
 foreach ($guid in $args) {
     # Check if the passed GUID exists in our ruleset's GUID column
     if ($OnlineRules.GUID -contains $guid) {
         # Find the specific rule object to get the description for the log
         $matchedRule = $OnlineRules | Where-Object { $_.GUID -eq $guid }
-        
-        Write-Host "✅ Valid Rule Found: $($matchedRule.Description)" -ForegroundColor Green
-        Write-Host "   Adding ID: $($guid)" -ForegroundColor Gray
 
-        # Apply the rule (Set to 1 for 'Block' or 'Enabled')
-        Add-MpPreference -AttackSurfaceReductionRules_Ids $guid -AttackSurfaceReductionRules_Actions Enabled
+        Write-Host "Valid Rule Found: $($matchedRule.Description)" -ForegroundColor Green
+        Write-Host "   Adding ID: $($guid)" -ForegroundColor Gray
+        $validGuids += $guid
     }
     else {
-        Write-Host "❌ Warning: '$guid' is not a recognized ASR Rule GUID. Skipping..." -ForegroundColor Yellow
+        Write-Host "Warning: '$guid' is not a recognized ASR Rule GUID. Skipping..." -ForegroundColor Yellow
     }
 }
+
+if ($validGuids.Count -eq 0) {
+    Write-Error "No valid rule GUIDs supplied. Nothing to do."
+    exit 1
+}
+
+# NOTE: Add-MpPreference must receive the full GUID/action arrays in a SINGLE
+# call. Calling it once per rule in a loop silently leaves only the last rule
+# applied, which previously dropped every GUID but the final one.
+$actions = @($validGuids | ForEach-Object { "Enabled" })
+
+Add-MpPreference -AttackSurfaceReductionRules_Ids $validGuids -AttackSurfaceReductionRules_Actions $actions
+
+Write-Host "`nSuccess: $($validGuids.Count) rule(s) applied." -ForegroundColor Green
