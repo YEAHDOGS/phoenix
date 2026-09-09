@@ -1,0 +1,125 @@
+R36S card cheat sheet - which folder on EASYROMS takes which files (from the OS's es_systems.cfg)
+Copy games into F:\<Folder>\ then run:  pwsh -File D:\Games\R36S-tools\update-card.ps1
+
+
+Folder          System                            Extensions
+------          ------                            ----------
+3do             3DO                               .bin .chd .cue .iso
+advision        Entex - Adventure Vision          .7z .bin .zip
+alg             American Laser Games              .alg
+amiga           Commodore - Amiga                 .adf .hdf .ipf .lha .zip
+amigacd32       Commodore - Amiga CD32            .ccd .chd .cue .iso .lha .mds .nrg
+amstradcpc      Amstrad CPC                       .7z .cpc .dsk .zip
+apple2          Apple II                          .apple2 .do .dsk .hdv .po .sh .zip
+arcade          Arcade - Various Platform         .7z .cue .zip
+arduboy         Arduboy                           .hex
+astrocde        Astrocade                         .7z .bin .zip
+atari2600       Atari - 2600                      .7z .a26 .bin .zip
+atari5200       Atari - 5200                      .7z .a52 .zip
+atari7800       Atari - 7800                      .7z .a78 .zip
+atari800        Atari - 800                       .7z .atr .rom .zip
+atarijaguar     Atari - Jaguar                    .abs .bin .cof .j64 .jag .prg .rom
+atarilynx       Atari - Lynx                      .7z .lnx .zip
+atarist         Atari - ST                        .dim .ipf .msa .st .stx .zip
+atarixegs       Atari - XEGS                      .bin .rom .xex .zip
+atomiswave      Sega - Atomiswave                 .7z .bin .ist .zip
+c128            Commodore - C128                  .7z .bin .cmd .crt .d2m .d4m .d64 .d6z .d71 .d7z .d80 .d81 .d82 .d8z .g41 .g4z .g64 .g6z .gz .m3u .nbz .nib .p00 .prg .t64 .tap .tcrt .vfl .vsf .x64 …
+c16             Commodore - C16                   .7z .bin .cmd .crt .d2m .d4m .d64 .d6z .d71 .d7z .d80 .d81 .d82 .d8z .g41 .g4z .g64 .g6z .gz .m3u .nbz .nib .p00 .prg .t64 .tap .tcrt .vfl .vsf .x64 …
+c64             Commodore - C64                   .7z .bin .cmd .crt .d2m .d4m .d64 .d6z .d71 .d7z .d80 .d81 .d82 .d8z .g41 .g4z .g64 .g6z .gz .m3u .nbz .nib .p00 .prg .t64 .tap .tcrt .vfl .vsf .x64 …
+channelf        Fairchild - ChannelF              .bin .chf .rom .zip
+coco3           Tandy - Color Computer 3          .bin .cas .ccc .dsk .rom .wav .zip
+coleco          Coleco - ColecoVision             .7z .cas .col .dsk .m3u .mx1 .mx2 .ri .rom .sc .sg .zip
+cps1            Arcade - CP System I              .7z .cue .zip
+cps2            Arcade - CP System II             .7z .cue .zip
+cps3            Arcade - CP System III            .7z .cue .zip
+daphne          Daphne                            .daphne
+doom            Doom                              .doom .sh .wad
+dos             Microsoft - DOS                   .bat .com .conf .cue .dosz .exe .iso .m3u .zip
+dreamcast       Sega - Dreamcast                  .7z .cdi .chd .cue .gdi .m3u
+easyrpg         EasyRPG                           .easyrpg .zip
+enterprise      Enterprise 64/128                 .128 .bas .com .dsk .dtf .img .tap .trn
+famicom         Nintendo - Famicom                .7z .nes .unf .unif .zip
+fds             Nintendo - Famicom Disk System    .7z .fds .nes .unf .unif .zip
+gameandwatch    Nintendo - Game and Watch         .mgw
+gamegear        Sega - Game Gear                  .7z .bin .gg .zip
+gb              Nintendo - GB                     .7z .dmg .gb .gbc .zip
+gba             Nintendo - GBA                    .7z .gb .gba .gbc .zip
+gbc             Nintendo - GBC                    .7z .dmg .gb .gbc .zip
+genesis         Sega - Genesis                    .68k .7z .bin .chd .cue .gen .gg .iso .md .mdx .sg .sgd .smd .sms .zip
+gx4000          Amstrad GX4000                    .cpr .dsk .zip
+intellivision   Mattel - Intellivision            .7z .bin .int .zip
+love2d          Love2d                            .love
+lowresnx        LowRes NX                         .nx
+mame            Arcade - MAME2010                 .7z .chd .zip
+mame2003        Arcade - MAME2003                 .7z .zip
+mastersystem    Sega - Master System              .68k .7z .bin .chd .cue .gen .gg .iso .md .mdx .sg .sgd .smd .sms .zip
+megadrive       Sega - Megadrive                  .68k .7z .bin .chd .cue .gen .gg .iso .md .mdx .sg .sgd .smd .sms .zip
+megaduck        Creatronic - Mega Duck            .7z .bin .zip
+movies          Movies                            .avi .mkv .mov .mp4 .mpeg
+msumd           Sega - Megadrive MSU              .md
+msx             Microsoft - MSX                   .7z .cas .dsk .m3u .mx1 .mx2 .rom .zip
+msx2            Microsoft - MSX 2                 .7z .cas .dsk .m3u .mx1 .mx2 .rom .zip
+mv              Milton Bradley - Microvision      .bin
+n64             Nintendo - 64                     .7z .n64 .v64 .z64 .zip
+n64dd           Nintendo - 64DD                   .d64 .n64 .n64dd .ndd .z64
+naomi           Sega - Naomi                      .7z .bin .dat .ist .zip
+nds             Nintendo - DS                     .7z .nds .zip
+neogeo          Arcade - Neogeo                   .7z .cue .neo .zip
+neogeocd        SNK - Neo Geo CD                  .chd .cue .m3u
+nes             Nintendo - NES                    .7z .nes .zip
+ngp             SNK - Neo Geo Pocket              .7z .ngc .ngp .zip
+ngpc            SNK - Neo Geo Pocket Color        .7z .ngc .ngp .zip
+odyssey2        Magnavox - Odyssey2               .bin
+onscripter      ONScripter                        .dat .txt
+openbor         OpenBOR                           .pak
+palm            Palm OS - Palm                    .img .prc
+pc98            NEC - PC98                        .cmd .d88 .fdi .hdi .zip
+pcengine        NEC - PCEngine                    .7z .bin .pce .zip
+pcenginecd      NEC - PCEngineCD                  .ccd .chd .cue .img .iso .m3u .pce
+pcfx            NEC - PC-FX                       .ccd .chd .cue .toc .zip
+pico            Sega - Pico                       .68k .7z .bin .chd .cue .gen .gg .iso .md .mdx .sg .sgd .smd .sms .zip
+piece           P/ECE                             .pex .pfi
+pokemonmini     Pokemon Mini                      .7z .min .zip
+ports           ports                             .sh
+psp             Sony - PlayStation Portable       .chd .cso .iso .pbp
+pspminis        Sony - Playstation Portable Minis .chd .cso .iso .pbp
+psx             Sony - PlayStation                .7z .cbn .ccd .chd .cue .img .iso .m3u .mdf .pbp .toc .zip
+satellaview     Nintendo - Satellaview            .7z .bs .sfc .smc .zip
+saturn          Sega - Saturn                     .chd .cue .img .iso .m3u
+scummvm         SCUMM Virtual Machine             .scummvm
+scv             Epoch - Super Cassette Vision     .0 .bin .cart .rom .zip
+sega32x         Sega - 32X                        .32x .68k .7z .bin .chd .cue .gen .iso .md .smd .sms .zip
+segacd          Sega - CD                         .68k .7z .chd .cue .gen .gg .iso .m3u .md .mdx .sg .smd .sms .zip
+sfc             Nintendo - Super Famicom          .7z .sfc .smc .zip
+sg-1000         Sega - SG-1000                    .68k .7z .bin .chd .cue .gen .gg .iso .md .mdx .sg .sgd .smd .sms .zip
+sgb             Nintendo - SGB                    .7z .dmg .gb .gbc .zip
+snes            Nintendo - Super NES              .7z .fig .sfc .smc .zip
+snes-hacks      Nintendo - Super NES Hacks        .7z .bs .bsx .dx2 .fig .gd3 .gd7 .sfc .smc .st .swc .zip
+snesmsu1        Nintendo - Super NES CD           .7z .sfc .smc .zip
+solarus         Solarus                           .solarus .zip
+sufami          Nintendo - SuFami Turbo           .7z .smc .zip
+supergrafx      NEC - Super Grafx                 .7z .ccd .chd .cue .pce .sgx .zip
+supervision     Watara - Supervision              .7z .bin .zip
+thomson         Theodore - Thomson                .fd .k7 .m5 .m7 .rom .sap
+ti99            TI99                              .ctg
+tic80           Tic-80                            .tic
+turbografx      NEC - Turbografx 16               .7z .chd .pce .zip
+turbografxcd    NEC - Turbografx CD               .ccd .chd .cue .img .iso .m3u .pce .zip
+tvc             Videoton TV-Computer              .cas
+uzebox          Uzebox                            .uze
+vectrex         Vectrex                           .7z .vec .zip
+vic20           Commodore - VIC-20                .20 .40 .60 .7z .a0 .b0 .bin .cmd .crt .d2m .d4m .d64 .d6z .d71 .d7z .d80 .d81 .d82 .d8z .g41 .g4z .g64 .g6z .gz .m3u .nbz .nib .p00 .prg .rom .t64 .…
+videopac        Philips Videopac G7000            .bin .zip
+virtualboy      Nintendo - Virtualboy             .7z .vb .vboy .zip
+vmac            Apple - Macintosh                 .cmd .dsk .hvf .img .zip
+vmu             Sega - Dreamcast VMU              .bin .vms
+wasm4           WASM-4                            .wasm
+wolf            Wolfenstein                       .ecwolf .wolf
+wonderswan      Bandai - WonderSwan               .7z .pc2 .ws .wsc .zip
+wonderswancolor Bandai - WonderSwan Color         .7z .pc2 .ws .wsc .zip
+x1              Sharp - X1                        .2d .2hd .88d .cmd .d88 .dup .dx1 .hdm .tfd .xdf .zip
+x68000          Sharp - x68000                    .2hd .88d .cmd .d88 .dim .dup .hdf .hdm .img .m3u .xdf .zip
+zx81            ZX81                              .p .tzx .zip
+zxspectrum      ZX Spectrum                       .7z .dsk .gz .img .mgt .scl .sna .szx .tap .trd .tzx .udi .z80 .zip
+
+
