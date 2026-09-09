@@ -91,6 +91,8 @@ cat > "$MOCKBIN/lsblk" <<'MOCK'
 args="$*"
 last="${@: -1}"
 dups="${MOCK_DUPS:-0}"
+evil="${MOCK_EVIL:-0}"
+evil_marker="${MOCK_EVIL_MARKER:-/tmp/phoenix-nuke-evil-marker}"
 case "$args" in
   *"-ndo PKNAME"*)
     case "$last" in
@@ -124,7 +126,14 @@ case "$args" in
   *"-P -b -d"*)
     sda_s="SATATEST001"; nvme_s="NVMETEST003"
     if [[ "$dups" == "1" ]]; then sda_s="DUP111"; nvme_s="DUP111"; fi
-    echo "NAME=\"sda\" MODEL=\"Test SATA HDD\" SERIAL=\"$sda_s\" SIZE=\"1000204886016\" TRAN=\"sata\" RM=\"0\" ROTA=\"1\" TYPE=\"disk\""
+    if [[ "$evil" == "1" ]]; then
+      # Hostile firmware, escaped the way real `lsblk -P` emits it (quotes
+      # arrive as \"). The parser must keep the payload as DATA: the row
+      # still enumerates, the attack string is displayed, nothing executes.
+      echo "NAME=\"sda\" MODEL=\"Evil\\\"; touch \\\"$evil_marker\\\"; echo \\\"X\\\"\" SERIAL=\"EVILTEST001\" SIZE=\"1000204886016\" TRAN=\"sata\" RM=\"0\" ROTA=\"1\" TYPE=\"disk\""
+    else
+      echo "NAME=\"sda\" MODEL=\"Test SATA HDD\" SERIAL=\"$sda_s\" SIZE=\"1000204886016\" TRAN=\"sata\" RM=\"0\" ROTA=\"1\" TYPE=\"disk\""
+    fi
     echo 'NAME="sdb" MODEL="Phoenix USB Stick" SERIAL="USBTEST002" SIZE="32000000000" TRAN="usb" RM="1" ROTA="1" TYPE="disk"'
     echo "NAME=\"nvme0n1\" MODEL=\"Test NVMe SSD\" SERIAL=\"$nvme_s\" SIZE=\"500107862016\" TRAN=\"nvme\" RM=\"0\" ROTA=\"0\" TYPE=\"disk\""
     echo 'NAME="sdd" MODEL="Mounted Data SSD" SERIAL="SDDTEST004" SIZE="250059350016" TRAN="sata" RM="0" ROTA="0" TYPE="disk"'
@@ -153,6 +162,41 @@ th() { local got; got="$(human_size "$1")"
     [[ "$got" == "$2" ]] && pass "human_size($1)=$2" \
         || fail "human_size($1)" "expected '$2', got '$got'"; }
 th 1000204886016 "1.0 TB"; th 500107862016 "500.1 GB"; th 16000000000 "16.0 GB"
+
+#--- parse_lsblk_pairs: eval-free lsblk -P parsing --------------------------------
+# Firmware strings (MODEL/SERIAL) are UNTRUSTED input -- a hostile USB device
+# can report arbitrary descriptors. The parser must treat them as data; the
+# old `eval "$line"` approach executed them as shell. These cases prove the
+# injection is dead.
+echo "== parse_lsblk_pairs (eval-free lsblk -P parsing) =="
+parse_lsblk_pairs 'NAME="sda" MODEL="Test SATA HDD" SERIAL="SATATEST001" SIZE="100" TRAN="sata" RM="0" ROTA="1" TYPE="disk"'
+[[ "${LP[NAME]}" == "sda" && "${LP[MODEL]}" == "Test SATA HDD" && "${LP[SERIAL]}" == "SATATEST001" && "${LP[TYPE]}" == "disk" ]] \
+    && pass "parse_lsblk_pairs benign line" \
+    || fail "parse_lsblk_pairs benign line" "got NAME=${LP[NAME]} MODEL=${LP[MODEL]} SERIAL=${LP[SERIAL]}"
+parse_lsblk_pairs 'NAME="sda" MODEL="Foo \"Bar\" \\ Baz" SERIAL="S1" TYPE="disk"'
+[[ "${LP[MODEL]}" == 'Foo "Bar" \ Baz' ]] \
+    && pass "parse_lsblk_pairs unescapes -P sequences" \
+    || fail "parse_lsblk_pairs unescapes -P sequences" "got '${LP[MODEL]}'"
+# hostile 1: command substitution inside a quoted value must not execute
+rm -f "$T/cmdsub-marker"
+p1='NAME="sda" MODEL="x$(touch '"$T"'/cmdsub-marker)" SERIAL="S1" TYPE="disk"'
+parse_lsblk_pairs "$p1"
+[[ "${LP[MODEL]}" == 'x$(touch '"$T"'/cmdsub-marker)' ]] \
+    && pass "parser keeps \$(...) payload as data" \
+    || fail "parser keeps \$(...) payload as data" "got '${LP[MODEL]}'"
+[[ ! -e "$T/cmdsub-marker" ]] \
+    && pass "parser does not execute \$(...) payload" \
+    || fail "parser does not execute \$(...) payload" "marker file executed"
+# hostile 2: quote break-out must not execute either
+rm -f "$T/breakout-marker"
+p2='NAME="sda" MODEL="Evil"; touch "'"$T"'/breakout-marker"; echo "X" SERIAL="S2" TYPE="disk"'
+parse_lsblk_pairs "$p2"
+[[ ! -e "$T/breakout-marker" ]] \
+    && pass "parser does not execute quote-break-out payload" \
+    || fail "parser does not execute quote-break-out payload" "marker file executed"
+[[ "${LP[NAME]}" == "sda" && "${LP[MODEL]}" == "Evil" ]] \
+    && pass "parser truncates at injected quote, keeps benign prefix" \
+    || fail "parser truncates at injected quote" "got NAME=${LP[NAME]} MODEL=${LP[MODEL]}"
 
 #--- parent_disk (mocked lsblk in PATH) -----------------------------------------
 export PATH="$MOCKBIN:$PATH"
@@ -284,6 +328,13 @@ run_case() {
 run_case "K1 enumerate-only default" 0 "5 disk(s) detected"
 # K2: --whatif behaves identically.
 run_case "K2 whatif" 0 "dry-run" --whatif
+# K2b: hostile firmware payload -- enumeration must stay dry-run AND the
+# injected `touch` must never execute (would create $T/evil-marker).
+rm -f "$T/evil-marker"
+MOCK_EVIL=1 MOCK_EVIL_MARKER="$T/evil-marker" run_case "K2b hostile lsblk payload inert" 0 "Evil"
+[[ ! -e "$T/evil-marker" ]] \
+    && pass "K2b payload did not execute (no marker file)" \
+    || fail "K2b payload executed" "marker file $T/evil-marker exists -- INJECTION LIVE"
 # K3: audit record for enumeration carries timestamp + disk ids + mode.
 auditf="$(ls "$T"/logs-K1*enumerate-only*default/phoenix-nuke-audit-*.log)"
 grep -Eq '\[[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z\] mode=ENUMERATE_DRYRUN' "$auditf" \
