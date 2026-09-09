@@ -29,6 +29,17 @@
 #      operator-confirmation evidence to a log file.
 #   7. Final abort window: 5-second countdown after arming (Ctrl-C aborts;
 #      --no-countdown only for VM tests).
+#   8. Image-proof gate (runbook invariant 1: verified image or no wipe):
+#      --nuke refuses unless --image-proof <file> names a VALID proof
+#      manifest (format phoenix-image-proof/1, verified=YES, 64-hex sha256,
+#      positive image_size_bytes, source_serial matching the nuke target --
+#      written in the Backup phase with tools/New-ImageProof.sh). This gate
+#      runs FIRST, before every other structural check. --skip-image-gate
+#      exists for true emergencies only: it demands the typed phrase
+#      'NUKE WITHOUT BACKUP' on a real console and is audit-logged.
+#      Mirrors tools/Invoke-Nuke.sh check_image_proof/typed_skip_image_gate.
+#      KNOWN GAP: the Windows twin Invoke-PhoenixNuke.ps1 does not have this
+#      gate yet -- contract parity work item for a follow-up run.
 #
 # The destructive primitive is a full-device zero-fill (dd if=/dev/zero).
 # WARNING: on flash media (SSD/NVMe/USB flash) a host-side overwrite is
@@ -41,6 +52,13 @@
 #   phoenix-nuke.sh --dry-run | --whatif         same as above (explicit)
 #   phoenix-nuke.sh --nuke <id>                  arm destruction of <id>
 #   phoenix-nuke.sh --nuke <id> --log-dir <dir>  override audit log dir
+#   phoenix-nuke.sh --image-proof <f> --nuke <id> arm only when <f> is a valid
+#                                    image-proof manifest (verified=YES,
+#                                    source_serial bound to the target)
+#                                    -- REQUIRED unless --skip-image-gate
+#   phoenix-nuke.sh --skip-image-gate --nuke <id> emergency: arm with NO
+#                                    verified image (typed 'NUKE WITHOUT
+#                                    BACKUP' on a real console, audit-logged)
 #   phoenix-nuke.sh --nuke <id> --override-boot-protection
 #       allow a boot/USB disk as the target (logged WARNING; confirmation
 #       still required twice)
@@ -62,6 +80,8 @@ LOG_DIR=""               # default: ./phoenix-logs
 OVERRIDE_BOOT_PROT=0     # --override-boot-protection
 NO_COUNTDOWN=0
 DRYRUN=0
+IMAGE_PROOF=""           # path to a phoenix-image-proof manifest (gate: required)
+SKIP_IMAGE_GATE=0        # emergency escape hatch; needs TTY-typed phrase
 
 # --- state -------------------------------------------------------------------
 AUDITFILE=""
@@ -98,6 +118,13 @@ Usage:
   $PROG --dry-run | --whatif           Same as above (explicit)
   $PROG --nuke <id>                    Arm destruction of disk <id> (interactive)
   $PROG --nuke <id> --log-dir <dir>    Override the audit-log directory
+  $PROG --image-proof <f> --nuke <id>  Arm only when <f> is a valid image-proof
+                                       manifest (tools/New-ImageProof.sh) bound
+                                       to the target's serial. REQUIRED unless
+                                       --skip-image-gate is given.
+  $PROG --skip-image-gate --nuke <id>  Emergency only: arm with NO verified image
+                                       on record. Requires typing
+                                       'NUKE WITHOUT BACKUP' on a real console.
   $PROG --nuke <id> --override-boot-protection
                                        Allow a boot/USB disk as the target
                                        (logged WARNING; confirmation still
@@ -109,7 +136,9 @@ Usage:
       serial number. Wildcards are never resolved; ambiguous identifiers fail
       closed.
 
-RULES: no flags = enumerate only. No default target. Boot disks and USB
+RULES: no flags = enumerate only. No default target. --nuke requires
+--image-proof <file> (runbook invariant 1: never wipe before a VERIFIED
+image exists) -- this gate runs before every other check. Boot disks and USB
 disks are refused unless --override-boot-protection. Arming requires typing
 the target disk's serial (or device path) TWICE on a real console --
 redirected stdin can never arm a wipe. Full audit log is written to the log
@@ -310,6 +339,76 @@ resolve_id() {
     return 1
 }
 
+# check_image_proof <proof-file> <target-serial> -> 0 when the file is a
+# VALID image-proof manifest (tools/New-ImageProof.sh) whose source_serial
+# matches the nuke target. Refusal reasons go to stderr. A proof is the
+# machine-readable form of runbook invariant 1 ("verified image or no wipe");
+# verified=YES means the Backup phase's integrity check passed, and the
+# serial binding stops a proof for disk A from arming a wipe of disk B.
+# Mirrors tools/Invoke-Nuke.sh (bash parity).
+check_image_proof() {
+    local f="$1" target="$2"
+    [[ -n "$f" && -f "$f" ]] || {
+        echo "[$PROG] REFUSED: --image-proof '$f' is not a readable file." >&2
+        return 1
+    }
+    local format="" verified="" sha256="" pserial="" psize="" line k v
+    while IFS= read -r line; do
+        [[ "$line" =~ ^[[:space:]]*# ]] && continue
+        [[ "$line" != *"="* ]] && continue
+        k="${line%%=*}"; v="${line#*=}"
+        case "$k" in
+            format)           format="$v" ;;
+            verified)         verified="$v" ;;
+            sha256)           sha256="$v" ;;
+            source_serial)    pserial="$v" ;;
+            image_size_bytes) psize="$v" ;;
+        esac
+    done < "$f"
+    [[ "$format" == "phoenix-image-proof/1" ]] || {
+        echo "[$PROG] REFUSED: proof '$f' has unknown/missing format '$format'" >&2
+        echo "[$PROG] (want phoenix-image-proof/1). Write it with tools/New-ImageProof.sh." >&2
+        return 1
+    }
+    [[ "$verified" == "YES" ]] || {
+        echo "[$PROG] REFUSED: proof '$f' is not VERIFIED (verified='$verified')." >&2
+        echo "[$PROG] The image must pass its integrity check before any wipe." >&2
+        return 1
+    }
+    [[ "$sha256" =~ ^[0-9a-fA-F]{64}$ ]] || {
+        echo "[$PROG] REFUSED: proof '$f' lacks a valid 64-hex sha256 checksum." >&2
+        return 1
+    }
+    [[ "$psize" =~ ^[0-9]+$ && "$psize" -gt 0 ]] || {
+        echo "[$PROG] REFUSED: proof '$f' has no positive image_size_bytes." >&2
+        return 1
+    }
+    [[ -n "$pserial" && "$pserial" != "unknown" ]] || {
+        echo "[$PROG] REFUSED: proof '$f' names no source disk serial." >&2
+        return 1
+    }
+    [[ "$pserial" == "$target" ]] || {
+        echo "[$PROG] REFUSED: proof '$f' covers disk serial '$pserial'," >&2
+        echo "[$PROG] but the nuke target is serial '$target'. A proof is bound" >&2
+        echo "[$PROG] to the disk it images -- it cannot arm a different disk." >&2
+        return 1
+    }
+    return 0
+}
+
+# typed_skip_image_gate -> 0 when the operator types the exact emergency
+# phrase on a real TTY. Same structural rule as typed_confirm_twice: piped
+# stdin can never skip the image gate.
+typed_skip_image_gate() {
+    if [[ ! -t 0 ]]; then
+        echo "Refused: --skip-image-gate needs a real console (stdin is not a TTY)." >&2
+        return 1
+    fi
+    local answer
+    read -r -p "Type 'NUKE WITHOUT BACKUP' to wipe with NO verified image on record: " answer
+    [[ "$answer" == "NUKE WITHOUT BACKUP" ]]
+}
+
 # typed_confirm_twice <serial> <dev> -> 0 when the operator types the exact
 # serial (or the exact /dev path) TWICE on a REAL terminal. Piped or
 # scripted stdin is refused structurally: `echo $serial | ...` can never arm
@@ -365,6 +464,8 @@ main() {
         case "$1" in
             --nuke)      NUKE_ID="${2:?--nuke needs a disk id}"; shift 2 ;;
             --log-dir)   LOG_DIR="${2:?--log-dir needs a path}"; shift 2 ;;
+            --image-proof) IMAGE_PROOF="${2:?--image-proof needs a file}"; shift 2 ;;
+            --skip-image-gate) SKIP_IMAGE_GATE=1; shift ;;
             --override-boot-protection) OVERRIDE_BOOT_PROT=1; shift ;;
             --no-countdown) NO_COUNTDOWN=1; shift ;;
             --dry-run)   DRYRUN=1; shift ;;
@@ -405,6 +506,27 @@ main() {
     local dev="${D_DEV[$idx]}" model="${D_MODEL[$idx]}" serial="${D_SERIAL[$idx]}"
     local size="${D_SIZE[$idx]}" tran="${D_TRAN[$idx]}" media="${D_MEDIA[$idx]}"
     local prot="${D_PROT[$idx]}"
+
+    # --- image-proof gate (runbook invariant 1: verified image or no wipe) ---
+    # Runs FIRST, before every other structural check: no verified image on
+    # record means no wipe, full stop.
+    if [[ -n "$IMAGE_PROOF" ]]; then
+        if ! check_image_proof "$IMAGE_PROOF" "$serial"; then
+            audit "REFUSED" "dev=$dev" "serial=$serial" "reason='image-proof-gate'"
+            die "Image-proof gate failed -- nothing was destroyed."
+        fi
+        audit "IMAGE-PROOF" "dev=$dev" "serial=$serial" "proof='$IMAGE_PROOF'"
+    elif (( SKIP_IMAGE_GATE == 0 )); then
+        audit "REFUSED" "dev=$dev" "serial=$serial" "reason='no-image-proof'"
+        die "REFUSED: --nuke requires --image-proof <file> (a verified full-disk image manifest -- write one with tools/New-ImageProof.sh in the Backup phase). Runbook invariant 1: never wipe before a VERIFIED image exists. --skip-image-gate is for true emergencies only."
+    else
+        if ! typed_skip_image_gate; then
+            audit "REFUSED" "dev=$dev" "serial=$serial" "reason='skip-image-gate-not-confirmed'"
+            die "Image-gate skip not confirmed on a real console -- nothing was destroyed."
+        fi
+        audit "WARNING" "dev=$dev" "serial=$serial" \
+              "reason='image-proof-gate-skipped'" "phrase='NUKE WITHOUT BACKUP'"
+    fi
 
     # --- boot/USB self-protection (heuristic; explicit override only) ---
     if [[ -n "$prot" && $OVERRIDE_BOOT_PROT -eq 0 ]]; then
