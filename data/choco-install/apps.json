@@ -66,6 +66,12 @@
     "defaultSelected": true
   },
   {
+    "package": "powertoys",
+    "description": "The Windows power tools Microsoft forgot to include — FancyZones, PowerRename, always-on-top",
+    "category": "Utilities",
+    "defaultSelected": false
+  },
+  {
     "package": "Filezilla",
     "description": "Drag and drop files to wherever you want",
     "category": "File Management",
