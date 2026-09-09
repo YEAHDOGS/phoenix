@@ -9,7 +9,12 @@
 #
 #   schemaVersion, machine.{computerName,timezone}, credentials.{username,password},
 #   os.{family,edition,productKey,answerFile.{disableWPBT,partitionLayout}},
-#   apps[].{id,source}
+#   apps[].{id,source}, nuke.{protectedDisks[]}
+#
+# A disk named in nuke.protectedDisks (by serial or /dev path) is EXCLUDED
+# from NUKE candidacy entirely (tools/lib/phoenix-disk-inventory.sh) -- it
+# cannot be armed even with --override flags. Mark the disks you must never
+# lose: the backup vault, the Castle drive, anything irreplaceable.
 #
 # The boot menu parses this WITHOUT jq (tools/phoenix-menu.sh: jget), so the
 # emitted JSON is deliberately flat-simple: string and number scalars only,
@@ -58,6 +63,7 @@ TIMEZONE="Central Standard Time"
 FAMILY="windows"; EDITION="Professional"; PRODUCT_KEY=""
 DISABLE_WPBT="true"; PARTITION_LAYOUT="gpt-uefi"
 APPS=(); OUT="./phoenix-config.json"
+PROTECT=()   # repeatable --protect-disk <serial-or-/dev-path>
 DRY_RUN=0; FORCE=0
 
 usage() {
@@ -74,6 +80,10 @@ New-PhoenixConfig.sh -- write phoenix-config.json for a Phoenix USB (schema v1)
   --answer-keep-wpbt       leave WPBT enabled (default: disabled)
   --partition-layout L     gpt-uefi|mbr-bios (default: gpt-uefi)
   --app source:id          repeatable, e.g. --app choco:googlechrome
+  --protect-disk ID        repeatable: disk serial (or /dev path) that the
+                         NUKE path must never offer as a candidate
+                         (nuke.protectedDisks). Use for the backup vault,
+                         the Castle drive, anything irreplaceable.
   --out PATH               default: ./phoenix-config.json
   --dry-run                print the config (password REDACTED), write nothing
   --force                  allow writing inside a git work tree
@@ -93,6 +103,7 @@ while (( $# > 0 )); do
         --answer-keep-wpbt) DISABLE_WPBT="false"; shift ;;
         --partition-layout) PARTITION_LAYOUT="${2:?--partition-layout needs a value}"; shift 2 ;;
         --app)              APPS+=("${2:?--app needs a value}"); shift 2 ;;
+        --protect-disk)     PROTECT+=("${2:?--protect-disk needs a value}"); shift 2 ;;
         --out)              OUT="${2:?--out needs a value}"; shift 2 ;;
         --dry-run)          DRY_RUN=1; shift ;;
         --force)            FORCE=1; shift ;;
@@ -141,14 +152,30 @@ for a in ${APPS[@]+"${APPS[@]}"}; do
     APP_ENTRIES+=("    { \"id\": \"$(jesc "$id")\", \"source\": \"$(jesc "$src")\" }")
 done
 
+#--- protected disks: identifiers must be non-empty, whitespace-free ----------
+for p in ${PROTECT[@]+"${PROTECT[@]}"}; do
+    [[ -n "$p" ]] || die "--protect-disk may not be empty"
+    [[ "$p" != *[[:space:]]* ]] \
+        || die "--protect-disk '$p' invalid: no whitespace (use the exact serial or /dev path)"
+done
+PROTECT_ENTRIES=()
+for p in ${PROTECT[@]+"${PROTECT[@]}"}; do
+    PROTECT_ENTRIES+=("\"$(jesc "$p")\"")
+done
+
 #--- build JSON -------------------------------------------------------------------
 json_for() { # $1 = password value to embed (real or REDACTED)
-    local pw="$1" pkey apps_json
+    local pw="$1" pkey apps_json protect_json
     if [[ -n "$PRODUCT_KEY" ]]; then pkey="\"$(jesc "$PRODUCT_KEY")\""; else pkey="null"; fi
     if (( ${#APP_ENTRIES[@]} == 0 )); then
         apps_json="[]"
     else
         apps_json=$'[\n'"$(printf '%s,\n' "${APP_ENTRIES[@]}" | sed '$ s/,$//')"$'\n  ]'
+    fi
+    if (( ${#PROTECT_ENTRIES[@]} == 0 )); then
+        protect_json="[]"
+    else
+        protect_json="[ $(printf '%s, ' "${PROTECT_ENTRIES[@]}" | sed 's/, $//') ]"
     fi
     cat <<EOF
 {
@@ -170,7 +197,10 @@ json_for() { # $1 = password value to embed (real or REDACTED)
       "partitionLayout": "$(jesc "$PARTITION_LAYOUT")"
     }
   },
-  "apps": $apps_json
+  "apps": $apps_json,
+  "nuke": {
+    "protectedDisks": $protect_json
+  }
 }
 EOF
 }

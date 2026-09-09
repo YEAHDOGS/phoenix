@@ -13,7 +13,7 @@
       schemaVersion, machine.{computerName,timezone},
       credentials.{username,password},
       os.{family,edition,productKey,answerFile.{disableWPBT,partitionLayout}},
-      apps[].{id,source}
+      apps[].{id,source}, nuke.{protectedDisks[]}
 
     SECURITY (read before you run this):
       unattend requires the install-time password in a REVERSIBLE form
@@ -57,6 +57,11 @@
 .PARAMETER App
     Repeatable, "source:id" -- e.g. -App choco:googlechrome.
 
+.PARAMETER ProtectDisk
+    Repeatable. Disk serial (or \\.\PhysicalDriveN path) that the NUKE path
+    must never offer as a candidate (nuke.protectedDisks). Use for the
+    backup vault, the Castle drive, anything irreplaceable.
+
 .PARAMETER Out
     Output path. Default: .\phoenix-config.json.
 
@@ -86,6 +91,7 @@ param(
     [switch]$KeepWPBT,
     [ValidateSet("gpt-uefi","mbr-bios")][string]$PartitionLayout = "gpt-uefi",
     [string[]]$App,
+    [string[]]$ProtectDisk,
     [string]$Out = ".\phoenix-config.json",
     [switch]$DryRun,
     [switch]$Force
@@ -131,6 +137,16 @@ foreach ($a in $App) {
     $appList += @{ id = $id; source = $src }
 }
 
+#--- protected disks: identifiers must be non-empty, whitespace-free -----------
+$protectList = @()
+foreach ($p in $ProtectDisk) {
+    if ([string]::IsNullOrWhiteSpace($p)) { Fail "-ProtectDisk may not be empty" }
+    if ($p -match '\s') {
+        Fail "-ProtectDisk '$p' invalid: no whitespace (use the exact serial or device path)"
+    }
+    $protectList += "$p"
+}
+
 #--- build config object (schema v1, same shape as the .sh twin) ------------------
 $config = [ordered]@{
     schemaVersion = 1
@@ -146,6 +162,7 @@ $config = [ordered]@{
         }
     }
     apps = $appList
+    nuke = [ordered]@{ protectedDisks = $protectList }
 }
 
 function Write-ConfigJson([hashtable]$Cfg, [bool]$Redact) {
@@ -158,6 +175,7 @@ function Write-ConfigJson([hashtable]$Cfg, [bool]$Redact) {
             credentials   = [ordered]@{ username = $Cfg.credentials.username; password = "***REDACTED***" }
             os            = $Cfg.os
             apps          = $Cfg.apps
+            nuke          = $Cfg.nuke
         }
         return ($redacted | ConvertTo-Json -Depth 5)
     }

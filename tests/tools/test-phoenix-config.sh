@@ -10,7 +10,7 @@
 #   - identical BOOT-ARCHITECTURE §5 schema v1: schemaVersion, machine
 #     {computerName,timezone}, credentials {username,password}, os
 #     {family,edition,productKey,answerFile{disableWPBT,partitionLayout}},
-#     apps[] {id,source}
+#     apps[] {id,source}, nuke {protectedDisks[]}
 #   - flat-scalar JSON the menu parses headless without jq
 #   - password never printed (dry-run redacts to ***REDACTED***)
 #   - piped-stdin password refused structurally (echo P | ... can never work)
@@ -49,7 +49,7 @@ echo "== static =="
 bash -n "$SH" && pass "bash -n: .sh parses" || fail "bash -n: .sh parses"
 
 for key in ComputerName Username Password Timezone Family Edition ProductKey \
-           KeepWPBT PartitionLayout App Out DryRun Force; do
+           KeepWPBT PartitionLayout App ProtectDisk Out DryRun Force; do
     grep -q "\$$key" "$PS1F" && pass ".ps1 param \$$key present" \
         || fail ".ps1 param \$$key present"
 done
