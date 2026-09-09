@@ -2,9 +2,10 @@
 # CASTLE INFRASTRUCTURE: ISO FETCH ENGINES
 # ==============================================================================
 
-# Target Matrices - Swap these URLs/Paths out for whatever you need to pull down
-$IsoUrl = "https://mirror.cachyos.org/ISO/desktop/240609/cachyos-desktop-linux-all-240609.iso" 
-$OutFile = ".\cachyos-server-latest.iso"
+param (
+    [string]$IsoUrl = "https://mirror.cachyos.org/ISO/desktop/240609/cachyos-desktop-linux-all-240609.iso",
+    [string]$OutFile = (Join-Path $PSScriptRoot "data\cachyos-server-latest.iso")
+)
 
 # Pre-Flight Directory Checks
 $TargetDir = [System.IO.Path]::GetDirectoryName((Resolve-Path -Path ".\").Path)
