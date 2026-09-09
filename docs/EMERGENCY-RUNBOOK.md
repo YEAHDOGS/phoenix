@@ -278,10 +278,47 @@ rejects it. The `source_serial` binds the proof to the disk it images: a
 proof for disk A cannot arm a wipe of disk B. Keep the `.proof` file on the
 Phoenix USB; you'll pass it to `Invoke-Nuke.sh --image-proof` in Phase 3.
 
-**Step 2.6 — Take a separate data-only backup.**
+**Step 2.6 — Take a separate data-only backup (scripted path, preferred).**
 Copy your user data (Documents, Desktop, Downloads triage, Ableton projects,
 `~/.ssh`, configs, photos) to a **second, separate location** from the full
-image. Belt and suspenders: this is what you actually restore from in Phase 4.
+image — this is what you actually restore from in Phase 4. The native tool
+mounts the infected volume **read-only** (never read-write), skips executables
+by default, and hashes every file:
+
+```bash
+./tools/phoenix-data-backup.sh \
+  --source-dev /dev/nvme0n1p3 \
+  --out /media/usb-target2/laptop-data-2026-09-09 \
+  --extra "Users/brandon/Ableton Projects:license-keys.txt" \
+  --operator brandon
+```
+
+- `--source-dev` is the **Windows partition** (e.g. the `p3` on the infected
+  disk); the tool mounts it `ro,noexec,nodev,nosuid` itself and unmounts on
+  exit. Pass `--source-dir /mnt/x` instead if you already mounted it read-only
+  yourself.
+- Without `--profiles`, every non-system profile under `Users/` is backed up
+  (`Public`/`Default*` are excluded unless named explicitly). Per profile:
+  Documents, Desktop, Downloads, Pictures, Videos, Music, `.ssh`.
+- `--extra` takes `:`-separated paths **relative to the volume root** for
+  anything outside the profile folders (Ableton project folders elsewhere,
+  license exports). Paths escaping the volume root are refused.
+- **Dirty-data contract:** `*.exe/*.msi/*.dll/*.ps1/...` are skipped (recorded
+  in `skipped-executables.txt`, never restored — reinstall from sources);
+  every copied file gets a SHA-256 in `files.sha256`; the output carries
+  `DIRTY-NOT-FORENSIC-SAFE.txt` (scan-before-restore) and
+  `data-backup.manifest` records `contamination=DIRTY`, `verify=PASS`.
+  Pass `--include-exe` only if you truly know what you are doing.
+- Fail-closed: the target must be a local direct-attached drive (network
+  filesystems and UNC paths refused), and `--out` may never sit inside the
+  source volume.
+- WinPE twin: `.\tools\New-PhoenixDataBackup.ps1 -Source "C:" -Out
+  "E:\laptop-data-2026-09-09" -Operator brandon` — robocopy-based copy of the
+  same profile set, same manifest/schema/dirty contract (see the tool header).
+
+> Manual alternative: copy the folders by hand from the rescue file manager.
+> You lose the hash manifest and the exe-skip ledger — the scripted path is
+> strongly preferred.
 > Treat this folder as **dirty**. The full-disk image is the quarantine archive;
 > the data backup is for selective restore only, after scanning.
 
