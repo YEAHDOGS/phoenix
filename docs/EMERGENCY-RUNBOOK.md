@@ -218,6 +218,20 @@ Step 2.5 proof itself:
   `verify=PASS`.
 - If the target fills or the machine dies mid-run, just re-run the same
   command — it resumes where it stopped.
+- **Compression + chunking decisions (the defaults, and why).** Chunks default
+  to `--chunk-mib 512` (512 MiB): small enough that a lost chunk costs minutes,
+  not hours, on resume; big enough that a 1 TB disk is only ~2,000 files. Each
+  chunk is individually SHA-512 hashed, so the manifest can prove exactly
+  which chunks survived an interruption.
+- **zstd verdict:** `--compressor auto` (the default) picks **zstd** when the
+  boot environment has it, else **gzip**, else uncompressed. gzip is present in
+  every rescue environment we boot; zstd ships in some and not others — so
+  `auto` degrades gracefully instead of failing. The compressor actually used
+  is recorded in `backup.manifest` and the resume state file, and a re-run
+  with a *different* compressor is refused as a hard failure (the chunks don't
+  mix). If you want a deterministic run, pass one explicitly
+  (e.g. `--compressor gzip`). The WinPE twin uses DISM's own WIM compression
+  (`-Compress Max` default) and records `compressor=dism-wim` in its manifest.
 
 **Step 2.3 (GUI alternative) — Rescuezilla.** If you prefer a GUI: in
 Rescuezilla, Backup → select the **entire source disk** → destination = the
