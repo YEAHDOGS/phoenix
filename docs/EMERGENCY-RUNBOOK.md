@@ -193,12 +193,38 @@ this phase — not even Castle. **Use only the direct-attached USB target.**
 same Ventoy menu, second entry. **Do not boot Windows.** Confirm you are in
 Rescuezilla's environment before proceeding.
 
-**Step 2.3 — Create the full-disk image.**
-In Rescuezilla: Backup → select the **entire source disk** (not individual
-partitions — you want the bootloader, recovery, and hidden partitions too) →
-destination = the external USB drive → enable compression and the post-backup
-integrity check. Name it clearly, e.g. `laptop-fulldisk-2026-09-09`. Let it run
-to completion; a failing disk can take hours.
+**Step 2.3 — Create the full-disk image (scripted path, preferred).**
+From the Backup environment (or any Linux shell with the Phoenix USB mounted),
+run the native imager — chunked, resumable, SHA-512-verified, and it mints the
+Step 2.5 proof itself:
+
+```bash
+./tools/phoenix-backup.sh \
+  --source /dev/nvme0n1 \
+  --source-serial <serial-of-the-infected-disk> \
+  --out /media/usb-target/laptop-fulldisk-2026-09-09 \
+  --proof-out /media/phoenix-usb/phoenix-logs/ \
+  --operator brandon
+```
+
+- `--source` is the **entire source disk** (not a partition — you want the
+  bootloader, recovery, and hidden partitions too). Get `--source-serial` from
+  `lsblk -o NAME,SERIAL` (it binds the proof to this disk; a proof for disk A
+  cannot arm a wipe of disk B).
+- Interrupt-safe: chunks already imaged *and verified* are skipped on re-run;
+  a corrupted chunk file is detected by hash and re-imaged. Verification
+  decompresses every chunk and checks the whole-stream SHA-512 — the manifest
+  (`backup.manifest`) and the nuke-gate `.proof` are written **only** on
+  `verify=PASS`.
+- If the target fills or the machine dies mid-run, just re-run the same
+  command — it resumes where it stopped.
+
+**Step 2.3 (GUI alternative) — Rescuezilla.** If you prefer a GUI: in
+Rescuezilla, Backup → select the **entire source disk** → destination = the
+external USB drive → enable compression and the post-backup integrity check.
+Name it clearly, e.g. `laptop-fulldisk-2026-09-09`. Let it run to completion;
+a failing disk can take hours. Afterwards you still need Step 2.5 (manual
+proof minting) — the scripted path above does it for you.
 
 **Step 2.4 — VERIFY the image.**
 Let Rescuezilla's post-backup check complete. Then independently confirm: the
@@ -212,8 +238,11 @@ and — if the build supports it — open the image in Image Explorer / run the
 
 **Step 2.5 — Write the image-proof manifest.**
 The nuke phase will not arm without machine-readable proof of the verified
-image (runbook invariant 1, enforced in code). From the Backup environment
-(or any Linux shell with the USB mounted), record it:
+image (runbook invariant 1, enforced in code). **If you used the scripted
+path in Step 2.3, this step is already done** — `phoenix-backup.sh` mints the
+proof itself, only after its own verification passes. This manual form is for
+the Rescuezilla GUI path. From the Backup environment (or any Linux shell with
+the USB mounted), record it:
 
 ```bash
 ./tools/New-ImageProof.sh \
