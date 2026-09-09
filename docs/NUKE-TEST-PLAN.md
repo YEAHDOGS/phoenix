@@ -10,7 +10,7 @@ Static checks (this Linux VM, no hardware needed):
 ```bash
 bash -n tools/Invoke-Nuke.sh          # syntax -- must pass
 # shellcheck tools/Invoke-Nuke.sh     # if available in the boot-image build env
-bash tests/tools/test-nuke-interlocks.sh   # interlock regression harness -- must be 58/58 green
+bash tests/tools/test-nuke-interlocks.sh   # interlock regression harness -- must be all green (count grows with coverage)
 ```
 
 The harness (`tests/tools/test-nuke-interlocks.sh`) runs the safety
@@ -148,7 +148,7 @@ this; document the outcome if observed on real hardware during image build.)
 ## Regression checklist (every change to the script)
 
 - [ ] `bash -n` passes.
-- [ ] `bash tests/tools/test-nuke-interlocks.sh` is 58/58 green.
+- [ ] `bash tests/tools/test-nuke-interlocks.sh` is all green.
 - [ ] T1/T2: enumeration only, exit 0, no writes.
 - [ ] T3: boot device refused structurally.
 - [ ] T5: wrong confirmation aborts, exit 2.

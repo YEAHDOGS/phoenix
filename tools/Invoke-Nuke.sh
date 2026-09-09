@@ -13,6 +13,12 @@
 #   1. Dry-run default: no flags (or --whatif) ONLY enumerates disks and exits.
 #   2. Explicit enumeration: numbered table (model, serial, size, bus) first.
 #   3. Never auto-select: no default target, ever.
+#      Ambiguous serials refused: a serial reported by more than one disk
+#      fails resolution (refuse, list candidates) AND arming (refused even
+#      when selected by row number or /dev node) -- typed confirmation can
+#      prove the operator read the table, not which of two same-serial
+#      disks they meant. Duplicated serials are flagged DUP-SERIAL in the
+#      enumeration table.
 #   4. Boot-USB guard: the booted USB (and any disk with mounted partitions)
 #      is structurally refused -- not a warning, a hard block.
 #   5. Typed confirmation: operator must type the target's serial (or
@@ -233,6 +239,22 @@ enumerate() {
     # silently breaking every external call afterwards (is_protected, awk in
     # human_size, ...). The device node is rebuilt from NAME instead.
 
+    # --- second pass: flag non-unique serials --------------------------------
+    # A duplicated serial means the typed confirmation ("type the serial") can
+    # no longer identify ONE disk -- a firmware/VM clone artifact, but in a
+    # destruction path we treat it as identity failure, not trivia. Flagged
+    # disks are refused at arm time (resolve_id + arm_and_nuke) regardless of
+    # how they were selected.
+    local i j s
+    for (( i=0; i<D_COUNT; i++ )); do
+        s="${D_SERIAL[$i]}"
+        [[ -z "$s" || "$s" == "unknown" ]] && continue
+        if (( $(serial_count "$s") > 1 )); then
+            if [[ -z "${D_FLAGS[$i]}" ]]; then D_FLAGS[$i]="DUP-SERIAL";
+            else D_FLAGS[$i]="${D_FLAGS[$i]} DUP-SERIAL"; fi
+        fi
+    done
+
     # --- print the numbered table ---
     echo "======================================================================"
     echo " PHOENIX NUKE -- block device enumeration ($(ts))"
@@ -257,6 +279,39 @@ enumerate() {
     echo "======================================================================"
 }
 
+# serial_count <serial> -> number of enumerated disks reporting that exact serial
+serial_count() {
+    local s="$1" i n=0
+    for (( i=0; i<D_COUNT; i++ )); do
+        [[ "${D_SERIAL[$i]}" == "$s" ]] && n=$((n+1))
+    done
+    echo "$n"
+}
+
+# refuse_dup_serial <serial> <dev> -> exit 1 with a refusal when the serial is
+# reported by more than one disk. Typed confirmation proves the operator read
+# the label on the table; it cannot prove WHICH of two same-serial disks they
+# meant -- so a duplicated serial is identity failure, and arming is refused
+# no matter how the disk was selected (serial, row number, or /dev node).
+refuse_dup_serial() {
+    local serial="$1" dev="$2" i
+    [[ -z "$serial" || "$serial" == "unknown" ]] && return 0
+    if (( $(serial_count "$serial") > 1 )); then
+        echo "[$PROG] REFUSED: serial '$serial' is reported by MULTIPLE disks:" >&2
+        for (( i=0; i<D_COUNT; i++ )); do
+            if [[ "${D_SERIAL[$i]}" == "$serial" ]]; then
+                echo "  row $((i+1)): ${D_DEV[$i]} (${D_MODEL[$i]}, $(human_size "${D_SIZE[$i]}"))" >&2
+            fi
+        done
+        echo "[$PROG] Typed confirmation cannot distinguish them -- firmware" >&2
+        echo "[$PROG] serials must be unique before any disk may be armed." >&2
+        echo "[$PROG] Resolve the hardware ambiguity first (detach/replace the" >&2
+        echo "[$PROG] duplicate); nothing was destroyed." >&2
+        return 1
+    fi
+    return 0
+}
+
 # resolve_id <id> -> index into D_* arrays, or exit 1
 resolve_id() {
     local id="$1" i
@@ -268,8 +323,28 @@ resolve_id() {
     if [[ "$id" == /dev/disk/by-id/* && -e "$id" ]]; then
         id="$(readlink -f "$id")"
     fi
+    # serial: must match EXACTLY ONE disk -- two disks sharing a serial is an
+    # ambiguity refusal (first-match-wins would let a duplicated serial arm
+    # the wrong disk). /dev-node matches are mechanically unambiguous.
+    local first=-1 matches=0
     for (( i=0; i<D_COUNT; i++ )); do
-        if [[ "${D_DEV[$i]}" == "$id" || "${D_SERIAL[$i]}" == "$id" ]]; then
+        if [[ "${D_SERIAL[$i]}" == "$id" ]]; then
+            matches=$((matches+1))
+            (( first == -1 )) && first=$i
+        fi
+    done
+    if (( matches > 1 )); then
+        echo "[$PROG] REFUSED: identifier '$id' is ambiguous --" \
+            "$matches disks report serial '$id'." >&2
+        echo "[$PROG] Use a row number or /dev node instead; the serial alone" >&2
+        echo "[$PROG] cannot identify one disk." >&2
+        return 1
+    fi
+    if (( matches == 1 )); then
+        echo "$first"; return 0
+    fi
+    for (( i=0; i<D_COUNT; i++ )); do
+        if [[ "${D_DEV[$i]}" == "$id" ]]; then
             echo "$i"; return 0
         fi
     done
@@ -440,6 +515,9 @@ arm_and_nuke() {
     fi
     if [[ "$serial" == "unknown" || -z "$serial" ]]; then
         die "REFUSED: $dev reports no serial number -- cannot satisfy typed confirmation. Aborting."
+    fi
+    if ! refuse_dup_serial "$serial" "$dev"; then
+        die "REFUSED: duplicated serial '$serial' -- identity ambiguous. Aborting."
     fi
 
     local method nist
