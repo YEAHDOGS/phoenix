@@ -30,7 +30,7 @@ the module never relies on overwrite alone for flash media — see §3.
 | 3 | **Never auto-select** | No default target. `<id>` must be a row number, `/dev` node, by-id path, or serial. |
 | 4 | **Boot-USB guard** | The booted USB is detected (mounted partitions + `/proc/cmdline` root device) and **refused structurally** — the script exits, it does not warn-and-continue. |
 | 5 | **Mounted-disk guard** | Any disk with a mounted partition is refused. You cannot nuke live media. |
-| 6 | **Serial-required confirmation** | Arming requires typing the target's exact serial (or `NUKE <serial>`) on a **real terminal** — stdin must be a TTY, so piped or scripted input (`echo $serial \| Invoke-Nuke.sh --nuke ...`) is refused structurally. Y/N is not accepted. Disks without a readable serial are refused. |
+| 6 | **Two-factor typed confirmation** | Arming requires typing the target's exact serial **and** the exact size as displayed (e.g. `SATATEST001 931.5 GB`, or `NUKE <serial> <size>`) on a **real terminal** — stdin must be a TTY, so piped or scripted input (`echo $serial \| Invoke-Nuke.sh --nuke ...`) is refused structurally. Y/N is not accepted. Disks without a readable serial are refused. |
 | 7 | **Confirmation logging** | The typed confirmation is written to the USB log with a UTC timestamp before anything destructive runs. |
 | 8 | **Abort window** | 5-second countdown after arming (Ctrl-C aborts; `--no-countdown` only for scripted VM tests). |
 | 9 | **Identity re-check** | The serial is re-read immediately before execution; if it changed, the run aborts. |
@@ -69,8 +69,9 @@ physical destruction; the media can never be used again.
   Areas/Device Configuration Overlays when `hdparm` is present — ensure it is
   in the boot image.
 - **Operator error**: typing the wrong serial arms the wrong disk — which is
-  why confirmation requires the *serial*, the one identifier the operator had
-  to read off the enumeration table deliberately.
+  why confirmation requires *two* factors: the serial and the displayed size.
+  A slip that produces the wrong serial now also has to produce the wrong
+  size to arm the wrong disk.
 - **Power loss mid-wipe**: an interrupted nwipe leaves a partially wiped disk
   (unbootable, but not certified). Re-run to completion; the log records it.
 - **Remapped bad sectors (HDD)**: sectors remapped by the drive firmware keep
@@ -95,5 +96,5 @@ physical destruction; the media can never be used again.
 1. I am booted from the Phoenix USB; the table shows my boot USB as BOOT-USB.
 2. The target row's serial matches the physical label on the drive I intend to destroy.
 3. I have a verified backup of anything on that disk I might want (Backup module).
-4. I typed the serial — not Y, not Enter — and the log recorded it.
+4. I typed the serial AND the size — not Y, not Enter — and the log recorded it.
 5. I understand the method and its NIST level from the table above.

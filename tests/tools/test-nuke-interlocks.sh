@@ -15,9 +15,10 @@
 #   UNIT (functions sourced from the real script, `main` stripped):
 #     classify_media, method_for (+ --method overrides), nist_level_for,
 #     human_size, parent_disk (lsblk hit + sed fallback), resolve_id,
-#     typed_confirmation (pipe-fed input refused -- serial, "yes", and
-#     "NUKE <serial>" -- on non-TTY stdin; wrong serial refused and correct
-#     serial / "NUKE <serial>" accepted on a real pty).
+#     typed_confirmation (pipe-fed input refused -- correct serial+size,
+#     "yes", and "NUKE <serial> <size>" -- on non-TTY stdin; wrong serial,
+#     wrong size, serial-only, and size-only refused on a real pty; correct
+#     serial+size / "NUKE <serial> <size>" accepted on a real pty).
 #   INTEGRATION (subprocess, mocked lsblk fixture: sda=HDD, sdb=boot USB
 #     (mounted), nvme0n1=NVMe SSD, sdd=mounted data SSD):
 #     dry-run enumeration, --whatif, boot-USB structural refusal,
@@ -189,50 +190,66 @@ tr /dev/sda 0; tr /dev/sdb 1; tr 0 FAIL; tr 3 FAIL; tr 99 FAIL; tr bogus FAIL
 
 #--- typed_confirmation: pipe-fed input can never arm (the TTY interlock) -----
 echo "== typed_confirmation: piped input cannot arm (unit) =="
-# U1: the CORRECT serial, piped, is refused -- stdin is not a terminal.
-if printf 'SATATEST001\n' | typed_confirmation "SATATEST001" >/dev/null 2>&1; then
-    fail "typed_confirmation refuses piped correct serial"
+# U1: the CORRECT serial+size, piped, is refused -- stdin is not a terminal.
+if printf 'SATATEST001 931.5 GB\n' | typed_confirmation "SATATEST001" "931.5 GB" >/dev/null 2>&1; then
+    fail "typed_confirmation refuses piped correct serial+size"
 else
-    pass "typed_confirmation refuses piped correct serial"
+    pass "typed_confirmation refuses piped correct serial+size"
 fi
-# U2: piped "yes" is refused (it could never match a serial anyway, but the
-#     TTY gate must fire first).
-if printf 'yes\n' | typed_confirmation "SATATEST001" >/dev/null 2>&1; then
+# U2: piped "yes" is refused (it could never match either token anyway, but
+#     the TTY gate must fire first).
+if printf 'yes\n' | typed_confirmation "SATATEST001" "931.5 GB" >/dev/null 2>&1; then
     fail 'typed_confirmation refuses piped "yes"'
 else
     pass 'typed_confirmation refuses piped "yes"'
 fi
-# U3: piped "NUKE <serial>" is refused too -- the prefix does not bypass it.
-if printf 'NUKE SATATEST001\n' | typed_confirmation "SATATEST001" >/dev/null 2>&1; then
-    fail 'typed_confirmation refuses piped "NUKE <serial>"'
+# U3: piped "NUKE <serial> <size>" is refused too -- the prefix does not bypass it.
+if printf 'NUKE SATATEST001 931.5 GB\n' | typed_confirmation "SATATEST001" "931.5 GB" >/dev/null 2>&1; then
+    fail 'typed_confirmation refuses piped "NUKE <serial> <size>"'
 else
-    pass 'typed_confirmation refuses piped "NUKE <serial>"'
+    pass 'typed_confirmation refuses piped "NUKE <serial> <size>"'
 fi
-# U4/U5/U6: on a REAL pty (human-at-console equivalent), the wrong serial is
-# still refused and the correct serial / "NUKE <serial>" are accepted.
+# U4-U9: on a REAL pty (human-at-console equivalent), wrong serial, wrong
+# size, serial-only, and size-only are refused; the correct serial+size and
+# "NUKE <serial> <size>" are accepted.
 # NOTE: util-linux `script` scrubs the environment, so `export -f` does not
 # reach the pty child -- inject the function bodies via `declare -f` into a
 # temp child script instead (avoids nested-quoting pitfalls entirely).
-pty_confirm() { # pty_confirm <typed-input> <expected-serial> -> rc of typed_confirmation on a real pty
+pty_confirm() { # pty_confirm <typed-input> <expected-serial> <expected-size> -> rc of typed_confirmation on a real pty
     local child="$T/pty-child.sh"
     { declare -f typed_confirmation; declare -f log; declare -f ts
-      printf 'typed_confirmation %q\n' "$2"; } > "$child"
+      printf 'typed_confirmation %q %q\n' "$2" "$3"; } > "$child"
     printf '%s\n' "$1" | script -qec "bash $child" /dev/null >/dev/null 2>&1
 }
-if pty_confirm 'wrongserial' 'SATATEST001'; then
+if pty_confirm 'wrongserial 931.5 GB' 'SATATEST001' '931.5 GB'; then
     fail "typed_confirmation rejects wrong serial on a TTY"
 else
     pass "typed_confirmation rejects wrong serial on a TTY"
 fi
-if pty_confirm 'SATATEST001' 'SATATEST001'; then
-    pass "typed_confirmation accepts correct serial on a TTY"
+if pty_confirm 'SATATEST001 500.1 GB' 'SATATEST001' '931.5 GB'; then
+    fail "typed_confirmation rejects wrong size on a TTY"
 else
-    fail "typed_confirmation accepts correct serial on a TTY"
+    pass "typed_confirmation rejects wrong size on a TTY"
 fi
-if pty_confirm 'NUKE SATATEST001' 'SATATEST001'; then
-    pass 'typed_confirmation accepts "NUKE <serial>" on a TTY'
+if pty_confirm 'SATATEST001' 'SATATEST001' '931.5 GB'; then
+    fail "typed_confirmation rejects serial-only on a TTY"
 else
-    fail 'typed_confirmation accepts "NUKE <serial>" on a TTY'
+    pass "typed_confirmation rejects serial-only on a TTY"
+fi
+if pty_confirm '931.5 GB' 'SATATEST001' '931.5 GB'; then
+    fail "typed_confirmation rejects size-only on a TTY"
+else
+    pass "typed_confirmation rejects size-only on a TTY"
+fi
+if pty_confirm 'SATATEST001 931.5 GB' 'SATATEST001' '931.5 GB'; then
+    pass "typed_confirmation accepts correct serial+size on a TTY"
+else
+    fail "typed_confirmation accepts correct serial+size on a TTY"
+fi
+if pty_confirm 'NUKE SATATEST001 931.5 GB' 'SATATEST001' '931.5 GB'; then
+    pass 'typed_confirmation accepts "NUKE <serial> <size>" on a TTY'
+else
+    fail 'typed_confirmation accepts "NUKE <serial> <size>" on a TTY'
 fi
 
 echo "== integration tests (mocked lsblk subprocess) =="
