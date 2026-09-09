@@ -161,7 +161,8 @@ function New-IsoFromFolders([hashtable]$Roots, [string]$Path, [string]$Label) {
     foreach ($r in $Roots.Values) { if (Get-ChildItem $r -Recurse -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.Length -ge 4GB } | Select-Object -First 1) { $big = $true } }
     $fsi.FileSystemsToCreate = if ($big) { 4 } else { 7 }   # 4 = UDF only (files >= 4 GB), 7 = ISO9660 + Joliet + UDF
     $fsi.UDFRevision = 0x102
-    $fsi.VolumeName = ($Label -replace '[^A-Za-z0-9_ -]','').Substring(0, [Math]::Min(30, $Label.Length))
+    $clean = ($Label -replace '[^A-Za-z0-9_ -]','').Trim(); if (-not $clean) { $clean = 'BACKUP' }
+    $fsi.VolumeName = $clean.Substring(0, [Math]::Min(30, $clean.Length))
     $fsi.FreeMediaBlocks = 2147483647   # no media-size limit; the burner decides later
     foreach ($k in $Roots.Keys) {
         $sub = ($k -replace '[\\/:*?"<>|]','_')
