@@ -277,4 +277,9 @@ schema is the down payment). The honest constraints, stated plainly:
   `tools/phoenix-data-backup.sh` (Linux backup side) + `tools/New-PhoenixDataBackup.ps1`
   (WinPE side) emit the same `phoenix-data-backup/1` manifest with the same
   dirty-data contract (executables skipped unless opted in, per-file SHA-256,
-  scan-before-restore marker).
+  scan-before-restore marker). The in-environment menu pair is complete:
+  `tools/phoenix-menu.sh` (Linux rescue side) + `tools/Invoke-PhoenixMenu.ps1`
+  (WinPE side) — the Analyze/Backup/Nuke/Reinstall dispatcher that reads
+  `phoenix-config.json` headlessly (no jq) and hands Nuke to the nuke tools;
+  the menu itself is never destructive (53-case suite
+  `tests/tools/test-phoenix-menu.sh`).
