@@ -29,12 +29,22 @@
 #      SATA SSD -> ATA Secure Erase (Purge); NVMe -> nvme format --ses=1
 #      (Purge); firmware purge unsupported -> nwipe fallback, logged warning.
 #   7. Full logging to a file on the USB.
+#   8. Image-proof gate (runbook invariant 1): --nuke refuses without
+#      --image-proof <file> naming a VALID proof manifest (format
+#      phoenix-image-proof/1, verified=YES, 64-hex sha256, positive size,
+#      source_serial matching the nuke target). Write the proof with
+#      tools/New-ImageProof.sh in the Backup phase. --skip-image-gate exists
+#      for true emergencies only: it demands typing "NUKE WITHOUT BACKUP"
+#      on a real TTY and is logged.
 #
 # USAGE:
 #   Invoke-Nuke.sh                        enumerate only (dry-run), exit 0
 #   Invoke-Nuke.sh --whatif               same as above
 #   Invoke-Nuke.sh --nuke <id>            arm destruction of disk <id>
 #   Invoke-Nuke.sh --method gutmann --verify-all --nuke <id>
+#   Invoke-Nuke.sh --image-proof <file> --nuke <id>
+#                                         arm only with a valid verified-image
+#                                         proof bound to the target's serial
 #
 # <id> may be the row number from the table, a /dev node, a /dev/disk/by-id
 # path, or the disk serial number.
@@ -51,6 +61,8 @@ NUKE_ID=""            # disk identifier selected by the operator
 METHOD_OVERRIDE="auto" # auto | dod522022m | gutmann | dodshort | zero
 VERIFY="last"         # nwipe verify mode: off | last | all
 LOG_DIR=""            # auto-detected on the boot USB unless overridden
+IMAGE_PROOF=""        # path to a phoenix-image-proof manifest (gate: required)
+SKIP_IMAGE_GATE=0     # emergency escape hatch; needs TTY-typed phrase
 NO_COUNTDOWN=0
 WHATIF=0
 
@@ -83,6 +95,15 @@ Usage:
   $PROG                        Enumerate disks and exit (dry-run, the default)
   $PROG --whatif               Same as above
   $PROG --nuke <id>            Arm destruction of disk <id> (interactive)
+  $PROG --image-proof <f> --nuke <id>
+                                 Arm only when <f> is a valid image-proof
+                                 manifest (tools/New-ImageProof.sh) bound
+                                 to the target's serial. REQUIRED unless
+                                 --skip-image-gate is given.
+  $PROG --skip-image-gate --nuke <id>
+                                 Emergency only: arm with NO verified image
+                                 on record. Requires typing
+                                 'NUKE WITHOUT BACKUP' on a real TTY.
   $PROG --method <m> --nuke <id>   Override HDD overwrite method
   $PROG --verify-all --nuke <id>    Verify every pass (slower, stronger)
   $PROG --log-dir <dir> --nuke <id> Override log location
@@ -475,6 +496,75 @@ typed_confirmation() {
     [[ "$typed" == "$serial" ]]
 }
 
+# check_image_proof <proof-file> <target-serial> -> 0 when the file is a
+# VALID image-proof manifest (tools/New-ImageProof.sh) whose source_serial
+# matches the nuke target. Refusal reasons go to stderr. A proof is the
+# machine-readable form of runbook invariant 1 ("verified image or no wipe");
+# verified=YES means the Backup phase's integrity check passed, and the
+# serial binding stops a proof for disk A from arming a wipe of disk B.
+check_image_proof() {
+    local f="$1" target="$2"
+    [[ -n "$f" && -f "$f" ]] || {
+        echo "[$PROG] REFUSED: --image-proof '$f' is not a readable file." >&2
+        return 1
+    }
+    local format="" verified="" sha256="" pserial="" psize="" line k v
+    while IFS= read -r line; do
+        [[ "$line" =~ ^[[:space:]]*# ]] && continue
+        [[ "$line" != *"="* ]] && continue
+        k="${line%%=*}"; v="${line#*=}"
+        case "$k" in
+            format)           format="$v" ;;
+            verified)         verified="$v" ;;
+            sha256)           sha256="$v" ;;
+            source_serial)    pserial="$v" ;;
+            image_size_bytes) psize="$v" ;;
+        esac
+    done < "$f"
+    [[ "$format" == "phoenix-image-proof/1" ]] || {
+        echo "[$PROG] REFUSED: proof '$f' has unknown/missing format '$format'" >&2
+        echo "[$PROG] (want phoenix-image-proof/1). Write it with tools/New-ImageProof.sh." >&2
+        return 1
+    }
+    [[ "$verified" == "YES" ]] || {
+        echo "[$PROG] REFUSED: proof '$f' is not VERIFIED (verified='$verified')." >&2
+        echo "[$PROG] The image must pass its integrity check before any wipe." >&2
+        return 1
+    }
+    [[ "$sha256" =~ ^[0-9a-fA-F]{64}$ ]] || {
+        echo "[$PROG] REFUSED: proof '$f' lacks a valid 64-hex sha256 checksum." >&2
+        return 1
+    }
+    [[ "$psize" =~ ^[0-9]+$ && "$psize" -gt 0 ]] || {
+        echo "[$PROG] REFUSED: proof '$f' has no positive image_size_bytes." >&2
+        return 1
+    }
+    [[ -n "$pserial" && "$pserial" != "unknown" ]] || {
+        echo "[$PROG] REFUSED: proof '$f' names no source disk serial." >&2
+        return 1
+    }
+    [[ "$pserial" == "$target" ]] || {
+        echo "[$PROG] REFUSED: proof '$f' covers disk serial '$pserial'," >&2
+        echo "[$PROG] but the nuke target is serial '$target'. A proof is bound" >&2
+        echo "[$PROG] to the disk it images -- it cannot arm a different disk." >&2
+        return 1
+    }
+    return 0
+}
+
+# typed_skip_image_gate -> 0 when the operator types the exact emergency
+# phrase on a real TTY. Same structural rule as typed_confirmation: piped
+# stdin can never skip the image gate.
+typed_skip_image_gate() {
+    if [[ ! -t 0 ]]; then
+        echo "Refused: --skip-image-gate needs a real console (stdin is not a TTY)." >&2
+        return 1
+    fi
+    local answer
+    read -r -p "Type 'NUKE WITHOUT BACKUP' to wipe with NO verified image on record: " answer
+    [[ "$answer" == "NUKE WITHOUT BACKUP" ]]
+}
+
 #===============================================================================
 # arming + destruction
 #===============================================================================
@@ -503,6 +593,21 @@ arm_and_nuke() {
     local size="${D_SIZE[$idx]}" tran="${D_TRAN[$idx]}" media="${D_MEDIA[$idx]}"
     local flags="${D_FLAGS[$idx]}"
 
+    # --- image-proof gate (runbook invariant 1: verified image or no wipe) ---
+    # Runs FIRST: no verified image on record means no wipe, before any other
+    # structural check is even evaluated.
+    if [[ -n "$IMAGE_PROOF" ]]; then
+        if ! check_image_proof "$IMAGE_PROOF" "$serial"; then
+            die "Image-proof gate failed -- nothing was destroyed."
+        fi
+    elif (( SKIP_IMAGE_GATE == 0 )); then
+        die "REFUSED: --nuke requires --image-proof <file> (a verified full-disk image manifest -- write one with tools/New-ImageProof.sh in the Backup phase). Runbook invariant 1: never wipe before a VERIFIED image exists. --skip-image-gate is for true emergencies only."
+    else
+        if ! typed_skip_image_gate; then
+            die "Image-gate skip not confirmed on a real console -- nothing was destroyed."
+        fi
+    fi
+
     # --- structural refusals (not warnings) ---
     if [[ "$dev" == "$BOOT_DISK" ]]; then
         die "REFUSED: $dev is the boot USB. It cannot be nuked, structurally."
@@ -525,6 +630,12 @@ arm_and_nuke() {
     nist="$(nist_level_for "$method")"
 
     start_log "$serial"
+
+    if [[ -n "$IMAGE_PROOF" ]]; then
+        log "IMAGE-PROOF: $IMAGE_PROOF (verified image of serial '$serial')."
+    else
+        log "WARNING: image-proof gate SKIPPED by operator typed confirmation -- no verified backup on record."
+    fi
 
     log "TARGET: $dev | model=$model | serial=$serial | size=$(human_size "$size") | bus=$tran | media=$media"
     log "METHOD: $method (NIST 800-88 level: $nist)"
@@ -596,6 +707,8 @@ main() {
             --verify-all)   VERIFY="all"; shift ;;
             --verify-off)   VERIFY="off"; shift ;;
             --log-dir)      LOG_DIR="${2:?--log-dir needs a path}"; shift 2 ;;
+            --image-proof)  IMAGE_PROOF="${2:?--image-proof needs a file}"; shift 2 ;;
+            --skip-image-gate) SKIP_IMAGE_GATE=1; shift ;;
             --no-countdown) NO_COUNTDOWN=1; shift ;;
             --whatif)       WHATIF=1; shift ;;
             -h|--help)      usage; exit 0 ;;
