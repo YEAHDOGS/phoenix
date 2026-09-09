@@ -52,6 +52,7 @@ continues setup unattended).
 | `-TimeZone` | `Central Standard Time` | Windows timezone ID |
 | `-Edition` | `Windows 11 Pro` | Must match `/Name:"..."` of an image in install.wim/esd |
 | `-ProductKey` | `VK7JG-NPHTM-C97JM-9MPGT-3V66T` | MS public generic Pro key (not a license). Swap in a real key if you have one |
+| `-EnableDeveloperMode` | *(off)* | Adds a specialize `RunSynchronous` command (order 6) enabling Windows Developer Mode — sideloading, symlinks without elevation |
 | `-OutputPath` | `win-install/staging/autounattend.xml` | Override only if you know why |
 | `-Force` | | Overwrite an existing output file |
 
