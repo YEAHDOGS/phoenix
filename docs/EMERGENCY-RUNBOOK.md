@@ -16,10 +16,16 @@ Read these before touching anything. Every phase below enforces them.
 
 1. **Never wipe before a VERIFIED image exists.** A backup you haven't verified is
    not a backup — it's a hope. The nuke phase must refuse to run without proof of a
-   verified image. This is enforced in code, not just documented: `Invoke-Nuke.sh
-   --nuke` requires `--image-proof <file>` (Step 2.5) whose `source_serial` binds
-   it to the target disk. `--skip-image-gate` exists for true emergencies only
-   (typed `NUKE WITHOUT BACKUP` on a real console, logged).
+   verified image. This is enforced in code, not just documented. The arming chain
+   is `tools/phoenix-nuke-guard.sh` (interactive arming guard, 59-case regression
+   suite) → `tools/phoenix-nuke.sh` (the nuke core; `tools/Invoke-Nuke.sh` is the
+   legacy entry point with the same gate). Any of them run with `--nuke` refuses
+   unless given `--image-proof <file>` (Step 2.5) naming a valid
+   `phoenix-image-proof/1` manifest with `verified=YES`, whose `source_serial`
+   binds it to the target disk — a proof for disk A cannot arm a wipe of disk B.
+   `--skip-image-gate` exists for true emergencies only (typed `NUKE WITHOUT
+   BACKUP` on a real console, audit-logged). Machine-check this invariant any
+   time with `tests/verify-runbook.sh` (Step 0.8).
 2. **Keep the infected image quarantined for forensics.** Label it clearly
    (`QUARANTINE-INFECTED-<date>`), store it on Castle's 10TB drive, and never mount
    it on a production machine. It is evidence, not a restore source.
@@ -145,6 +151,21 @@ fresh install will need. Write them down offline. The answer file /
 `phoenix-config.json` carry install-time passwords in reversible form and this
 repo is public (see BOOT-ARCHITECTURE.md §5 — **the USB is a key, keep it on
 your person**); you will change them at Step 4.2.
+
+**Step 0.8 — Verify the runbook itself before you touch the infected machine.**
+Docs drift from code; a stale runbook is a hazard. From a clean machine with the
+Phoenix repo (or the USB checkout) available, run the verifier:
+
+```bash
+./tests/verify-runbook.sh
+```
+
+It asserts two things: (a) every script path named in this runbook actually
+exists, and (b) every pre-wipe guard the runbook promises is present in the real
+tool code — the image-proof gate, the `source_serial` binding, the typed-confirmation
+interlock, the boot-USB and mounted-disk refusals, the method-per-media rule.
+If it fails, **stop**: the runbook and the tools disagree, and you do not wipe a
+disk on a disagreement.
 
 ---
 
@@ -369,6 +390,14 @@ Only then may Phase 3 begin.
 
 ## Phase 3 — NUKE (only after verified backups)
 
+> ### ⚠️ THE WRONG DISK IS THE ENEMY
+> The failure this phase is engineered against is not malware surviving the
+> wipe — it is wiping **the wrong disk**. Every layer below exists so that
+> arming a wipe of the wrong disk is *structurally hard*: no auto-selected
+> target, no piped confirmations, no silent defaults, no boot-USB targeting,
+> no mounted-disk targeting. If any step below feels like it's fighting you,
+> that friction is the safety system working.
+
 **Step 3.1 — Confirm the exit gate.** Before anything destructive:
 - [ ] Verified full-disk image exists (Step 2.4 green)
 - [ ] Image copied/quarantined (Step 2.7)
@@ -377,27 +406,46 @@ Only then may Phase 3 begin.
 - [ ] **Media type identified** (HDD vs SSD/NVMe — determines the sanitize
       method; when in doubt, treat as SSD)
 
-**Step 3.2 — Boot `[3] NUKE — ShredOS` and sanitize method-per-media.**
-ShredOS boots straight into nwipe. **Do not nwipe-only an SSD** — nwipe cannot
-reach wear-levelled, overprovisioned, or remapped blocks. The rule:
+**Step 3.2 — Arm and run the interlocked nuke.**
+The arming chain is `tools/phoenix-nuke-guard.sh` (arming guard) →
+`tools/phoenix-nuke.sh` (nuke core). From the Nuke boot environment:
+
+```bash
+# 1. The guard enumerates every disk (device, model, serial, size, bus, flags)
+#    as a numbered table. Nothing is armed yet -- dry-run is the default.
+./tools/phoenix-nuke-guard.sh
+
+# 2. To actually arm, TYPE the exact /dev path from the table TWICE plus the
+#    exact confirmation phrase, on a real console. The guard refuses: the boot
+#    USB, any mounted disk, piped/non-console input, and duplicate serials.
+#    It then hands the validated path to the nuke core (--exec appends it).
+./tools/phoenix-nuke-guard.sh --nuke \
+  --exec ./tools/phoenix-nuke.sh \
+  --image-proof /media/phoenix-usb/phoenix-logs/<image>.proof --nuke
+```
+
+- `--image-proof` names the manifest from Step 2.5; its `source_serial` must
+  match the disk being armed (invariant 1, enforced in code — see
+  `docs/NUKE-SAFETY.md`). The only bypass is `--skip-image-gate`, which demands
+  typing `NUKE WITHOUT BACKUP` on a real console and is audit-logged —
+  true emergencies only.
+- The core then enforces method-per-media (Step 3.2b) and a final countdown
+  abort window before touching the disk.
+
+**Step 3.2b — Sanitize method-per-media.** nwipe alone cannot sanitize SSDs
+(wear-levelling, overprovisioning, remapped blocks — NIST 800-88 Purge).
+The core picks the method from the media type; the rule it enforces:
 - **Spinning HDD:** nwipe with an appropriate pass.
 - **SATA/NVMe SSD:** firmware-level sanitize **first** (`nvme format --ses=1` /
   `nvme sanitize`, manufacturer Secure Erase, or `hdparm` ATA Secure Erase —
-  all available from a Linux shell), then nwipe as a supplement if desired.
+  all available from the Linux boot env), then nwipe as a supplement if desired.
 - **Unknown media:** treat as SSD.
 
-> The interlocked nuke UX has landed as `tools/Invoke-Nuke.sh` (bash, runs in
-> the Linux boot env — typed confirmation, disk enumeration by model/serial/
-> size, never auto-selects a target, method-per-media per BOOT-ARCHITECTURE.md
-> §8). Arming **requires** `--image-proof <file>` — the manifest written in
-> Step 2.5 — and the proof's `source_serial` must match the nuke target
-> (invariant 1, enforced in code; see `docs/NUKE-SAFETY.md` interlock 11).
-> The only bypass is `--skip-image-gate`, which demands typing
-> `NUKE WITHOUT BACKUP` on a real console and is logged — true emergencies
-> only. Until it is exercised in the QEMU test plan (docs/NUKE-TEST-PLAN.md),
-> the ShredOS
-> manual flow is the only wipe path — match the target disk's serial to the
-> physical drive with your own eyes, twice.
+> Manual fallback: boot `[3] NUKE — ShredOS` for its straight-into-nwipe
+> environment and work the disks by hand — but then YOU are the only guard
+> left. Match the target disk's serial to the physical drive with your own
+> eyes, twice, and enforce invariant 1 by hand (no verified image, no wipe).
+> `tests/verify-runbook.sh` confirms every guard above is actually in the code.
 
 **Step 3.3 — Sanity re-check post-wipe.** After the wipe completes, boot
 `[2] BACKUP — Rescuezilla` again and confirm the disk reads as
