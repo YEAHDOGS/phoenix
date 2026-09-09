@@ -98,3 +98,26 @@ physical destruction; the media can never be used again.
 3. I have a verified backup of anything on that disk I might want (Backup module) — and the **image-proof manifest** for it is on this USB (`--image-proof`).
 4. I typed the serial — not Y, not Enter — and the log recorded it.
 5. I understand the method and its NIST level from the table above.
+
+## 7. The NUKE core pair (boot-menu entry points)
+
+`tools/Invoke-Nuke.sh` (this document's subject) is the NIST-correct wipe
+engine. The boot menu's Nuke mode is entered through a second, smaller pair
+with its own contract — built for the menu's Analyze / Backup / **Nuke** /
+Reinstall flow:
+
+- `tools/Invoke-PhoenixNuke.ps1` — Windows side (WinPE / staging machine)
+- `tools/phoenix-nuke.sh` — Linux rescue side (exact rule parity with the .ps1)
+
+Contract (both): dry-run is the default (enumerate only); identifiers are
+row number, device node, or exact serial — wildcards are never resolved and
+ambiguous identifiers (e.g. duplicated serials) fail closed; arming requires
+typing the exact serial (or device path) **twice** on a real console
+(redirected stdin is refused); boot/USB disks are refused unless
+`--override-boot-protection` / `-OverrideBootProtection` is given (the
+override is logged as a WARNING and still requires the double confirmation);
+every run writes a structured audit record (UTC timestamp, disk id, mode,
+operator-confirmation evidence) to the log dir. The destructive primitive is
+a full-device zero-fill — on flash media that is NIST Clear at best, which is
+why SSD/NVMe targets should go through `Invoke-Nuke.sh` (firmware Purge)
+instead. Regression suite: `tests/tools/test-phoenix-nuke.sh` (88 cases).
