@@ -17,6 +17,10 @@ export const setup = $state({
   disableWpbt: true,
   stageUpdates: false,
   driverProfile: '',
+  imageTargetPath: '',
+  quarantineLabel: 'QUARANTINE-INFECTED-<date>',
+  castleTarget: '',
+  requireVerifiedImage: true,
   apps: [] as string[],
   modules: ['analyze', 'backup', 'reinstall'] as string[],
   drive: 'E:',
@@ -47,6 +51,12 @@ export function buildConfig(): PhoenixConfig {
     credentials: { username: setup.username, password: setup.password },
     apps: [...setup.apps],
     options: { timeZone: setup.timeZone, locale: setup.locale },
+    backup: {
+      imageTargetPath: setup.imageTargetPath,
+      quarantineLabel: setup.quarantineLabel,
+      castleTarget: setup.castleTarget,
+      requireVerifiedImage: setup.requireVerifiedImage,
+    },
     platformOptions: {
       windows: {
         computerName: setup.computerName,
