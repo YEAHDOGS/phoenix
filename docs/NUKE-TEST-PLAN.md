@@ -10,7 +10,20 @@ Static checks (this Linux VM, no hardware needed):
 ```bash
 bash -n tools/Invoke-Nuke.sh          # syntax -- must pass
 # shellcheck tools/Invoke-Nuke.sh     # if available in the boot-image build env
+bash tests/tools/test-nuke-interlocks.sh   # interlock regression harness -- must be 58/58 green
 ```
+
+The harness (`tests/tools/test-nuke-interlocks.sh`) runs the safety
+interlocks with a mocked `lsblk` fixture (sda=HDD, sdb=boot USB, nvme0n1=NVMe,
+sdd=mounted data disk) and a preflight that refuses to run if
+nwipe/hdparm/nvme-cli are present, so no destructive path can execute.
+It covers: dry-run default, `--whatif`, boot-USB structural refusal,
+mounted-partition refusal (row + /dev path), unknown/out-of-range id,
+bad `--method`, missing `--nuke` arg, gate ordering, plus unit tests of
+`classify_media`, `method_for` (+overrides), `nist_level_for`,
+`human_size`, `parent_disk`, `resolve_id`. It has caught two real bugs so
+far (a `parent_disk` sed fallback mangling nvme names; an `lsblk -P`
+`eval` clobbering PATH and silently killing the mount guard).
 
 Everything below runs on Brandon's Windows 11 host with QEMU
 (`C:\Program Files\qemu\`; see `scripts/qemu/start.ps1` for the WHPX pattern).
@@ -130,6 +143,7 @@ this; document the outcome if observed on real hardware during image build.)
 ## Regression checklist (every change to the script)
 
 - [ ] `bash -n` passes.
+- [ ] `bash tests/tools/test-nuke-interlocks.sh` is 58/58 green.
 - [ ] T1/T2: enumeration only, exit 0, no writes.
 - [ ] T3: boot device refused structurally.
 - [ ] T5: wrong confirmation aborts, exit 2.
