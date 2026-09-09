@@ -109,10 +109,18 @@ parent_disk() {
         echo "/dev/$pk"
         return
     fi
-    # fallback: strip trailing partition digits (sda1 -> sda, nvme0n1p2 -> nvme0n1)
+    # fallback: strip trailing partition digits (sda1 -> sda, nvme0n1p2 -> nvme0n1,
+    # mmcblk0p1 -> mmcblk0). The nvme/mmcblk/loop substitutions must be tried
+    # FIRST and must not fall through to the generic one: a second pass would
+    # re-strip the disk name itself (nvme0n1 -> nvme0n). `t` skips to end of
+    # script after the first successful substitution.
     local base
     base="$(basename "$node")"
-    base="$(echo "$base" | sed -E 's/(nvme[0-9]+n[0-9]+)p[0-9]+$/\1/; s/([a-zA-Z]+)[0-9]+$/\1/')"
+    base="$(echo "$base" | sed -E \
+        -e 's/^(nvme[0-9]+n[0-9]+)p[0-9]+$/\1/; t' \
+        -e 's/^(mmcblk[0-9]+)p[0-9]+$/\1/; t' \
+        -e 's/^(loop[0-9]+)p[0-9]+$/\1/; t' \
+        -e 's/^([a-zA-Z]+)[0-9]+$/\1/')"
     echo "/dev/$base"
 }
 
