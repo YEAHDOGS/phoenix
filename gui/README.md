@@ -43,7 +43,11 @@ No build step, no SDK, no dependencies beyond .NET Framework WinForms
 - **Build flow** (`Invoke-PhoenixBuild`): verifies the target is a Ventoy USB,
   dot-sources `tools/New-UnattendXml.ps1` → `New-UnattendXml` and
   `tools/New-AppInstallScript.ps1` → `New-AppInstallScript`, calls
-  `tools/Stage-Usb.ps1` → `Stage-Usb` for ISO staging, then writes
+  the planned `tools/Stage-Usb.ps1` → `Stage-Usb` module for ISO staging
+  (not yet implemented — the current stager scaffold is
+  `tools/Build-PhoenixUsb.ps1`, a standalone script with `-WhatIf`
+  dry-run support; the GUI skips staging with a warning until the
+  `Stage-Usb` module contract lands), then writes
   `<USB>:\phoenix\phoenix-config.json` via `Write-PhoenixConfig`. Missing
   modules are reported, not crashed on.
 
