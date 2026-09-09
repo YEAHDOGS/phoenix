@@ -1,16 +1,18 @@
-# Phoenix GUI Plan — USB Builder (founder-approved architecture)
+# Phoenix GUI Plan — USB Builder (Tauri flagship)
 
-> Status: design + scaffold (2026-09-09). Static review only — no PowerShell on
-> this Linux VM. **Windows-side testing still required** before this is trusted.
+> Status: design + scaffold (2026-09-09). Frontend type-checked
+> (`svelte-check`: 0 errors) and production-built (`vite build`: clean) on
+> Linux. **Rust side is static-review only** — no Rust toolchain on this VM.
+> The spike MUST be run on a real Windows machine (`npm run tauri dev` →
+> Diagnostics → Run streaming spike).
 
-## 0. Architecture split (founder decision, 2026-09-09)
+## 0. Architecture split (founder decision, stands)
 
-Two sides, hard boundary between them:
+Two sides, hard boundary:
 
 - **Config side (this GUI):** runs on a *working Windows machine*. Collects the
-  setup in a wizard, stages ISOs onto the USB, and writes
-  **`phoenix-config.json`** (apps selection, username/password, answer-file
-  options) to the USB. That's its whole job.
+  setup in a wizard, stages Ventoy ISOs onto the USB, writes the OS-agnostic
+  **`phoenix-config.json`** to the USB. That's its whole job.
 - **Boot side:** reads `phoenix-config.json` and runs **HEADLESS**. No GUI in
   WinPE — that is where projects go to die.
 
@@ -20,213 +22,269 @@ the menu. The GUI never constructs a boot menu.
 
 ## 1. Stack recommendation (ONE)
 
-**Extend the existing PowerShell WinForms launcher** (`scripts/tools/gui-launcher.ps1`).
-The USB builder becomes a new mode inside the launcher — a `USB Builder...`
-menu entry that opens the builder dialog (`gui/phoenix-setup.ps1`,
-dot-sourced as a library exposing `Show-PhoenixBuilder`).
+**Tauri 2 + Svelte 5 + Tailwind**, scaffolded from
+`npm create tauri-app -- --template svelte-ts`, living at
+`gui/phoenix-tauri/`. Brandon's real stack, as a single small binary.
 
-### Why this, and not the alternatives
+### Tauri vs Electron — validation note (researched 2026-09-09)
 
-- **Zero new dependencies.** The launcher branch already exists, already runs,
-  already solved WinForms-in-PowerShell styling, elevation
-  (`#Requires -RunAsAdministrator`), and script execution with output display.
-  The builder reuses all of it instead of rebuilding it.
-- **Matches the repo.** Everything in Phoenix is PowerShell; the builder
-  dot-sources the generator modules and calls them as functions — natural
-  parameter binding, no IPC, no second toolchain, and the same people who
-  write the scripts can fix the GUI.
-- **One app on the working machine.** The launcher is already "the thing you
-  open on a working Windows box to do Phoenix things." A builder mode keeps
-  one entry point instead of two competing apps.
-- The earlier idea of a separate `gui/phoenix-setup.ps1` app is superseded:
-  that file is now a **library the launcher loads**, still runnable standalone
-  for development.
+| | Tauri 2 | Electron |
+|---|---|---|
+| Binary size | ~3–30 MB | 150–250 MB |
+| Runtime RAM | ~50–100 MB | ~200–500 MB |
+| Installers | Windows .msi/.exe, macOS .dmg, Linux .deb/.AppImage from one codebase | same, at 10× the weight |
+| Web stack | Svelte 5 + Vite + Tailwind (his exact stack) | same, heavier shell |
 
-Rejected alternatives:
+Sources: tauri.app (bundle-size and concept docs), 2026 Tauri-vs-Electron
+comparisons. On-brand for a debloat tool, and it fits his "all code is a
+liability" rule: the whole app is one Rust binary + web UI, no Chromium
+vendored per install.
 
-- **Separate standalone app** — two apps, two menus, duplicated styling and
-  elevation handling, for no gain. (This was the previous recommendation;
-  the founder's split retired it.)
-- **WPF/XAML** — prettier, but needs XAML design tooling and is harder to
-  debug from a Linux workstation. Marginal gain for a form-driven wizard.
-- **Tauri v2 + Svelte 5 + Tailwind** (VISION.md's Phase 5 pick) — buys a
-  Rust+Node toolchain and an IPC boundary between the UI and the PowerShell
-  modules it exists to drive. Parked; revisit only if the builder outgrows
-  `.ps1`.
-- **Web UI** — needs a browser/host on the build machine and has the worst
-  elevation story for disk operations.
-- **Any GUI inside WinPE** — explicitly vetoed by the founder.
+### The bar for .NET
 
-## 2. Screen map
+Reach for .NET/WinForms **only** if a deep-Windows-integration need arises
+that Tauri provably can't do — e.g. in-process COM/WMI that can't be reached
+through a spawned PowerShell (and the streaming pattern below covers nearly
+all of that). Until that bar is met with evidence, .NET stays out.
 
-### (a) Launcher + Builder mode
+### Disposition of the WinForms launcher branch
 
-The launcher keeps its current Scripts view untouched. Additive change only:
-a **File → `USB Builder...`** menu item (and it stays working if the builder
-library is absent — the item reports "builder not found" instead of crashing).
+The PowerShell WinForms launcher (`scripts/tools/gui-launcher.ps1` +
+`gui/phoenix-setup.ps1`) stays in the repo as the **documented
+zero-dependency fallback**: no toolchain, runs anywhere PowerShell 5.1
+exists. The Tauri app is the **flagship**. New builder work goes to Tauri;
+the WinForms path gets maintenance only.
 
-The builder dialog (1000x700, same dark theme):
+## 2. Validation verdict — Tauri passes all three (researched 2026-09-09)
 
-```
-+----------------------------------------------------------+
-| PHOENIX - USB Builder                    [wizard above]   |
-+----------------------------------------------------------+
-|  [Analyze]      [Backup]       [Nuke]       [Reinstall]   |
-|  SystemRescue   Rescuezilla    ShredOS      WinPE+Win ISO  |
-|  [x] stage ISO  [x] stage ISO  [ ] stage    [x] stage ISO  |
-+----------------------------------------------------------+
-|  Ventoy USB: [E:\  v]  [Verify Ventoy]                    |
-|  [New Setup...] [Open Setup...]  [ BUILD USB ]            |
-+----------------------------------------------------------+
-|  (log pane - passwords never written here)                |
-+----------------------------------------------------------+
-```
+### (1) Spawning PowerShell + streaming output — CONFIRMED, the core pattern
 
-- Each tile = one Ventoy ISO to stage (see §5). Checkbox = "stage this ISO".
-  Nuke (ShredOS) defaults OFF.
-- `Verify Ventoy` checks the target drive for a Ventoy install (`ventoy/`
-  dir); BUILD refuses to run against a non-Ventoy drive.
-- `New Setup...` opens the wizard (§2b). `BUILD USB` stages ISOs + writes
-  `phoenix-config.json` (§2c) + writes the WinPE headless payload.
+`tauri-plugin-shell`: `Command.create('powershell', ['-NoProfile',
+'-ExecutionPolicy', 'Bypass', '-File', scriptPath])` + `.spawn()`, with
+stdout/stderr streamed line-by-line to the Svelte UI
+(`cmd.stdout.on('data', …)` / `cmd.stderr.on('data', …)`) — the same shape as
+the ffmpeg-streaming examples in the plugin docs. Rust-side equivalent is
+documented too (`ShellExt`, `CommandEvent::Stdout` → `window.emit(…)`).
 
-### (b) "New Setup" wizard (modal dialog, hidden-tab TabControl, Next/Back)
+The scaffold implements the **Rust-side variant** (single code path,
+frontend stays dumb): `stream_powershell_script` in
+`src-tauri/src/lib.rs` spawns `powershell.exe` and re-emits every
+stdout/stderr line as a `phx-output` event; `+page.svelte` subscribes once
+and routes lines into the log pane. `stream_powershell_inline` covers
+diagnostics. This is how the GUI will drive the stager scripts
+(New-AnswerFile, USB build, downloads) without blocking.
 
-| Page | Fields |
-|---|---|
-| 1. Machine | Computer name (validated: ≤15 chars, A–Z 0–9 `-`), timezone dropdown (defaults to the build machine's), Windows edition dropdown (Pro/Home/Education), product key textbox (optional; blank = generic key) |
-| 2. Accounts | Username, password (masked, `UseSystemPasswordChar`), confirm password (must match). Held as `SecureString` in the GUI; written **plaintext** into `phoenix-config.json` (see security note §6) — never to the log. |
-| 3. Apps | `CheckedListBox` (check-on-click) with category filter, bound to `data/choco-install/apps.json` entries `{package, description, category, defaultSelected}`. Empty/missing file → "app list not populated yet" and continue (apps are optional). |
-| 4. Answer-file options | Locale, skip OOBE (default on), disable WPBT (default on), driver-pack profile dropdown, "stage updates" checkbox |
-| 5. Review & Build | Read-only summary (password `••••••`), ISO/module list, target drive, `[ Build USB ]`, progress log |
+**Security:** the plugin needs explicit scope config — done in
+`src-tauri/capabilities/shell.json`, which whitelists `powershell.exe` with
+an explicit arg allowlist (`-NoProfile -ExecutionPolicy Bypass
+(-File|-Command) <path>`). Scripts must live under the Phoenix tools dir.
 
-Wizard state lives in one `$Setup` hashtable; `Open Setup...` / save round-trips
-a `*.phoenix.json` sidecar (password omitted — re-prompted at build).
+**Required spike (on a real Windows machine):** Diagnostics → *Run streaming
+spike* must show interleaved stdout/stderr lines arriving live in the log.
+If it doesn't, nothing below it is trusted.
 
-### (c) Contracts
+### (2) Elevation story — CONFIRMED, design = elevate on demand
 
-**`phoenix-config.json`** — written by the GUI to `<USB>:\phoenix\phoenix-config.json`.
-The headless boot side is the consumer.
+Tauri maintainer guidance: either stamp `requireAdministrator` in the exe
+manifest (embed-resource/winres in `build.rs`) or — better — run the app
+**unelevated** and elevate only privileged steps via a small helper invoked
+with the `runas` verb (ShellExecute) or a self-relaunch-with-runas.
+
+Phoenix picks **on-demand elevation**, because the config app mostly needs
+NO admin: picking apps and writing `phoenix-config.json` are normal file
+writes. Only raw USB writes / Ventoy install need elevation. So: the app
+launches unelevated, and **UAC prompts only on the "Write USB" step**.
+
+Do NOT stamp `requireAdministrator` on the whole app: UAC on every launch,
+plus elevated processes break drag-and-drop from unelevated Explorer —
+both are daily friction for zero gain here.
+
+### (3) Never in WinPE — CONFIRMED by construction
+
+The Tauri app is WebView2 + a Rust runtime; WinPE ships neither, and the
+architecture already routes WinPE through headless scripts +
+`phoenix-config.json`. Stated as a hard boundary: **the config app runs ONLY
+on a working Windows machine.**
+
+One dependency to note: the build machine needs the **WebView2 runtime** —
+preinstalled on Windows 11 and most Windows 10 installs, so a non-issue in
+practice, but it is listed as a prerequisite in the app README.
+
+**Verdict: Tauri passes all three.** No fallback needed beyond the
+documented WinForms zero-dependency path (§1).
+
+## 3. Scope: one app, blade registry
+
+"Multiple smart interfaces" = **ONE Tauri config app to start** (apps
+picker, credentials, answer-file options, USB writer), architected so more
+interfaces plug in later. The seam is `src/lib/blades.ts`: a `Blade`
+registry (`id`, `label`, `platforms`, `description`) driving the tab bar in
+`+page.svelte`. Adding a second blade is a registry entry + its Svelte
+view — no app rewrite.
+
+## 4. Screen map (Tauri)
+
+- **Header:** Phoenix branding + blade tabs (one today: *USB Builder*).
+- **Module tiles:** the 4 boot options → Ventoy ISOs to stage
+  (Analyze→SystemRescue, Backup→Rescuezilla, Nuke→ShredOS, Reinstall→WinPE+Win
+  ISO), each with a *Stage ISO* checkbox. Nuke defaults OFF with the modal
+  interlock (§8).
+- **Drive row:** Ventoy USB drive field, *Verify Ventoy*, *Detect drives*,
+  repo-root field (for `data/choco-install/apps.json`), *New Setup…* button.
+- **Setup wizard** (modal, 5 steps): Machine → Accounts → Apps → Options →
+  Review & Build. Same fields as the WinForms wizard: computer name
+  (validated), masked username/password (match validation, never logged),
+  app checklist with category filter bound to the
+  `{package, description, category, defaultSelected}` schema, answer-file
+  options (locale, skip OOBE, disable WPBT, driver profile, stage updates),
+  review summary (password `••••••`), *Build USB*.
+- **Diagnostics:** collapsible *PowerShell streaming spike* panel (the
+  required spike, §2.1).
+- **Log pane:** build log; password/secret/token/product-key keys redacted.
+
+## 5. Contracts
+
+### `phoenix-config.json` — OS-agnostic from day one (founder requirement)
+
+Written by the GUI to `<USB>:\phoenix\phoenix-config.json`. Top level has
+**no Windows-only keys**; a `platform` discriminator selects the OS and
+anything platform-specific nests under `platformOptions`, so macOS/Linux
+execution blades can plug into the same GUI later:
 
 ```json
 {
   "version": 1,
-  "computerName": "PHOENIX-01",
-  "username": "brando",
-  "password": "<plaintext, see security note>",
-  "timeZone": "Central Standard Time",
-  "edition": "Pro",
-  "productKey": "",
-  "locale": "en-US",
-  "options": { "skipOobe": true, "disableWpbt": true, "stageUpdates": false, "driverProfile": "" },
+  "platform": "windows",
+  "credentials": { "username": "brando", "password": "<plaintext, see §8>" },
   "apps": ["git", "vscode"],
+  "options": { "timeZone": "Central Standard Time", "locale": "en-US" },
+  "platformOptions": {
+    "windows": {
+      "computerName": "PHOENIX-01", "edition": "Pro", "productKey": "",
+      "skipOobe": true, "disableWpbt": true,
+      "stageUpdates": false, "driverProfile": ""
+    }
+  },
   "modules": ["analyze", "backup", "reinstall"]
 }
 ```
 
-**Generator modules** (sibling workers; the GUI dot-sources them and calls
-functions — it never shells out to `powershell.exe`). Missing modules degrade
-gracefully (wizard reports "not available yet", Build disabled):
+### Tauri commands (`src-tauri/src/lib.rs`)
 
-- `tools/New-UnattendXml.ps1` → `New-UnattendXml -ComputerName -Username -Password(SecureString) -TimeZone -Edition -ProductKey -Options(hashtable) -OutputPath` → path. The GUI pre-generates `autounattend.xml` onto the USB at build time; the headless side can also regenerate from `phoenix-config.json`.
-- `tools/New-AppInstallScript.ps1` → `New-AppInstallScript -AppsJsonPath -SelectedPackages -OfflineCachePath -OutputPath` → path.
-- `tools/Stage-Usb.ps1` → `Stage-Usb -Setup -IncludeModules -TargetDrive -IsoCacheDir` → stages ISOs (download + SHA-512 verify per VISION.md), writes `phoenix-config.json`, lays down the WinPE headless payload. Fails the build if any required asset is missing.
+| Command | Contract |
+|---|---|
+| `stream_powershell_script(scriptPath, args)` | Spawn `.ps1`, stream stdout/stderr → `phx-output` events. The stager driver. |
+| `stream_powershell_inline(command)` | Same for inline snippets (diagnostics). |
+| `list_removable_drives()` | → `{letter, label}[]`. **Stubbed** — wire to `Get-CimInstance Win32_LogicalDisk` in the Windows spike. |
+| `verify_ventoy(drive)` | → bool. Checks `<drive>:\ventoy\`. Real, cross-platform. |
+| `write_phoenix_config(drive, config)` | Writes `<drive>:\phoenix\phoenix-config.json`. Real. |
+| `get_app_catalog(repoRoot)` | Reads `<repoRoot>/data/choco-install/apps.json`, `[]` if empty/missing. Real. |
 
-**Headless side contract** (for the boot-side worker): WinPE `startnet.cmd`
-runs `<USB>:\phoenix\headless\Start-Phoenix.ps1`, which reads
-`..\phoenix-config.json` and executes without user interaction: apply the
-pre-generated `autounattend.xml` path, run offline app installs from the
-staged cache, apply driver profile. No windows, no prompts — prompts in WinPE
-are where projects go to die.
+### Stager / generator modules (sibling workers)
 
-## 3. What the scaffold implements (this branch)
+The Tauri app drives them through `stream_powershell_script` — no direct
+`powershell.exe` shell-outs from JS, one streaming code path. Missing
+scripts degrade gracefully (log + message, no crash).
 
-- `gui/phoenix-setup.ps1` — refactored into a **dot-sourcable library**
-  exposing `Show-PhoenixBuilder`; still runnable standalone for dev
-  (`powershell -File gui\phoenix-setup.ps1`). Contains the builder dialog,
-  the 5-page wizard, `Write-PhoenixConfig`, and `Invoke-PhoenixBuild`.
-- `scripts/tools/gui-launcher.ps1` — **additive only**: a File-menu
-  `USB Builder...` item that dot-sources the builder library and opens it.
-  The Scripts view is untouched.
-- `gui/README.md` — run/test notes.
+### Headless side (unchanged)
 
-## 4. Boot side: Ventoy mapping (for the screen map)
+WinPE `startnet.cmd` → `<USB>:\phoenix\headless\Start-Phoenix.ps1` reads
+`..\phoenix-config.json` and runs with zero user interaction.
 
-The founder validated Ventoy multi-boot. The GUI stages these ISOs; Ventoy's
-own menu is the 4-option menu — the GUI builds no boot menu.
+## 6. Boot side: Ventoy mapping (unchanged)
 
 | GUI tile | ISO staged | Provides |
 |---|---|---|
 | Analyze | SystemRescue | hardware analysis, full file manager, shell |
 | Backup | Rescuezilla | full-machine image backup before anything destructive |
 | Nuke | ShredOS | `nwipe` secure disk wipe (own on-device confirmations) |
-| Reinstall | Windows installer ISO + Phoenix WinPE payload | headless config-driven install via `phoenix-config.json` |
+| Reinstall | Windows installer ISO + Phoenix WinPE payload | headless config-driven install |
 
 ### File explorer requirement (founder)
 
-Brandon wants to browse drives from the bootable tool. Accounted for, not
-solved by the GUI:
+Stage **Explorer++ portable** in the WinPE payload; the Linux ISOs ship full
+file managers natively. The GUI's job: include it in the staging manifest
+and verify it landed.
 
-- **WinPE side:** stage a portable file manager — **Explorer++** is the
-  standard pick — into the WinPE payload (`<USB>:\phoenix\tools\Explorer++.zip`
-  extracted, launched from the headless script or a WinPE shortcut).
-- **Linux side:** SystemRescue / Rescuezilla / ShredOS all ship full file
-  managers natively — nothing to stage.
-- The GUI's only job here: include Explorer++ in the staging manifest and
-  verify it landed.
+### Honest constraint: Macs
 
-## 5. This replaces the old §5
+The Ventoy multi-boot USB is a **PC thing** — Apple Silicon Macs won't boot
+it, period. Mac support is a **separate blade** down the road
+(`startosinstall`/MDM path), not the same stick. The OS-agnostic schema
+(§5) is what keeps that door open; nothing in v1 pretends to walk through it.
 
-There is no Phoenix-built PE boot menu anymore. The old `modules.json`
-manifest idea is retired — Ventoy owns the menu, `phoenix-config.json` owns
-the configuration. The builder writes both the ISOs and the config; the
-headless WinPE payload consumes the config.
+## 7. What the scaffold implements (this branch)
 
-## 6. Safety
+`gui/phoenix-tauri/` (from `npm create tauri-app -- --template svelte-ts`,
+Tauri 2, customized):
+
+- **Backend** (`src-tauri/`): shell plugin wired, the six commands above,
+  `capabilities/shell.json` scope whitelist, product metadata
+  (Phoenix USB Builder, `net.wearedogs.phoenix`), 1100×780 window.
+- **Frontend** (`src/`): Svelte 5 runes + Tailwind v4. `lib/types.ts`
+  (OS-agnostic schema), `lib/blades.ts` (registry), `lib/store.svelte.ts`
+  (wizard state, password-safe logging), `lib/phoenix.ts` (invoke wrappers),
+  components (`ModuleTiles`, `SetupWizard`, `LogPane`, `SpikePanel`),
+  routes (`+page`, `+layout`).
+- **Verified on Linux:** `npm install`, `svelte-check` (0 errors, 0 warnings),
+  `vite build` (clean). Rust is static-review only here.
+
+Untouched fallback: `scripts/tools/gui-launcher.ps1` + `gui/phoenix-setup.ps1`
+(zero-dependency WinForms path — maintenance only, see §1).
+
+## 8. Safety
 
 ### Nuke interlocks
 
-- The Nuke tile (ShredOS ISO) defaults to **unchecked**. Checking it opens a
-  modal warning: staging the ISO only puts the wipe tool on the USB — nothing
-  runs on the build machine, and ShredOS/`nwipe` keeps its own on-device
-  confirmations, which this GUI cannot bypass.
-- `BUILD USB` with Nuke staged requires a second explicit confirmation naming
-  the target drive.
-- The GUI never invokes any wipe tool. There is no "run nuke now" anywhere in
-  the builder.
+- Nuke tile (ShredOS ISO) defaults **unchecked**; checking opens the modal
+  warning (staging ≠ running); unchecking is free.
+- Build with Nuke staged requires explicit confirmation naming the drive.
+- The GUI never invokes any wipe tool; `nwipe`'s on-device confirmations
+  stand and cannot be bypassed from here.
 
 ### Password handling
 
-- In the GUI: `SecureString`, masked boxes, match validation, never logged
-  (`Write-SetupLog` redacts `password/secret/token/*key` keys).
-- On the USB: `phoenix-config.json` carries the password in **plaintext** —
-  unavoidable, because `autounattend.xml` requires it and the headless WinPE
-  side must read it without a build-machine DPAPI key. Same exposure as the
-  existing `win-install/autounattend.xml` in the public repo.
-- Policy (matches the existing README): the password in the config is a
-  **throwaway install-time credential**, changed after first logon. The GUI's
-  Review page states this next to the masked password field.
+- GUI: masked inputs, in-memory only, never logged (both the TS `log()` and
+  the old PS `Write-SetupLog` redact secret-like keys), cleared after build.
+- USB: plaintext in `phoenix-config.json` — unavoidable (unattend requires
+  it; WinPE can't use the build machine's DPAPI key). Policy, same as the
+  existing `win-install/autounattend.xml`: **throwaway install-time
+  credential, changed after first logon.** Stated in the wizard next to the
+  password fields.
 
-## 7. Founder questions
+### Elevation
+
+Unelevated by default; UAC only on the Write USB step (§2.2). No
+`requireAdministrator` stamp.
+
+## 9. Founder questions
 
 1. **Throwaway-credential policy** — confirm: config passwords are always
    throwaway install-time creds, changed post-install. (Current assumption.)
-2. **Ventoy prep** — should `Stage-Usb` expect a pre-made Ventoy USB (verify
-   `ventoy/` dir, bail with instructions) or install Ventoy itself (needs the
-   Ventoy package + admin)? Leaning: verify-and-bail for now.
+2. **Ventoy prep** — stager expects a pre-made Ventoy USB (verify `ventoy/`,
+   bail with instructions) vs. stager installs Ventoy itself? Leaning
+   verify-and-bail.
 3. **ISO pinning** — who curates the pinned ISO list + SHA-512 hashes
-   (Windows 11, SystemRescue, Rescuezilla, ShredOS versions)? Sibling worker
-   or a data file in repo (`data/iso-pins.json`)?
-4. **Explorer++ sourcing** — download at build time (needs a pinned URL +
-   hash) or vendor the portable zip in the repo?
+   (Windows 11, SystemRescue, Rescuezilla, ShredOS)? Sibling worker or
+   `data/iso-pins.json` in repo?
+4. **Explorer++ sourcing** — download at build time (pinned URL + hash) or
+   vendor the portable zip in the repo?
+5. **.NET bar** — confirm the bar in §1: .NET only on a proven
+   Tauri-can't-do-it integration need.
+6. **Mac blade priority** — after v1, or explicitly later? (Schema is ready
+   either way.)
 
-## 8. What's still missing (not this worker's job)
+## 10. What's still missing (not this worker's job)
 
-- `tools/New-UnattendXml.ps1`, `tools/New-AppInstallScript.ps1`,
-  `tools/Stage-Usb.ps1` (sibling workers) — the builder detects and reports
-  their absence instead of crashing.
+- **Windows spike run** (required): `cargo check` / `cargo build` the Rust
+  side, `npm run tauri dev`, run the Diagnostics spike, implement
+  `list_removable_drives`, walk the wizard at 100%/150% DPI, verify Ventoy
+  detection on a real Ventoy USB.
+- `tools/` stager + generator modules (sibling workers) — driven via
+  `stream_powershell_script` when they land.
 - `data/choco-install/apps.json` content (sibling worker populating).
-- The headless WinPE payload (`phoenix/headless/Start-Phoenix.ps1`,
-  `startnet.cmd` hook) that consumes `phoenix-config.json`.
-- ISO pin list + hashes (see Q3).
-- Windows-side testing: launcher → File → USB Builder → walk the wizard at
-  100%/150% DPI; verify Ventoy detection against a real Ventoy USB.
+- Headless WinPE payload (`phoenix/headless/Start-Phoenix.ps1`,
+  `startnet.cmd` hook) consuming `phoenix-config.json`.
+- ISO pin list + hashes; Explorer++ sourcing (see Q3/Q4).
+- Elevation helper for the Write USB step (`runas`-verb helper or
+  self-relaunch) — designed (§2.2), not yet implemented.
