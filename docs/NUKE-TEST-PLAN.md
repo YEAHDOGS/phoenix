@@ -102,6 +102,11 @@ Expect: `FATAL: No disk matches identifier`, exit 1, nothing touched.
 Expect: `Aborted. Confirmation did not match.`, exit code `2`, log file
 exists on the USB recording the abort, target image unchanged.
 
+> Also T5-adjacent (covered in `tests/tools/test-nuke-interlocks.sh`, no VM
+> needed): piping the *correct* serial in (`echo <serial> | Invoke-Nuke.sh
+> --nuke <row>`) is refused with "stdin is not a TTY", exit 2 — the
+> confirmation only accepts input typed on a real terminal.
+
 ### T6 — `NUKE <serial>` prefix is accepted
 Same as T5 but type `NUKE <exact-serial>`. Then **Ctrl-C during the 5s
 countdown**.

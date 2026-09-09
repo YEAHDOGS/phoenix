@@ -14,7 +14,10 @@
 # Coverage:
 #   UNIT (functions sourced from the real script, `main` stripped):
 #     classify_media, method_for (+ --method overrides), nist_level_for,
-#     human_size, parent_disk (lsblk hit + sed fallback), resolve_id.
+#     human_size, parent_disk (lsblk hit + sed fallback), resolve_id,
+#     typed_confirmation (pipe-fed input refused -- serial, "yes", and
+#     "NUKE <serial>" -- on non-TTY stdin; wrong serial refused and correct
+#     serial / "NUKE <serial>" accepted on a real pty).
 #   INTEGRATION (subprocess, mocked lsblk fixture: sda=HDD, sdb=boot USB
 #     (mounted), nvme0n1=NVMe SSD, sdd=mounted data SSD):
 #     dry-run enumeration, --whatif, boot-USB structural refusal,
@@ -22,8 +25,10 @@
 #     out-of-range row, bad --method, missing --nuke arg, gate ordering.
 #
 # Deliberately NOT covered here (VM-only, see docs/NUKE-TEST-PLAN.md T5-T8):
-#   typed-confirmation accept/abort and any destructive method execution.
-#   Those need QEMU throwaway images and must never run on bare metal.
+#   typed-confirmation accept/abort against a real block device, and any
+#   destructive method execution. Those need QEMU throwaway images and must
+#   never run on bare metal. (The pipe/pty confirmation matrix IS covered
+#   in the unit section above; it just cannot prove the device-exists path.)
 #
 # Usage: bash tests/tools/test-nuke-interlocks.sh   (exit 0 = all green)
 #===============================================================================
@@ -182,6 +187,54 @@ tr() { # tr <id> <expected-idx-or-FAIL>
 tr 1 0; tr 2 1; tr SATATEST001 0; tr USBTEST002 1
 tr /dev/sda 0; tr /dev/sdb 1; tr 0 FAIL; tr 3 FAIL; tr 99 FAIL; tr bogus FAIL
 
+#--- typed_confirmation: pipe-fed input can never arm (the TTY interlock) -----
+echo "== typed_confirmation: piped input cannot arm (unit) =="
+# U1: the CORRECT serial, piped, is refused -- stdin is not a terminal.
+if printf 'SATATEST001\n' | typed_confirmation "SATATEST001" >/dev/null 2>&1; then
+    fail "typed_confirmation refuses piped correct serial"
+else
+    pass "typed_confirmation refuses piped correct serial"
+fi
+# U2: piped "yes" is refused (it could never match a serial anyway, but the
+#     TTY gate must fire first).
+if printf 'yes\n' | typed_confirmation "SATATEST001" >/dev/null 2>&1; then
+    fail 'typed_confirmation refuses piped "yes"'
+else
+    pass 'typed_confirmation refuses piped "yes"'
+fi
+# U3: piped "NUKE <serial>" is refused too -- the prefix does not bypass it.
+if printf 'NUKE SATATEST001\n' | typed_confirmation "SATATEST001" >/dev/null 2>&1; then
+    fail 'typed_confirmation refuses piped "NUKE <serial>"'
+else
+    pass 'typed_confirmation refuses piped "NUKE <serial>"'
+fi
+# U4/U5/U6: on a REAL pty (human-at-console equivalent), the wrong serial is
+# still refused and the correct serial / "NUKE <serial>" are accepted.
+# NOTE: util-linux `script` scrubs the environment, so `export -f` does not
+# reach the pty child -- inject the function bodies via `declare -f` into a
+# temp child script instead (avoids nested-quoting pitfalls entirely).
+pty_confirm() { # pty_confirm <typed-input> <expected-serial> -> rc of typed_confirmation on a real pty
+    local child="$T/pty-child.sh"
+    { declare -f typed_confirmation; declare -f log; declare -f ts
+      printf 'typed_confirmation %q\n' "$2"; } > "$child"
+    printf '%s\n' "$1" | script -qec "bash $child" /dev/null >/dev/null 2>&1
+}
+if pty_confirm 'wrongserial' 'SATATEST001'; then
+    fail "typed_confirmation rejects wrong serial on a TTY"
+else
+    pass "typed_confirmation rejects wrong serial on a TTY"
+fi
+if pty_confirm 'SATATEST001' 'SATATEST001'; then
+    pass "typed_confirmation accepts correct serial on a TTY"
+else
+    fail "typed_confirmation accepts correct serial on a TTY"
+fi
+if pty_confirm 'NUKE SATATEST001' 'SATATEST001'; then
+    pass 'typed_confirmation accepts "NUKE <serial>" on a TTY'
+else
+    fail 'typed_confirmation accepts "NUKE <serial>" on a TTY'
+fi
+
 echo "== integration tests (mocked lsblk subprocess) =="
 # run_case <name> <expected-exit> <expected-substring> [script args...]
 # stdin comes from /dev/null unless NUKE_STDIN is set.
@@ -228,6 +281,10 @@ run_case "I9 --nuke missing arg" 1 "needs a disk id" --nuke
 #      prompt (fixture paths do not exist on the host, so this is the
 #      expected outcome here; on real hardware the serial prompt follows).
 NUKE_STDIN="y" run_case "I10 block-device gate before confirmation" 1 "not a block device" --nuke 1
+unset NUKE_STDIN
+# I12: even the CORRECT serial, piped in, cannot reach confirmation here --
+#      the device gate fires first, and no "CONFIRMED"/arming line appears.
+NUKE_STDIN="SATATEST001" run_case "I12 piped correct serial blocked by device gate" 1 "not a block device" --nuke 1
 unset NUKE_STDIN
 # I11: enumeration table content -- boot USB flagged, NVMe classified, sizes sane.
 out="$(PATH="$MOCKBIN:$PATH" timeout 20 bash "$NUKE" --log-dir "$T/logs-I11" </dev/null 2>&1)"
