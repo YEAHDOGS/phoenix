@@ -17,6 +17,8 @@
 #   4. Refuses when the target is inside the backup directory.
 #   5. --apply prints the full plan and requires the operator to type RESTORE
 #      (--confirm-word RESTORE bypasses the prompt for GUI/scripted use, loudly).
+#   --allow-same-disk overrides ONLY interlock 3, for legitimate same-disk
+#   restores (local testing, a second profile on one machine).
 
 set -euo pipefail
 
@@ -25,6 +27,7 @@ TARGET_ROOT=""
 APP="all"
 APPLY=0
 CONFIRM_WORD=""
+ALLOW_SAME_DISK=0
 PROFILE_DIR="$(cd "$(dirname "$0")/../../profiles" && pwd)"
 HOME_ROOT="${PHOENIX_HOME:-$HOME}"
 
@@ -34,6 +37,8 @@ while [ $# -gt 0 ]; do
         --target-root)  TARGET_ROOT="$2"; shift 2 ;;
         --app)          APP="$2"; shift 2 ;;
         --apply)        APPLY=1; shift ;;
+        --plan)         APPLY=0; shift ;;
+        --allow-same-disk) ALLOW_SAME_DISK=1; shift ;;
         --confirm-word) CONFIRM_WORD="$2"; shift 2 ;;
         --profile-dir)  PROFILE_DIR="$2"; shift 2 ;;
         *) echo "unknown arg: $1" >&2; exit 1 ;;
@@ -70,14 +75,24 @@ if [ -n "$SRC_HOME" ] && [ -e "$SRC_HOME" ]; then
         echo "INTERLOCK: target '$TARGET_CANON' IS the backup source — restore refuses to target the disk it came from" >&2; exit 1
     fi
 fi
-# interlock 3: filesystem fingerprint match
+# interlock 3: filesystem fingerprint match (same disk as the backup source)
+# --allow-same-disk overrides this one interlock for legitimate same-disk
+# restores (testing, second profile on one machine); typed confirmation stays.
 TGT_FSID="$(stat -c %d "$TARGET_CANON" 2>/dev/null || echo unknown)"
 if [ -n "$SRC_FSID" ] && [ "$SRC_FSID" != "null" ] && [ "$SRC_FSID" != "unknown" ] && [ "$TGT_FSID" = "$SRC_FSID" ]; then
-    echo "INTERLOCK: target filesystem id matches the backup SOURCE — refusing" >&2; exit 1
+    if [ "$ALLOW_SAME_DISK" = 1 ]; then
+        echo "[!] --allow-same-disk: target is on the SOURCE disk — proceeding only because you said so"
+    else
+        echo "INTERLOCK: target filesystem id matches the backup SOURCE — refusing (use --allow-same-disk to override)" >&2; exit 1
+    fi
 fi
 TGT_UUID="$(findmnt -no UUID -T "$TARGET_CANON" 2>/dev/null || echo "")"
 if [ -n "$SRC_UUID" ] && [ -n "$TGT_UUID" ] && [ "$SRC_UUID" = "$TGT_UUID" ]; then
-    echo "INTERLOCK: target filesystem UUID matches the backup SOURCE — refusing" >&2; exit 1
+    if [ "$ALLOW_SAME_DISK" = 1 ]; then
+        echo "[!] --allow-same-disk: target UUID matches the SOURCE disk — proceeding only because you said so"
+    else
+        echo "INTERLOCK: target filesystem UUID matches the backup SOURCE — refusing (use --allow-same-disk to override)" >&2; exit 1
+    fi
 fi
 
 expand_profile_path() { # $1 = raw profile path; ~ expands to TARGET home
