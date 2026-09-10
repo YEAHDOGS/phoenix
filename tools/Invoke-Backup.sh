@@ -607,7 +607,7 @@ emit_proof() {
         --image-size-bytes "$size" \
         --verified \
         --verified-by "phoenix-backup:${USER:-unknown}" \
-        --out "$proofdir" 2>&1 | tee -a "$LOGFILE"
+        --out "$proofdir" --json-out "$proofdir" 2>&1 | tee -a "$LOGFILE"
 }
 
 # print_rescuezilla_checklist -- manual Rescuezilla path (runbook Step 2.3).

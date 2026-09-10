@@ -29,7 +29,7 @@ set -euo pipefail
 PROG="$(basename "$0")"
 
 IMAGE_NAME=""; IMAGE_PATH=""; SOURCE_SERIAL=""; SOURCE_DEV=""
-SHA256=""; SIZE_BYTES=""; VERIFIED_BY=""; OUT_DIR="."; VERIFIED=0
+SHA256=""; SIZE_BYTES=""; VERIFIED_BY=""; OUT_DIR="."; JSON_OUT=""; VERIFIED=0
 
 usage() {
     cat <<EOF
@@ -39,7 +39,7 @@ Usage:
   $PROG --image-name <name> --image-path <dir-or-file> \\
         --source-serial <serial> --sha256 <64-hex> --verified \\
         [--source-dev /dev/nvme0n1] [--image-size-bytes N]
-        [--verified-by <who>] [--out <dir>]
+        [--verified-by <who>] [--out <dir>] [--json-out <dir>]
 
   --image-name        label, e.g. laptop-fulldisk-2026-09-09
   --image-path        where the image lives (dir or file); size is read
@@ -55,6 +55,11 @@ Usage:
   --verified-by       operator name (default: \$USER)
   --image-size-bytes  override the size read from --image-path
   --out               directory for the .proof file (default: .)
+  --json-out DIR      ALSO write backup-image-proof.json (schema
+                      phoenix-image-proof/1) into DIR -- the JSON sibling
+                      the REINSTALL chain-of-custody gate consumes. Without
+                      it the proof exists only for the Nuke --image-proof
+                      gate.
 EOF
 }
 
@@ -70,6 +75,7 @@ while (( $# > 0 )); do
         --image-size-bytes) SIZE_BYTES="${2:?}"; shift 2 ;;
         --verified-by)      VERIFIED_BY="${2:?}"; shift 2 ;;
         --out)              OUT_DIR="${2:?}"; shift 2 ;;
+        --json-out)         JSON_OUT="${2:?}"; shift 2 ;;
         --verified)         VERIFIED=1; shift ;;
         -h|--help)          usage; exit 0 ;;
         *)                  die "Unknown option: $1 (see --help)" ;;
@@ -118,6 +124,35 @@ OUT="$OUT_DIR/image-proof-${SOURCE_SERIAL}-${TS}.proof"
 } > "$OUT"
 
 echo "Proof written: $OUT"
+# JSON sibling for the REINSTALL chain-of-custody gate (schema
+# phoenix-image-proof/1). The Nuke phase consumes the .proof file; the
+# Reinstall phase consumes this JSON. Both are written from the same
+# source data so they cannot disagree about serial/hash/verified.
+if [[ -n "$JSON_OUT" ]]; then
+    [[ -d "$JSON_OUT" ]] || die "--json-out '$JSON_OUT' is not a directory"
+    export PHOENIX_PROOF_SERIAL="$SOURCE_SERIAL" \
+        PHOENIX_PROOF_SHA256="$SHA256" PHOENIX_PROOF_IMAGE_PATH="$IMAGE_PATH" \
+        PHOENIX_PROOF_IMAGE_NAME="$IMAGE_NAME" PHOENIX_PROOF_TS="$TS" \
+        PHOENIX_PROOF_VERIFIED_BY="$VERIFIED_BY"
+    if (( VERIFIED == 1 )); then PHOENIX_PROOF_VERIFIED=YES; else PHOENIX_PROOF_VERIFIED=NO; fi
+    export PHOENIX_PROOF_VERIFIED
+    python3 - "$JSON_OUT" <<'PYEOF'
+import json, os, sys
+ver = os.environ.get("PHOENIX_PROOF_VERIFIED", "NO")
+data = {
+    "schema": "phoenix-image-proof/1",
+    "serial": os.environ["PHOENIX_PROOF_SERIAL"],
+    "verified": ver == "YES",
+    "sha256": os.environ["PHOENIX_PROOF_SHA256"],
+    "image": os.environ["PHOENIX_PROOF_IMAGE_PATH"],
+    "image_name": os.environ["PHOENIX_PROOF_IMAGE_NAME"],
+    "created_utc": os.environ["PHOENIX_PROOF_TS"],
+    "verified_by": os.environ["PHOENIX_PROOF_VERIFIED_BY"],
+}
+open(os.path.join(sys.argv[1], "backup-image-proof.json"), "w").write(json.dumps(data, indent=2) + "\n")
+PYEOF
+    echo "JSON proof written: $JSON_OUT/backup-image-proof.json"
+fi
 if (( VERIFIED == 0 )); then
     echo "NOTE: verified=NO -- the nuke image-proof gate will REJECT this proof."
     echo "Re-run with --verified only after the backup tool's integrity check passes."
