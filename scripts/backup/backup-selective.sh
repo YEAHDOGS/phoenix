@@ -50,11 +50,16 @@ echo
 
 manifest_entries=()
 quarantined=()
+apps_done=()
 copied=0
 
 for pf in "$PROFILE_DIR"/*.json; do
     id="$(jq -r '.app' "$pf")"
     [ "$APP" = "all" ] || [ "$APP" = "$id" ] || continue
+    case " ${apps_done[*]:-} " in
+        *" $id "*) ;;
+        *) apps_done+=("$id") ;;
+    esac
 
     nloc="$(jq '.locations | length' "$pf")"
     for ((i=0; i<nloc; i++)); do
@@ -119,6 +124,25 @@ if [ "$EXECUTE" = 1 ]; then
     } > "$DEST/manifest.json"
     echo "[+] copied $copied files -> $DEST"
     echo "[+] manifest.json written ($DEST/manifest.json)"
+    # source fingerprint for the restore interlock: the restore engine refuses
+    # to target a disk whose fingerprint matches this, so restoring onto the
+    # drive the backup came from is structurally hard.
+    if [ "${#apps_done[@]}" -gt 0 ]; then
+        meta_apps="$(printf '%s\n' "${apps_done[@]}" | jq -R . | jq -s .)"
+    else
+        meta_apps="[]"
+    fi
+    jq -n --arg schema "phoenix-backup-meta/v1" \
+          --arg created "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+          --arg tool "backup-selective.sh" \
+          --arg host "$(hostname 2>/dev/null || echo unknown)" \
+          --arg home "$HOME_ROOT" \
+          --arg fsid "$(stat -c %d "$HOME_ROOT" 2>/dev/null || echo unknown)" \
+          --arg uuid "$(findmnt -no UUID -T "$HOME_ROOT" 2>/dev/null || echo "")" \
+          --argjson apps "$meta_apps" \
+          '{schema:$schema, created:$created, tool:$tool, source_host:$host, source_home:$home, source_fs_id:$fsid, source_uuid:(if $uuid=="" then null else $uuid end), apps:$apps}' \
+        > "$DEST/manifest-meta.json"
+    echo "[+] manifest-meta.json written (source fingerprint)"
     if [ "${#quarantined[@]}" -gt 0 ]; then
         echo "[!] QUARANTINED (invalid config, not copied):"
         printf '    %s\n' "${quarantined[@]}"

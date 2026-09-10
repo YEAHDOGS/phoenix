@@ -71,6 +71,11 @@ out="$(PHOENIX_HOME="$FH" "$ENGINE" --app chrome --execute --dest "$DEST" 2>&1)"
 src_h="$(sha256sum "$FH/.config/google-chrome/Default/Bookmarks" | cut -d' ' -f1)"
 man_h="$(jq -r '.[] | select(.file | contains("Bookmarks")) | .sha256' "$DEST/manifest.json")"
 [ "$src_h" = "$man_h" ] && pass "manifest SHA-256 matches source" || fail "manifest SHA-256 matches source"
+[ -f "$DEST/manifest-meta.json" ] && pass "manifest-meta.json written" || fail "manifest-meta.json written"
+[ "$(jq -r '.schema' "$DEST/manifest-meta.json")" = "phoenix-backup-meta/v1" ] && pass "meta schema" || fail "meta schema"
+[ "$(jq -r '.source_home' "$DEST/manifest-meta.json")" = "$FH" ] && pass "meta source_home matches fixture" || fail "meta source_home matches fixture"
+jq -e '.apps | index("chrome")' "$DEST/manifest-meta.json" >/dev/null && pass "meta apps lists chrome" || fail "meta apps lists chrome"
+[ -n "$(jq -r '.source_fs_id' "$DEST/manifest-meta.json")" ] && [ "$(jq -r '.source_fs_id' "$DEST/manifest-meta.json")" != "null" ] && pass "meta source_fs_id present" || fail "meta source_fs_id present"
 
 echo "== 4. quarantine: invalid config JSON is not copied =="
 echo 'NOT JSON{{{' > "$FH/.config/Code/User/settings.json"   # corrupt it

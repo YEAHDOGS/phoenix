@@ -114,8 +114,23 @@ if ($Execute) {
     if (-not $Dest) { Write-Error "-Execute requires -Dest"; exit 1 }
     $manifestPath = Join-Path $Dest "manifest.json"
     $manifest | ConvertTo-Json -Depth 4 | Set-Content $manifestPath
+    # source fingerprint for the restore interlock: restore refuses to target
+    # a disk whose volume serial matches this.
+    $drive = $env:USERPROFILE -replace '^([A-Za-z]):.*', '$1'
+    $vol = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$drive`:'" -ErrorAction SilentlyContinue
+    [pscustomobject]@{
+        schema       = "phoenix-backup-meta/v1"
+        created      = (Get-Date).ToUniversalTime().ToString("o")
+        tool         = "backup-selective.ps1"
+        source_host  = $env:COMPUTERNAME
+        source_home  = $env:USERPROFILE
+        source_fs_id = $vol.VolumeSerialNumber
+        source_uuid  = $null
+        apps         = @($manifest | Select-Object -ExpandProperty app -Unique)
+    } | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $Dest "manifest-meta.json")
     Write-Host "`n[+] Copied $($manifest.Count) files -> $Dest" -ForegroundColor Green
     Write-Host "[+] manifest.json written ($manifestPath)" -ForegroundColor Green
+    Write-Host "[+] manifest-meta.json written (source fingerprint)" -ForegroundColor Green
     if ($quarantined) {
         Write-Host "`n[!] QUARANTINED (invalid config, not copied):" -ForegroundColor Yellow
         $quarantined | ForEach-Object { Write-Host "    $_" -ForegroundColor Yellow }
