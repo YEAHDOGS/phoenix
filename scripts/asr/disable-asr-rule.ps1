@@ -26,21 +26,32 @@ $RemovalType = $args[0]
 # Get Active ASR Rules from this machine
 . ./get-active-asr-rules.ps1
 
+$disableGuids = @()
+
 foreach ($guid in ($args | Select-Object -Skip 1)) {
     $MatchedRule = $ActiveRules | Where-Object { $_.GUID -eq $guid }
 
     if ($MatchedRule) {
-        Write-Host "❌ Matching GUID Found: $($MatchedRule.GUID) Current Status: $($MatchedRule.Status)" -ForegroundColor Red
+        Write-Host "Matching GUID Found: $($MatchedRule.GUID) Current Status: $($MatchedRule.Status)" -ForegroundColor Red
         if ($RemovalType -in @('d', 'disable')) {
-            Add-MpPreference -AttackSurfaceReductionRules_Ids $guid -AttackSurfaceReductionRules_Actions Disabled
-            Write-Host "  Disabled Rule $($MatchedRule.GUID)" -ForegroundColor Red
+            $disableGuids += $guid
         }
         else {
             Remove-MpPreference -AttackSurfaceReductionRules_Ids $guid
             Write-Host "  Removed Rule $($MatchedRule.GUID)" -ForegroundColor Red
         }
-    } 
+    }
     else {
-        Write-Host "❌ Warning: '$guid' does not match any active rules. Skipping..." -ForegroundColor Yellow
+        Write-Host "Warning: '$guid' does not match any active rules. Skipping..." -ForegroundColor Yellow
+    }
+}
+
+if ($disableGuids.Count -gt 0) {
+    # NOTE: Add-MpPreference must receive the full GUID/action arrays in a
+    # SINGLE call. One call per rule silently drops all but the last.
+    $actions = @($disableGuids | ForEach-Object { "Disabled" })
+    Add-MpPreference -AttackSurfaceReductionRules_Ids $disableGuids -AttackSurfaceReductionRules_Actions $actions
+    foreach ($g in $disableGuids) {
+        Write-Host "  Disabled Rule $g" -ForegroundColor Red
     }
 }
