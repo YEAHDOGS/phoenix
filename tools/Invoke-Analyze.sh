@@ -346,11 +346,36 @@ for i in "${!D_NAMES[@]}"; do
 done
 
 # --- image-proof hint ---------------------------------------------------------
+# A proof is only a *hint* here (analyze never gates on it). Structural
+# validity reuses the same field rules as Invoke-Nuke.sh check_image_proof,
+# minus the target-serial binding (analyze has no single target).
+proof_structurally_valid() {
+    local f="$1" format="" verified="" sha256="" pserial="" psize="" line k v
+    [[ -n "$f" && -f "$f" ]] || return 1
+    while IFS= read -r line; do
+        [[ "$line" =~ ^[[:space:]]*# ]] && continue
+        [[ "$line" != *"="* ]] && continue
+        k="${line%%=*}"; v="${line#*=}"
+        case "$k" in
+            format)           format="$v" ;;
+            verified)         verified="$v" ;;
+            sha256)           sha256="$v" ;;
+            source_serial)    pserial="$v" ;;
+            image_size_bytes) psize="$v" ;;
+        esac
+    done < "$f"
+    [[ "$format" == "phoenix-image-proof/1" ]] || return 1
+    [[ "$verified" == "YES" ]] || return 1
+    [[ "$sha256" =~ ^[0-9a-fA-F]{64}$ ]] || return 1
+    [[ "$psize" =~ ^[0-9]+$ && "$psize" -gt 0 ]] || return 1
+    [[ -n "$pserial" && "$pserial" != "unknown" ]] || return 1
+    PROOF_SERIAL="$pserial"
+    return 0
+}
 PROOF_VALID="no"; PROOF_SERIAL=""
 if [[ -n "$IMAGE_PROOF" ]]; then
-    if [[ -f "$IMAGE_PROOF" ]] && python3 "$TOOLS_DIR/New-ImageProof.sh" --verify "$IMAGE_PROOF" >/dev/null 2>&1; then
+    if proof_structurally_valid "$IMAGE_PROOF"; then
         PROOF_VALID="yes"
-        PROOF_SERIAL="$(grep -m1 '^source_serial=' "$IMAGE_PROOF" 2>/dev/null | cut -d= -f2-)"
     else
         notes_add "image-proof '$IMAGE_PROOF' missing or invalid; treated as absent"
     fi
