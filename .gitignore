@@ -16,3 +16,9 @@ scripts/sys-info/data/*
 # Isos
 *.iso
 qemu/data/*
+# Phoenix answer-file generator staging: filled autounattend.xml files carry
+# REAL local-account passwords. They must never be committed.
+win-install/staging/
+
+# Phoenix toolkit staging (build-time binaries, never commit)
+staging/

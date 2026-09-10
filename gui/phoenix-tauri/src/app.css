@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+/* Phoenix USB Builder theme. Dark header + light workspace,
+   same visual language as the WinForms launcher it succeeds. */
+
+@theme {
+  --color-phx-primary: #2980b9;
+  --color-phx-accent: #e74c3c;
+  --color-phx-dark: #2c3e50;
+}
+
+html,
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+/* Keep number-ish inputs tidy */
+input[type="password"] {
+  letter-spacing: 0.1em;
+}

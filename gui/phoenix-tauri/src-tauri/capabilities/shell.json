@@ -1,0 +1,33 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "description": "Whitelist powershell.exe for Phoenix stager scripts (JS-side Command API). The Rust backend spawns PowerShell directly; this scope locks down any frontend-initiated spawning to the same allowlist.",
+  "identifier": "shell",
+  "permissions": [
+    {
+      "allow": [
+        {
+          "args": [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            {
+              "validator": "^(-File|-Command)$"
+            },
+            {
+              "validator": ".*"
+            }
+          ],
+          "cmd": "powershell.exe",
+          "name": "phoenix-powershell"
+        }
+      ],
+      "identifier": "shell:allow-execute"
+    },
+    "shell:allow-spawn",
+    "shell:allow-stdin-write",
+    "shell:allow-kill"
+  ],
+  "windows": [
+    "main"
+  ]
+}
