@@ -59,6 +59,22 @@ $refreshItem = New-Object System.Windows.Forms.ToolStripMenuItem
 $refreshItem.Text = "Refresh (F5)"
 $fileMenu.DropDownItems.Add($refreshItem) | Out-Null
 $fileMenu.DropDownItems.Add($(New-Object System.Windows.Forms.ToolStripSeparator)) | Out-Null
+# Phoenix USB Builder (gui/phoenix-setup.ps1, dot-sourced as a library).
+# Additive: the Scripts view below is untouched.
+$builderItem = New-Object System.Windows.Forms.ToolStripMenuItem
+$builderItem.Text = "USB Builder..."
+$builderItem.Add_Click({
+    $builderPath = Join-Path (Split-Path (Split-Path $ScriptDir -Parent) -Parent) "gui\phoenix-setup.ps1"
+    if (-not (Test-Path $builderPath)) {
+        [System.Windows.Forms.MessageBox]::Show("USB Builder not found:`n$builderPath", "USB Builder",
+            [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
+        return
+    }
+    . $builderPath
+    Show-PhoenixBuilder
+})
+$fileMenu.DropDownItems.Add($builderItem) | Out-Null
+$fileMenu.DropDownItems.Add($(New-Object System.Windows.Forms.ToolStripSeparator)) | Out-Null
 $exitItem = New-Object System.Windows.Forms.ToolStripMenuItem
 $exitItem.Text = "Exit"
 $exitItem.Add_Click({ $form.Close() })
