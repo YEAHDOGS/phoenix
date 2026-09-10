@@ -178,9 +178,11 @@ try:
     devs=json.load(sys.stdin)["blockdevices"]
 except Exception: devs=[]
 for d in devs:
+    def val(x):
+        return "" if x is None else str(x)   # keep JSON false as "False"; None as empty
     # -d already restricts lsblk to whole disks; the type key is absent
     # unless explicitly requested in -o, so no type filter here.
-    print("\x1f".join(str(d.get(k,"") or "") for k in ("name","size","model","serial","tran","rota","rm")))
+    print("\x1f".join(val(d.get(k)) for k in ("name","size","model","serial","tran","rota","rm")))
 ' 2>/dev/null)" || return 1
     [[ -z "$n" ]] && return 1
     local line
