@@ -381,6 +381,11 @@ reach wear-levelled, overprovisioned, or remapped blocks. The rule:
 > the ShredOS
 > manual flow is the only wipe path — match the target disk's serial to the
 > physical drive with your own eyes, twice.
+>
+> `tools/Invoke-Nuke.sh` is **dry-run by default**: no flags (or `--whatif`)
+> only enumerates disks and exits. Always run this first and match the target
+> serial to the physical drive with your own eyes (see Appendix D for what the
+> enumeration output looks like and which columns you are reading).
 
 **Step 3.3 — Sanity re-check post-wipe.** After the wipe completes, boot
 `[2] BACKUP — Rescuezilla` again and confirm the disk reads as
@@ -464,3 +469,84 @@ credentials? Needed for the Veeam scheduled job in Step 4.4.
    Step 0.6 is required.) And is it HDD or SSD/NVMe? (Determines the nuke method.)
 5. ~~Should the Analyze/Backup/Nuke/Reinstall **menu** be built into the Phoenix
    USB before this run?~~ **Answered:** Ventoy *is* the menu (BOOT-ARCHITECTURE.md §3).
+## Appendix D — Disk enumeration examples (what you're reading)
+
+All outputs below are **EXAMPLES** — fictional serials. Your screen will show
+your real disks. The columns that matter for the interlock are **serial** and
+**model**: the typed confirmation in Phase 3 must match them exactly as shown.
+
+**Linux — the raw inventory source** (`lsblk -dno NAME,MODEL,SERIAL,SIZE,TRAN,RM -P`,
+what `tools/Get-DiskInventory.sh` parses):
+
+```
+NAME="sda" MODEL="Samsung SSD 870 EVO 1TB" SERIAL="S5YBNJ0R123456A" SIZE="931.5G" TRAN="sata" RM="0"
+NAME="sdb" MODEL="SanDisk Ultra USB 3.0"   SERIAL="4C530001234567890123"        SIZE="57.3G"  TRAN="usb"  RM="1"
+NAME="nvme0n1" MODEL="WD Black SN850X 1TB" SERIAL="234567890123"                SIZE="931.5G" TRAN="nvme" RM="0"
+```
+
+**Linux — the structured contract** (`./tools/Get-DiskInventory.sh`, same shape
+as the `.ps1` twin; this is what the confirmation gate reads — never your memory):
+
+```json
+[
+  {
+    "id": 1,
+    "dev": "/dev/sda",
+    "model": "Samsung SSD 870 EVO 1TB",
+    "serial": "S5YBNJ0R123456A",
+    "size_bytes": 1000204886016,
+    "size_human": "931.5 GiB",
+    "transport": "SATA",
+    "removable": false,
+    "mounted": false,
+    "media": "ssd"
+  },
+  {
+    "id": 2,
+    "dev": "/dev/sdb",
+    "model": "SanDisk Ultra USB 3.0",
+    "serial": "4C530001234567890123",
+    "size_bytes": 61505273856,
+    "size_human": "57.3 GiB",
+    "transport": "USB",
+    "removable": true,
+    "mounted": true,
+    "media": "usb"
+  }
+]
+```
+
+Note disk 2 (`/dev/sdb`, the boot USB): `"mounted": true` — it is **listed but
+structurally refused** as a nuke target. The menu shows it greyed out on purpose;
+hiding it would invite "where did my disk go?" workarounds.
+
+**NVMe detail** (`nvme list` — confirms the serial the interlock will re-read
+immediately before execution):
+
+```
+Node             SN                   Model                Namespace Usage
+/dev/nvme0n1     234567890123         WD Black SN850X 1TB  1         931.51 GB
+```
+
+**Windows — the same inventory from the WinPE side** (`Get-Disk | Format-Table`):
+
+```
+Number FriendlyName          SerialNumber       Size BusType
+------ ------------          ------------       ---- -------
+0      Samsung SSD 870 EVO   S5YBNJ0R123456A    931 GB SATA
+1      SanDisk Ultra USB 3.0 4C530001234567890123 57 GB USB
+```
+
+**What the typed confirmation looks like** (Phase 3, Step 3.2 — real TTY only):
+
+```
+TARGET: [1] Samsung SSD 870 EVO 1TB  SN S5YBNJ0R123456A  931.5 GiB
+Type the serial and model EXACTLY as shown to arm the wipe:
+> S5YBNJ0R123456A Samsung SSD 870 EVO 1TB
+```
+
+Physical cross-check before typing: the serial on the drive's label (or in the
+laptop's BIOS/UEFI storage page) must match the `SERIAL`/`SerialNumber` column
+above. If the on-screen serial doesn't match the hardware you intend to wipe,
+**stop** — the fingerprint gate (§4 of `docs/NUKE-SAFETY.md`) will also refuse a
+disk that changed since the Analyze snapshot, but your eyes are the first gate.
