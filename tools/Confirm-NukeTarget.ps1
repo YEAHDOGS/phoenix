@@ -8,9 +8,10 @@
 
       Confirm-NukeTarget -InventoryJson <json> -Id <n> [-StateDir <dir>] [-ConfigJson <json>]
 
-    Gates, in order: typed confirmation (exact "SERIAL MODEL" on a real
-    console -- piped stdin is refused), Analyze fingerprint freshness,
-    config target_disks allowlist.
+    Gates, in order: booted/system-disk structural refusal, typed
+    confirmation (exact "SERIAL MODEL" on a real console -- piped stdin is
+    refused), Analyze fingerprint freshness, config target_disks allowlist
+    (compared normalized: uppercased, whitespace-trimmed).
 
     STAGING-ONLY: this verifies the flow on a working machine. Destruction can
     never be armed from a live Windows session.
@@ -108,6 +109,14 @@ function Test-DiskFingerprint {
     Write-Host ("[nuke-interlock] fingerprint OK: {0} recorded {1:N1}h ago by Analyze." -f $Serial, $ageH)
 }
 
+function Get-NormalizedSerial {
+    # MUST match nuke_normalize_serial() in tools/lib/nuke-interlock.sh and
+    # docs/NUKE-SAFETY.md interlock 12: uppercase + trim surrounding
+    # whitespace. Internal whitespace is significant ("AB 12" != "AB12").
+    param([string]$Serial)
+    return "$Serial".Trim().ToUpperInvariant()
+}
+
 function Test-ConfigAllowlist {
     param([string]$Cfg, [string]$Serial)
     if ([string]::IsNullOrWhiteSpace($Cfg) -or -not (Test-Path $Cfg)) {
@@ -116,12 +125,16 @@ function Test-ConfigAllowlist {
     try { $config = Get-Content $Cfg -Raw | ConvertFrom-Json }
     catch { Write-Error "[nuke-interlock] REFUSED: config is not valid JSON." }
 
-    $allow = @($config.target_disks | ForEach-Object { $_.serial })
-    if ($allow -ccontains $Serial) {
-        Write-Host "[nuke-interlock] allowlist OK: $Serial is approved in target_disks."
+    $want = Get-NormalizedSerial $Serial
+    if ([string]::IsNullOrWhiteSpace($want)) {
+        Write-Error "[nuke-interlock] REFUSED: empty serial can never be a nuke target."
+    }
+    $allow = @($config.target_disks | ForEach-Object { Get-NormalizedSerial $_.serial })
+    if ($allow -ccontains $want) {
+        Write-Host "[nuke-interlock] allowlist OK: $want is approved in target_disks."
         return
     }
-    Write-Error "[nuke-interlock] REFUSED: serial $Serial is NOT in target_disks -- this disk may not be nuked."
+    Write-Error "[nuke-interlock] REFUSED: serial $want is NOT in target_disks -- this disk may not be nuked."
 }
 
 # --- main --------------------------------------------------------------------
@@ -129,6 +142,12 @@ $inventory = $InventoryJson | ConvertFrom-Json
 $serial = Get-TargetField $inventory $Id "serial"
 $model = Get-TargetField $inventory $Id "model"
 $mounted = Get-TargetField $inventory $Id "mounted"
+$boot = Get-TargetField $inventory $Id "boot"
+$system = Get-TargetField $inventory $Id "system"
+
+if ($boot -or $system) {
+    Write-Error "[nuke-interlock] REFUSED: disk [$Id] is the boot/system disk. It can never be a nuke target."
+}
 
 if ($mounted) {
     Write-Error "[nuke-interlock] REFUSED: disk [$Id] has mounted partitions; it can never be a nuke target."
