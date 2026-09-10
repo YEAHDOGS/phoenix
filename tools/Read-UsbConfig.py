@@ -27,6 +27,7 @@ Usage:
             CFG_BACKUP_KIND             backup_target.kind (direct-usb | castle-smb)
             CFG_BACKUP_LABEL_PREFIX     backup_target.label_prefix
             CFG_BACKUP_SMB_PATH         backup_target.smb_path (castle-smb only)
+            CFG_ANALYZE_ENABLED         1 when boot_entries.analyze is true
     python3 tools/Read-UsbConfig.py --json <config.json>
         The same policy as a JSON object (serials under "allow_serials").
 
@@ -86,6 +87,7 @@ def extract_policy(cfg):
         "backup_kind": backup.get("kind", ""),
         "backup_label_prefix": backup.get("label_prefix", "PHOENIX-IMAGE"),
         "backup_smb_path": backup.get("smb_path", ""),
+        "analyze_enabled": bool(boot.get("analyze", False)),
     }
 
 
@@ -120,6 +122,7 @@ def print_shell(policy):
     print("CFG_BACKUP_KIND=%s" % shlex.quote(policy["backup_kind"]))
     print("CFG_BACKUP_LABEL_PREFIX=%s" % shlex.quote(policy["backup_label_prefix"]))
     print("CFG_BACKUP_SMB_PATH=%s" % shlex.quote(policy["backup_smb_path"]))
+    print("CFG_ANALYZE_ENABLED=%s" % ("1" if policy["analyze_enabled"] else "0"))
 
 
 def print_json(policy):
@@ -134,6 +137,7 @@ def print_json(policy):
             "backup_kind": policy["backup_kind"],
             "backup_label_prefix": policy["backup_label_prefix"],
             "backup_smb_path": policy["backup_smb_path"],
+            "analyze_enabled": policy["analyze_enabled"],
         },
         indent=2,
     ))
