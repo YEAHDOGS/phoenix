@@ -9,25 +9,35 @@
     SAFETY MODEL (exact rule parity with tools/phoenix-nuke.sh):
       1. Dry-run is the DEFAULT: no flags (or -DryRun/-WhatIf) ONLY enumerates
          disks and exits 0. Destruction requires -Nuke <id>.
-      2. Explicit enumeration: numbered table (device, model, serial, size,
-         bus, media, flags) is printed first.
+      2. Explicit enumeration: numbered candidate table (device, model,
+         serial, size, bus, media, ARM-CODE, flags) is printed first. Disks
+         declared protected in phoenix-config.json are EXCLUDED from the
+         table and named in a hidden summary instead -- never candidates.
       3. Never auto-select: no default target, ever. <id> must be a row
          number, a \\.\PhysicalDriveN path, or the exact serial. Wildcards
          (* ? [ ]) are NEVER resolved -- fail closed. An identifier matching
          more than one disk (e.g. duplicated serials) is an ambiguity
          refusal, never first-match-wins.
-      4. Boot/USB self-protection: the boot disk, the disk hosting the system
+      4. Config-protected disks are EXCLUDED, not warned: a serial or
+         \\.\PhysicalDriveN path listed in phoenix-config.json ->
+         "nuke": { "protectedDisks": [...] } never becomes a candidate row
+         and cannot be armed -- not even with -OverrideBootProtection.
+      5. Boot/USB self-protection: the boot disk, the disk hosting the system
          volume, and USB-attached disks are refused structurally UNLESS
          -OverrideBootProtection is given. The override is logged as a
-         WARNING and still requires the double-typed confirmation.
-      5. Double-typed confirmation: the operator must type the target disk's
-         exact serial (or exact device path) TWICE, on a real console.
-         Redirected/piped stdin is refused structurally
-         ([Console]::IsInputRedirected) -- `echo $serial | ...` can never arm
-         a wipe. Y/N is not accepted. A mismatch on EITHER prompt aborts.
-      6. Audit record: every run writes timestamp, disk id, mode, and the
+         WARNING and still requires the typed confirmations.
+      6. Typed confirmation, TWO stages, both on a real console:
+         (a) ARM-CODE transcription challenge (docs/NUKE-INTERLOCKS.md
+             §2/§3): the operator types the target's 6-char ARM-CODE -- a
+             deterministic sha256 over serial|model|size-bytes -- or its
+             exact serial. It binds the typed identity to the serial AND the
+             displayed size: a disk that was not read deliberately cannot be
+             armed. Piped input refused ([Console]::IsInputRedirected).
+         (b) Double-typed serial confirmation (two attempts, serial or device
+             path, exact match). A mismatch on EITHER prompt aborts.
+      7. Audit record: every run writes timestamp, disk id, mode, and the
          operator-confirmation evidence to a log file.
-      7. Final abort window: 5-second countdown after arming (Ctrl-C aborts;
+      8. Final abort window: 5-second countdown after arming (Ctrl-C aborts;
          -NoCountdown only for VM tests).
 
     The destructive primitive is a full-device zero-fill (diskpart "clean
@@ -44,11 +54,16 @@
 
 .EXAMPLE
     .\Invoke-PhoenixNuke.ps1 -Nuke 1
-    Arm destruction of row 1 (interactive, double-typed confirmation).
+    Arm destruction of row 1 (interactive: ARM-CODE transcription, then
+    double-typed confirmation).
 
 .EXAMPLE
     .\Invoke-PhoenixNuke.ps1 -Nuke "WD-WCC4N1234567" -LogDir C:\phoenix-logs
     Arm by exact serial with an explicit log directory.
+
+.EXAMPLE
+    .\Invoke-PhoenixNuke.ps1 -ConfigPath E:\phoenix-config.json
+    Enumerate with config-protected disk exclusions from the given config.
 
 .NOTES
     Requires elevation (block-device access). Exit codes:
@@ -70,11 +85,19 @@ param(
     [string]$LogDir = "",
 
     # Explicit override of the boot/USB self-protection heuristic. Still
-    # requires the double-typed confirmation; the override is logged.
+    # requires the typed confirmations; the override is logged. It can NEVER
+    # reach a config-protected disk (protected disks are excluded, not
+    # warned -- see -ConfigPath).
     [switch]$OverrideBootProtection,
 
     # Skip the final 5-second abort window (VM tests only).
     [switch]$NoCountdown,
+
+    # Path to phoenix-config.json carrying "nuke": { "protectedDisks": [...] }.
+    # A serial or \\.\PhysicalDriveN path listed there is EXCLUDED from
+    # candidacy -- never a numbered row, never armable, not even with
+    # -OverrideBootProtection. Default: .\phoenix-config.json if present.
+    [string]$ConfigPath = "",
 
     [switch]$Help
 )
@@ -82,7 +105,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$VERSION = "0.1.0"
+$VERSION = "0.2.0"
 $PROG = "Invoke-PhoenixNuke"
 
 #===============================================================================
@@ -128,21 +151,29 @@ Usage:
   .\Invoke-PhoenixNuke.ps1 -DryRun
       Same as above (explicit); -WhatIf is an alias
   .\Invoke-PhoenixNuke.ps1 -Nuke <id>
-      Arm destruction of disk <id> (interactive, double-typed confirmation)
+      Arm destruction of disk <id> (interactive: ARM-CODE transcription
+      challenge, then double-typed confirmation)
   .\Invoke-PhoenixNuke.ps1 -Nuke <id> -LogDir <dir>
       Override the audit-log directory
   .\Invoke-PhoenixNuke.ps1 -Nuke <id> -OverrideBootProtection
-      Allow a boot/USB disk as the target (logged WARNING; confirmation still
-      required twice). Without this flag boot/USB disks are refused.
+      Allow a boot/USB disk as the target (logged WARNING; confirmations
+      still required). Without this flag boot/USB disks are refused. This
+      override can NEVER reach a config-protected disk.
+  .\Invoke-PhoenixNuke.ps1 -ConfigPath <path>
+      Read config-protected disk exclusions from <path> (default:
+      .\phoenix-config.json when present)
 
 <id>: row number from the enumeration table, a \\.\PhysicalDriveN path, or
       the disk's exact serial number. Wildcards are never resolved; ambiguous
-      identifiers fail closed.
+      identifiers fail closed. Serials and device paths listed under
+      "nuke": { "protectedDisks": [...] } in the config are excluded from
+      candidacy entirely and cannot be armed by any identifier.
 
 RULES: no flags = enumerate only. No default target. The boot disk / USB
 disks are refused unless -OverrideBootProtection. Arming requires typing the
-target disk's serial (or device path) TWICE on a real console -- redirected
-stdin can never arm a wipe. Full audit log is written to the log directory.
+target disk's ARM-CODE (or exact serial) once, then its serial (or device
+path) TWICE -- all on a real console; redirected stdin can never arm a wipe.
+Full audit log is written to the log directory.
 VM-ONLY TESTING. NEVER test destructive paths on bare metal.
 "@
 }
@@ -166,9 +197,81 @@ function Format-Size {
 }
 
 #===============================================================================
+# interlock library (docs/NUKE-INTERLOCKS.md) -- same contract as the bash twin
+# tools/lib/phoenix-disk-inventory.sh and tools/Get-PhoenixDiskInventory.ps1.
+#===============================================================================
+function Get-PhoenixArmCode {
+    <# Deterministic per-disk ARM-CODE: the transcription challenge the
+       operator types to arm a wipe. MUST match the bash twin byte for byte:
+       first 6 uppercase hex chars of
+       sha256("phoenix-nuke-arm|<serial>|<model>|<size-bytes>").
+       The code binds the serial AND the displayed size shown in the row. #>
+    param([string]$Serial, [string]$Model, [string]$SizeBytes)
+    $input = "phoenix-nuke-arm|$Serial|$Model|$SizeBytes"
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($input)
+    $hash  = [System.Security.Cryptography.SHA256]::Create().ComputeHash($bytes)
+    $hex   = ($hash | ForEach-Object { $_.ToString("x2") }) -join ""
+    return $hex.Substring(0, 6).ToUpper()
+}
+
+function Get-PhoenixProtectedList {
+    <# Read "nuke.protectedDisks" from phoenix-config.json. Missing file or
+       missing key => empty list (not an error). #>
+    param([string]$Path)
+    if (-not $Path -or -not (Test-Path $Path)) { return @() }
+    try {
+        $cfg = Get-Content -Raw -Path $Path | ConvertFrom-Json
+        $list = $cfg.nuke.protectedDisks
+        if ($null -eq $list) { return @() }
+        return @($list | ForEach-Object { "$_" })
+    } catch {
+        Write-Warning "Could not parse protectedDisks from $Path : $_"
+        return @()
+    }
+}
+
+function Read-ArmCodeConfirmation {
+    <#
+    .SYNOPSIS
+        ARM-CODE transcription gate (first typed gate): the operator must
+        type the target's ARM-CODE -- or its exact serial -- on a real
+        console. Piped/redirected stdin is refused structurally
+        ([Console]::IsInputRedirected). Exact match, case-sensitive, one
+        attempt. Returns $true only on an exact match.
+    #>
+    param(
+        [Parameter(Mandatory)][string]$Serial,
+        [Parameter(Mandatory)][string]$ArmCode,
+        [Parameter(Mandatory)][string]$Device
+    )
+    if (-not $Serial -or $Serial -eq "(unknown)" -or $Serial -eq "unknown") {
+        Write-Audit -Mode "REFUSED" -DiskDevice $Device -Serial $Serial `
+            -Detail "reason=`"no-serial-arm-gate`""
+        Fail "REFUSED: disk has no readable serial -- cannot be armed."
+    }
+    if ([Console]::IsInputRedirected) {
+        Write-Audit -Mode "REFUSED" -DiskDevice $Device -Serial $Serial `
+            -Detail "reason=`"stdin-redirected`""
+        Fail "REFUSED: confirmation stdin is redirected -- piped or scripted input cannot arm a wipe. Type the ARM-CODE at the console."
+    }
+    $got = Read-Host "Type the ARM-CODE (or exact serial) of the disk to arm"
+    if (($got -ceq $ArmCode) -or ($got -ceq $Serial)) {
+        Write-Audit -Mode "ARM-CODE" -DiskDevice $Device -Serial $Serial `
+            -Detail "arm_code=`"$ArmCode`""
+        return $true
+    }
+    Write-Audit -Mode "ABORTED" -DiskDevice $Device -Serial $Serial `
+        -Detail "reason=`"arm-code-mismatch`""
+    return $false
+}
+
+#===============================================================================
 # enumeration
 #===============================================================================
 function Get-PhoenixDiskTable {
+    param([string]$ConfigPath)
+    $protected = Get-PhoenixProtectedList -Path $ConfigPath
+
     $systemDriveLetter = $env:SystemDrive.Substring(0, 1)
     $systemDiskNumber = $null
     try {
@@ -176,11 +279,29 @@ function Get-PhoenixDiskTable {
     } catch { }
 
     $rows = @()
+    $hidden = @()
     $rowNum = 0
     foreach ($d in (Get-Disk | Sort-Object Number)) {
-        $rowNum++
+        if ($d.BusType -eq "File Backed Virtual") { continue }  # VHD/X mounts
         $serial = if ($d.SerialNumber) { $d.SerialNumber.Trim() } else { "unknown" }
         $device = "\\.\PhysicalDrive$($d.Number)"
+
+        # --- config-protected exclusion (structural, not advisory) ---
+        # A serial or device path listed in phoenix-config.json ->
+        # "nuke": { "protectedDisks": [...] } is EXCLUDED from candidacy:
+        # never a numbered row, never armable -- not even with
+        # -OverrideBootProtection. (NUKE-INTERLOCKS.md §1)
+        $isProtected = $false
+        foreach ($p in $protected) {
+            if ($p -ceq $serial -or $p -ceq $device) { $isProtected = $true; break }
+        }
+        if ($isProtected) {
+            $hidden += [pscustomobject]@{ Device = $device; Why = "PROTECTED(config)" }
+            continue
+        }
+
+        $rowNum++
+        $model = if ($d.FriendlyName) { $d.FriendlyName.Trim() } else { "(unknown)" }
         $flags = @()
         $protectedReason = ""
 
@@ -197,34 +318,41 @@ function Get-PhoenixDiskTable {
             Row             = $rowNum
             Number          = $d.Number
             Device          = $device
-            Model           = $d.FriendlyName
+            Model           = $model
             Serial          = $serial
             SizeBytes       = $d.Size
             Bus             = $d.BusType
             Media           = (Get-MediaClass $d.BusType $false)
+            ArmCode         = (Get-PhoenixArmCode -Serial $serial -Model $model -SizeBytes "$($d.Size)")
             Flags           = ($flags -join " ")
             ProtectedReason = $protectedReason
         }
     }
-    return $rows
+    return @{ Rows = $rows; Hidden = $hidden }
 }
 
 function Show-DiskTable {
-    param([array]$Table)
+    param([array]$Table, [array]$Hidden = @())
     Write-Host "======================================================================"
     Write-Host " PHOENIX NUKE CORE -- disk enumeration ($(Get-UtcStamp))"
     Write-Host "======================================================================"
-    $fmt = "{0,-3} {1,-22} {2,-30} {3,-22} {4,-9} {5,-6} {6,-14} {7}"
-    Write-Host ($fmt -f "#", "DEVICE", "MODEL", "SERIAL", "SIZE", "BUS", "MEDIA", "FLAGS")
+    $fmt = "{0,-3} {1,-22} {2,-30} {3,-22} {4,-9} {5,-6} {6,-14} {7,-8} {8}"
+    Write-Host ($fmt -f "#", "DEVICE", "MODEL", "SERIAL", "SIZE", "BUS", "MEDIA", "ARM-CODE", "FLAGS")
     Write-Host "----------------------------------------------------------------------"
     foreach ($r in $Table) {
         $model = if ($r.Model.Length -gt 30) { $r.Model.Substring(0, 30) } else { $r.Model }
         $serial = if ($r.Serial.Length -gt 22) { $r.Serial.Substring(0, 22) } else { $r.Serial }
         Write-Host ($fmt -f $r.Row, $r.Device, $model, $serial,
-            (Format-Size $r.SizeBytes), $r.Bus, $r.Media, $r.Flags)
+            (Format-Size $r.SizeBytes), $r.Bus, $r.Media, $r.ArmCode, $r.Flags)
     }
     Write-Host "----------------------------------------------------------------------"
-    Write-Host " $($Table.Count) disk(s) detected. No -Nuke given: dry-run, nothing destroyed."
+    if ($Hidden.Count -gt 0) {
+        Write-Host " Excluded from candidacy ($($Hidden.Count)) -- cannot be armed, not even"
+        Write-Host " with -OverrideBootProtection:"
+        foreach ($h in $Hidden) { Write-Host "   hidden: $($h.Device) ($($h.Why))" }
+        Write-Host "----------------------------------------------------------------------"
+    }
+    Write-Host " $($Table.Count) candidate disk(s). No -Nuke given: dry-run, nothing destroyed."
     Write-Host "======================================================================"
 }
 
@@ -338,8 +466,15 @@ catch { Fail "Cannot create log dir '$logDirPath': $($_.Exception.Message)" }
 $script:AuditFile = Join-Path $logDirPath ("phoenix-nuke-audit-{0:yyyyMMddTHHmmssZ}.log" -f (Get-Date).ToUniversalTime())
 New-Item -ItemType File -Path $script:AuditFile -Force | Out-Null
 
-$table = Get-PhoenixDiskTable
-Show-DiskTable $table
+$table = $null
+$hiddenDisks = @()
+if (-not $ConfigPath -and (Test-Path ".\phoenix-config.json")) {
+    $ConfigPath = ".\phoenix-config.json"
+}
+$inv = Get-PhoenixDiskTable -ConfigPath $ConfigPath
+$table = $inv.Rows
+$hiddenDisks = $inv.Hidden
+Show-DiskTable -Table $table -Hidden $hiddenDisks
 
 if (-not $Nuke -or $DryRun) {
     # Dry-run default: enumerate and exit. Nothing is armed, nothing logged
@@ -402,6 +537,23 @@ Write-Host "  Media  : $($target.Media)  (bus: $($target.Bus))"
 Write-Host "  Method : diskpart 'clean all' (full-device zero-fill)"
 Write-Host ""
 Write-Host "  This is NOT recoverable. There is no undo."
+Write-Host ""
+
+# --- ARM-CODE transcription challenge (NUKE-INTERLOCKS.md §2/§3) ---
+# First typed gate, real console only. The code binds serial + model +
+# displayed size, so typing it proves the operator read THIS enumeration
+# row deliberately -- a disk that was not looked at cannot be armed.
+# Exact match, one attempt; failure aborts (exit 2) before the
+# double-typed serial confirmation is even offered.
+Write-Host "  ARM-CODE for this disk: $($target.ArmCode)"
+Write-Host "  (shown in the table above; type it exactly -- it binds the serial"
+Write-Host "   AND the size displayed for this disk)"
+Write-Host ""
+if (-not (Read-ArmCodeConfirmation -Serial $target.Serial -ArmCode $target.ArmCode -Device $target.Device)) {
+    Write-Host "Aborted. The ARM-CODE (or exact serial) did not match. Nothing was destroyed." -ForegroundColor Yellow
+    exit 2
+}
+Write-Host "ARM-CODE accepted -- transcription challenge passed." -ForegroundColor Red
 Write-Host ""
 
 # --- double-typed confirmation, real console only ---
