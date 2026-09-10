@@ -35,6 +35,11 @@
     Defaults to ..\..\profiles relative to this script.
 .PARAMETER Apply
     Actually restore. Without it, plan mode only.
+.PARAMETER Plan
+    Explicit plan mode (default anyway) — accepted for symmetry with the backup engine.
+.PARAMETER AllowSameDisk
+    Overrides ONLY the volume-serial interlock, for legitimate same-disk
+    restores (local testing, a second profile on one machine).
 .PARAMETER ConfirmWord
     Pass "RESTORE" to skip the interactive typed confirmation (for the
     Svelte/Tauri GUI). Prints a warning when used.
@@ -46,6 +51,8 @@ param(
     [string]$App = "all",
     [string]$ProfileDir = (Join-Path $PSScriptRoot ".." ".." "profiles"),
     [switch]$Apply,
+    [switch]$Plan,
+    [switch]$AllowSameDisk,
     [string]$ConfirmWord = ""
 )
 
@@ -81,7 +88,11 @@ if ($meta -and $meta.source_home) {
     $tDrive = $targetCanon -replace '^([A-Za-z]):.*', '$1'
     $tVol = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$tDrive`:'" -ErrorAction SilentlyContinue
     if ($tVol -and $meta.source_fs_id -and ($tVol.VolumeSerialNumber -eq $meta.source_fs_id)) {
-        Write-Error "INTERLOCK: target drive $tDrive volume serial matches the backup SOURCE — refusing"; exit 1
+        if ($AllowSameDisk) {
+            Write-Host "[!] -AllowSameDisk: target is on the SOURCE volume — proceeding only because you said so" -ForegroundColor Yellow
+        } else {
+            Write-Error "INTERLOCK: target drive $tDrive volume serial matches the backup SOURCE — refusing (use -AllowSameDisk to override)"; exit 1
+        }
     }
     $sourceRel = ($meta.source_home -replace '^[A-Za-z]:', '') -replace '\\', '/'
     $sourceRel = $sourceRel.Trim('/')
