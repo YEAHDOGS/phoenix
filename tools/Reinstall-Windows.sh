@@ -66,6 +66,27 @@ done
 [[ -z "$STATE" ]] && STATE="./phoenix-state"
 mkdir -p "$STATE"
 
+# USB-config gate (stick policy, same model as Invoke-Nuke.sh): the config
+# is FULLY validated by Read-UsbConfig.py (JSON Schema + CONFIG-SCHEMA.md
+# section 6) and the reinstall policy is loaded into CFG_* variables. A
+# stick that disables the reinstall boot entry cannot arm a reinstall.
+# Fail closed on EVERY problem: missing reader, unreadable config, invalid
+# config (exit 2), or reinstall disabled.
+reinstall_load_usb_config() {
+    local reader="$HERE/Read-UsbConfig.py"
+    local cfg_out
+    [[ -f "$reader" ]] || { echo "[$PROG] REFUSED: --config requires tools/Read-UsbConfig.py next to Reinstall-Windows.sh (stick image incomplete)." >&2; exit 2; }
+    cfg_out="$("$reader" --shell "$CONFIG" 2>"$STATE/reinstall-config.err")" \
+        || { echo "[$PROG] REFUSED: invalid phoenix-config.json:" >&2; cat "$STATE/reinstall-config.err" >&2; exit 2; }
+    # shellcheck disable=SC1090
+    eval "$cfg_out"   # sets CFG_REINSTALL_ENABLED, CFG_REINSTALL_PLATFORM, CFG_UNATTEND_FILE, ...
+    [[ -n "${CFG_REINSTALL_ENABLED:-}" ]] || { echo "[$PROG] REFUSED: config reader returned no reinstall policy." >&2; exit 2; }
+    [[ "${CFG_REINSTALL_ENABLED:-0}" == "1" ]] || { echo "[$PROG] REFUSED: stick policy disables the REINSTALL boot entry (boot_entries.reinstall=false)." >&2; exit 2; }
+    [[ "${CFG_REINSTALL_PLATFORM:-windows}" == "windows" ]] || { echo "[$PROG] REFUSED: stick policy selects platform '${CFG_REINSTALL_PLATFORM:-?}' (only 'windows' is implemented; linux is a future blade)." >&2; exit 2; }
+    echo "[$PROG] stick policy: reinstall enabled, platform ${CFG_REINSTALL_PLATFORM:-windows}, answer file ${CFG_UNATTEND_FILE:-/autounattend.xml}."
+}
+reinstall_load_usb_config
+
 # shellcheck disable=SC1090
 source "$NUKE_LIB"
 # shellcheck disable=SC1090
