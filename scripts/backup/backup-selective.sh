@@ -85,7 +85,11 @@ for pf in "$PROFILE_DIR"/*.json; do
                     done < <(find "$path" \( -type f -o -type l \) -name '*.json' 2>/dev/null)
                 fi
                 if [ "$ok" = 1 ]; then
-                    rel="${path#/}"                      # strip leading /
+                    if [[ "$path" == "$HOME_ROOT"* ]]; then
+                        rel="${path#$HOME_ROOT/}"     # paths under home stay home-relative
+                    else
+                        rel="${path#/}"
+                    fi
                     target="$DEST/$id/$rel"
                     mkdir -p "$(dirname "$target")"
                     cp -a "$path" "$target"
