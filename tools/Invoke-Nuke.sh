@@ -801,6 +801,41 @@ arm_and_nuke() {
     echo ""
     echo "NUKE COMPLETE: $dev destroyed via $method (NIST 800-88: $nist)."
     echo "Log: $LOGFILE"
+
+    # Completion record for the chain of custody: the REINSTALL phase
+    # consumes this (tools/Reinstall-Windows.sh gate 5) to prove the disk
+    # was wiped. Written only when the wipe ran to completion -- aborts,
+    # refusals, and dry runs leave no record, so a partial nuke can never
+    # masquerade as complete.
+    write_nuke_completion "$(dirname "$LOGFILE")" "$serial" "$dev" \
+        "$model" "$method" "$nist" "${IMAGE_PROOF:-}"
+}
+
+# write_nuke_completion <logdir> <serial> <dev> <model> <method> <nist> <image-proof>
+# Writes nuke-completed.json (schema phoenix-nuke-completion/1). Factored as
+# a function so the chain-of-custody suite can exercise the contract without
+# touching a real disk.
+write_nuke_completion() {
+    local logdir="$1" serial="$2" dev="$3" model="$4" method="$5" nist="$6" proof="$7"
+    export PHOENIX_NUKE_PATH="$logdir/nuke-completed.json" \
+        PHOENIX_NUKE_SERIAL="$serial" PHOENIX_NUKE_DEV="$dev" \
+        PHOENIX_NUKE_MODEL="$model" PHOENIX_NUKE_METHOD="$method" \
+        PHOENIX_NUKE_NIST="$nist" PHOENIX_NUKE_IMAGE_PROOF="$proof" \
+        PHOENIX_NUKE_COMPLETED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    python3 - <<'PYEOF'
+import json, os
+open(os.environ["PHOENIX_NUKE_PATH"], "w").write(json.dumps({
+    "schema": "phoenix-nuke-completion/1",
+    "serial": os.environ["PHOENIX_NUKE_SERIAL"],
+    "dev": os.environ["PHOENIX_NUKE_DEV"],
+    "model": os.environ["PHOENIX_NUKE_MODEL"],
+    "method": os.environ["PHOENIX_NUKE_METHOD"],
+    "nist_level": os.environ["PHOENIX_NUKE_NIST"],
+    "image_proof": os.environ["PHOENIX_NUKE_IMAGE_PROOF"],
+    "completed_at": os.environ["PHOENIX_NUKE_COMPLETED_AT"],
+}, indent=2) + "\n")
+PYEOF
+    log "Completion record: $logdir/nuke-completed.json"
 }
 
 #===============================================================================
