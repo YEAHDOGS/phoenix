@@ -200,6 +200,12 @@ destination = the external USB drive → enable compression and the post-backup
 integrity check. Name it clearly, e.g. `laptop-fulldisk-2026-09-09`. Let it run
 to completion; a failing disk can take hours.
 
+> **Scripted alternative:** `tools/Invoke-Backup.sh` (Linux rescue side) performs
+> the same full-disk image headlessly — air-gap gate, serial-resolved source
+> and USB target, verification ladder, and automatic image-proof emission —
+> see `docs/BACKUP-MODULE.md`. The manual Rescuezilla path remains fully
+> supported; the proof manifest is the contract either way.
+
 **Step 2.4 — VERIFY the image.**
 Let Rescuezilla's post-backup check complete. Then independently confirm: the
 image files exist on the target, sizes are plausible (compressed but non-trivial),
