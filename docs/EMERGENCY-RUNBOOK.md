@@ -151,6 +151,22 @@ captured in Phase 2's data-only backup.
 
 ## Phase 2 — BACKUP (image BEFORE wipe, always)
 
+**Step 2.0 — Pre-flight safety checklist.** Run through this out loud before
+imaging OR nuking. The scripts below enforce every line mechanically, but your
+brain is the first interlock.
+
+- [ ] **Enumerate, don't assume.** Run the disk inventory and read the table
+  with your own eyes — model, serial, size, bus. Match the serial to the
+  physical drive label (or the laptop's BIOS/UEFI storage page).
+- [ ] **The boot USB is never the target.** It is listed so you can see it,
+  and refused structurally. If your "target" row looks like a USB stick,
+  stop — you picked the wrong disk.
+- [ ] **Typed confirmation is exact.** Serial + model, exactly as printed,
+  case-sensitive, on a real terminal. Piped input is refused. `echo` can
+  never arm an image or a wipe.
+- [ ] **Image before wipe, always.** The nuke gate checks for
+  `image-proof.txt` from Step 2.6 and refuses without it.
+
 **Step 2.1 — Air-gap the machine.** Ethernet unplugged. Wi-Fi disabled (or the
 radio switched off in BIOS if available). The machine talks to nothing during
 this phase — not even Castle. **Use only the direct-attached USB target.**
@@ -166,13 +182,45 @@ destination = the external USB drive → enable compression and the post-backup
 integrity check. Name it clearly, e.g. `laptop-fulldisk-2026-09-09`. Let it run
 to completion; a failing disk can take hours.
 
+**Scripted alternative (same safety contract, no GUI):** from a Linux shell on
+the Rescuezilla desktop (target mounted at e.g. `/mnt/usb`):
+
+```bash
+./scripts/emergency/image_disk.sh \
+    --src /dev/sda \
+    --dest-dir /mnt/usb \
+    --label laptop-fulldisk-2026-09-10 \
+    --verify
+```
+
+This enforces the Step 2.0 checklist mechanically: explicit `lsblk`
+enumeration, structural refusal of the boot/root disk and any mounted source,
+refusal to overwrite an existing image, and a typed `SERIAL MODEL`
+confirmation on a real TTY (piped input refused). It images with `dcfldd`
+(hash-on-the-fly + progress) when available, else `dd` (`conv=noerror,sync`
+so bad sectors become zero-filled gaps instead of aborting), then writes
+`<label>.img` + `<label>.manifest.csv` (SHA-256, the same `Path,Hash`
+contract as `scripts/checksum/check.sh`) and — with `--verify` — re-reads
+the image and re-hashes before reporting success. **It will never image the
+USB stick you booted from** (boot/root disk is refused, hard).
+
+Windows twin for the WinPE side (same contract, .NET streamed copy with
+progress + on-the-fly SHA-256):
+
+```powershell
+.\scripts\emergency\Invoke-Image.ps1 -Source 1 -DestDir E:\ -Label laptop-fulldisk-2026-09-10 -Verify
+```
+
 **Step 2.4 — VERIFY the image.**
 Let Rescuezilla's post-backup check complete. Then independently confirm: the
 image files exist on the target, sizes are plausible (compressed but non-trivial),
 and — if the build supports it — open the image in Image Explorer / run the
 "check image" step. Additionally, write a SHA-256 manifest of the image **now**,
 while the target is still attached to the air-gapped machine, so the later
-Castle copy (Step 2.6) can be proven bit-identical. From a Linux shell on the
+Castle copy (Step 2.6) can be proven bit-identical. (If you used
+`image_disk.sh` in Step 2.3, the manifest is already written — skip straight
+to verifying it.)
+From a Linux shell on the
 Rescuezilla desktop (target mounted at e.g. `/mnt/usb`):
 
 ```bash
