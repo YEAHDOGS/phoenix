@@ -60,15 +60,20 @@ EOF
 # not the exact pair. Logs accepted confirmations with a UTC timestamp.
 nuke_confirm_target() {
     local inv="$1" id="$2" state_dir="${3:-/tmp}"
-    local serial model size_human mounted
+    local serial model size_human mounted boot
 
     serial="$(nuke_target_field "$inv" "$id" serial)" || { echo "[nuke-interlock] REFUSED: no disk with id $id." >&2; return 1; }
     model="$(nuke_target_field "$inv" "$id" model)"
     size_human="$(nuke_target_field "$inv" "$id" size_human)"
     mounted="$(nuke_target_field "$inv" "$id" mounted)"
+    boot="$(nuke_target_field "$inv" "$id" boot)"
 
     if [[ -z "$serial" ]]; then
         echo "[nuke-interlock] REFUSED: disk [$id] has no readable serial; it can never be a nuke target." >&2
+        return 1
+    fi
+    if [[ "$boot" == "True" ]]; then
+        echo "[nuke-interlock] REFUSED: disk [$id] is the booted disk; it can never be a nuke target." >&2
         return 1
     fi
     if [[ "$mounted" == "True" ]]; then

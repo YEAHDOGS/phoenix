@@ -32,7 +32,7 @@ EOF
 echo "== enumeration (mocked lsblk) =="
 
 INV_JSON="$(PHOENIX_MOCK_LSBLK="$FIX/mock-lsblk.txt" PHOENIX_MOCK_MOUNTS="sdb1" \
-            PHOENIX_MOCK_HASH=aaabbb "$ENUM")"
+            PHOENIX_MOCK_BOOT="" PHOENIX_MOCK_HASH=aaabbb "$ENUM")"
 echo "$INV_JSON" > "$TMP/inv.json"
 
 py() { python3 -c "$1" "$TMP/inv.json"; }
@@ -121,6 +121,22 @@ printf 'USB Flash Drive\n' | script -qec \
 # mounted disk (id 3 = sdb, mocked mounted) can never be a target
 [[ "$(python3 -c 'import json; print(json.load(open("'"$TMP/inv.json"'"))["disks"][2]["mounted"])')" == "True" ]] \
   && ok "mounted disk refused (guard confirmed by fixture)" || bad "mounted fixture wrong"
+
+# boot-disk flag: nvme0n1 (deterministic order puts it first) is mocked as
+# the booted disk; the others are not
+INV_BOOT="$(PHOENIX_MOCK_LSBLK="$FIX/mock-lsblk.txt" PHOENIX_MOCK_MOUNTS="" \
+            PHOENIX_MOCK_BOOT="nvme0n1" PHOENIX_MOCK_HASH=aaabbb "$ENUM")"
+echo "$INV_BOOT" > "$TMP/inv-boot.json"
+boot0="$(python3 -c 'import json; print(json.load(open("'"$TMP/inv-boot.json"'"))["disks"][0]["boot"])')"
+boot1="$(python3 -c 'import json; print(json.load(open("'"$TMP/inv-boot.json"'"))["disks"][1]["boot"])')"
+boot2="$(python3 -c 'import json; print(json.load(open("'"$TMP/inv-boot.json"'"))["disks"][2]["boot"])')"
+[[ "$boot0" == "True" && "$boot1" == "False" && "$boot2" == "False" ]] \
+  && ok "boot disk flagged in inventory (only the booted one)" || bad "boot flag wrong: $boot0/$boot1/$boot2"
+
+# booted disk (id 1 = nvme0n1 in the boot-flagged inventory) can never be a
+# target -- the guard fires before the TTY gate, so no pty is needed
+bash -c "source \"$LIB\"; nuke_confirm_target \"$TMP/inv-boot.json\" 1 \"$TMP/c-boot\"" >/dev/null 2>&1
+[[ $? -ne 0 ]] && ok "booted disk refused as target" || bad "booted disk ACCEPTED (danger)"
 
 # --- 3. fingerprint gate -------------------------------------------------------
 echo "== analyze-first fingerprint gate =="
