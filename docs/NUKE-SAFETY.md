@@ -89,6 +89,12 @@ physical destruction; the media can never be used again.
 - **Logs live on the USB**: default log dir is `<boot-usb-mount>/phoenix-logs/`,
   one file per run: `nuke-<serial>-<UTC-timestamp>.log` (+ `.nwipe` suffix for
   nwipe's own log). `--log-dir` overrides.
+- **Completion record feeds the chain**: on successful wipe,
+  `write_nuke_completion` writes `nuke-completed.json` (schema
+  `phoenix-nuke-completion/1`: serial, dev, model, method, NIST level,
+  completed_at) into the log dir. The Reinstall chain-of-custody gate
+  consumes it. Written only on completion — aborts, refusals, and dry runs
+  leave no record, so a partial nuke can never masquerade as complete.
 - **VM-only testing**: destructive paths are tested exclusively in QEMU on
   throwaway images. See `docs/NUKE-TEST-PLAN.md`. Never on bare metal.
 

@@ -82,6 +82,28 @@ Ventoy's `auto_install` plugin points the Windows ISO at the answer file on
 the data partition — no manual XML placement inside the ISO, no reburning.
 (The `ventoy.json` for this is written by `tools/Build-PhoenixUsb.ps1`.)
 
+### Payload wiring (unified line)
+
+Every phase runs through the same two structural contracts — the
+**USB-config stick policy** (`tools/Read-UsbConfig.py` fully validates
+`phoenix-config.json` and emits `CFG_*` policy vars; fail closed on anything
+invalid) and the **chain-of-custody ordering** (Backup emits the image proof
+→ Nuke requires it and writes a completion record → Reinstall consumes both →
+Restore runs after the new machine is built):
+
+| Phase | Boot entry | Payload | Config gate | Chain record produced | Chain record consumed |
+|---|---|---|---|---|---|
+| Analyze | `[1] ANALYZE` | `tools/Invoke-Analyze.sh` (twin `.ps1`) | `CFG_ANALYZE_ENABLED` | analysis report JSON | — |
+| Backup | `[2] BACKUP` | `tools/Invoke-Backup.sh` (twin `.ps1`) | `CFG_BACKUP_ENABLED/KIND/SMB_PATH` | `backup-image-proof.json` (schema `phoenix-image-proof/1`, via `New-ImageProof.sh --json-out`) + `.proof` for the Nuke gate | — |
+| Nuke | `[3] NUKE` | `tools/Invoke-Nuke.sh` | stick policy: `CFG_NUKE_ENABLED`, allowlist, skip-gate compiled out, countdown | `nuke-completed.json` (schema `phoenix-nuke-completion/1`, written on successful wipe only) | `.proof` file (`--image-proof`; verified, 64-hex sha256, bound to the target serial) |
+| Reinstall | `[4] REINSTALL` | `tools/Reinstall-Windows.sh` (twin `.ps1`) | `CFG_REINSTALL_ENABLED` + platform; full schema validation before any other gate | — (arms the install; never launches Setup) | verified `backup-image-proof.json` **and** `nuke-completed.json` for the exact serial |
+| Restore | (post-reinstall, on the new machine) | `scripts/backup/restore-selective.sh` (twin `.ps1`) | opt-in `--config`: stick Backup lane must be enabled | — | opt-in `--chain <state-dir>`: verified backup proof + nuke record on record (ordering proof; serial binding stays with the restore interlocks) |
+
+The producer→consumer handshakes are pinned by
+`tests/tools/test-chain-of-custody.sh`: the records the Backup and Nuke
+writers emit are consumed by the real Reinstall gate. Run the whole payload
+line with `tests/run-payload.sh`.
+
 ## 4. Phoenix WinPE build (ADK)
 
 Built **once, on a clean Windows machine** with the free Microsoft ADK +

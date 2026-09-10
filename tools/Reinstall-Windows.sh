@@ -5,6 +5,9 @@
 # Twin: tools/Reinstall-Windows.ps1 (WinPE side, same gate contract).
 #
 # Flow (mirrors docs/EMERGENCY-RUNBOOK.md Phase 4, manual mode):
+#   0. USB-config stick-policy gate: phoenix-config.json is FULLY validated
+#      by tools/Read-UsbConfig.py (same single reader the nuke/backup flows
+#      use); the stick's reinstall lane must be enabled, platform windows.
 #   1. Enumerate disks (tools/Get-DiskInventory.sh) -> numbered table.
 #   2. Pick a row: the reinstall target. It MUST be blank (zeroed leading
 #      sectors, no mounts, readable serial) -- otherwise the disk still

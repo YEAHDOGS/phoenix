@@ -1,4 +1,4 @@
-# Phoenix selective restore
+# RESTORE-MODULE.md — Phoenix selective restore (data phase)
 
 Applies a backup manifest onto a **new machine**. Twin engines, same behavior:
 
@@ -35,6 +35,27 @@ restore-selective.sh --manifest-dir /mnt/castle/brando-laptop \
 6. **Apply** — re-verify hash right before each copy, copy, verify hash of the
    written file. Any mismatch aborts with a failure list. Final report shows
    planned vs actually restored counts.
+
+## Stick-policy + chain-of-custody gates (opt-in)
+
+The restore engine predates the config-schema world; two opt-in flags wire
+it into the unified line without changing default behavior:
+
+- `--config phoenix-config.json` — the config is fully validated by
+  `tools/Read-UsbConfig.py` (JSON Schema + `docs/CONFIG-SCHEMA.md` §6) and
+  the stick's Backup lane must be enabled (`boot_entries.backup`). A restore
+  from data that did not come through a Phoenix backup is refused.
+- `--chain <state-dir>` — the state dir from the same USB must hold a
+  **verified** `backup-image-proof.json` (schema `phoenix-image-proof/1`)
+  **and** `nuke-completed.json` (schema `phoenix-nuke-completion/1`): restore
+  happens only after the full-disk backup + wipe were recorded. Enforcement
+  is *ordering*, not serial binding — selective manifests are filesystem-level
+  (`source_fs_id`/`source_uuid`), so interlocks 2-4 remain the primary
+  defense; `--chain` adds the phase-ordering proof.
+
+In the boot menu flow, Restore runs **after** Reinstall (Phase 4 → data
+phase): the new machine is built, then the operator restores app data onto
+it. It is not a boot-menu entry itself.
 
 ## Safety interlocks
 
