@@ -27,9 +27,11 @@ instead of imaging.
 
 ## Safety model
 
-1. **Config is mandatory.** `--config <phoenix-config.json>` is required, never
-   auto-discovered. `boot_entries.backup` must be true. Unknown config fields
-   fail closed (schema `additionalProperties: false`).
+1. **Config is mandatory for real work.** `--config <phoenix-config.json>` is
+   required for anything beyond bare enumeration (plan, `--dry-run`,
+   `--tool rescuezilla`, armed run), never auto-discovered.
+   `boot_entries.backup` must be true. Unknown config fields fail closed
+   (schema `additionalProperties: false`).
 2. **Serial resolution, never letters.** Source and target are resolved by
    **serial** (row number or /dev node accepted as aliases of the enumerated
    table, same as the Nuke UX). Letters lie; serials identify.
