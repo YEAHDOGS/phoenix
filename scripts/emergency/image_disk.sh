@@ -160,6 +160,9 @@ if command -v dcfldd >/dev/null 2>&1; then
         || { echo "[$PROG] dcfldd failed." >&2; exit 1; }
 else
     echo "      (dd: no dcfldd on this host, hashing after copy)"
+    # conv=noerror,sync: on a failing disk, bad sectors become zero-filled
+    # gaps instead of aborting the image (forensic standard). Note: this pads
+    # a short final block up to bs, so the image can be larger than the source.
     dd if="$SRC" of="$DEST_IMG" bs=64M status=progress conv=noerror,sync \
         || { echo "[$PROG] dd failed." >&2; exit 1; }
 fi
@@ -172,7 +175,7 @@ python3 - "$DEST_IMG" "$IMG_HASH" "$DEST_MANIFEST" <<'PY'
 import csv, sys
 path, digest, out = sys.argv[1], sys.argv[2], sys.argv[3]
 with open(out, "w", newline="") as f:
-    w = csv.writer(f)
+    w = csv.writer(f, lineterminator="\n")
     w.writerow(["Path", "Hash"])
     w.writerow([path, digest])
 PY
