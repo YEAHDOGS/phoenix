@@ -106,11 +106,17 @@ gate "reinstall_require_artifacts \"$TMP/autounattend.xml\" \"$TMP/empty.xml\"";
 echo "== config-consistency gate =="
 
 mkconfig() { # <file> <reinstall-enabled> <platform> <answer-file>
+    # Schema-valid config (the flow's USB-config gate runs the full
+    # validator; nuke is off in fixtures so no target_disks allowlist is
+    # required by the cross-field rules).
     cat > "$1" <<EOF
 {"schema_version": 1,
- "boot_entries": {"analyze": true, "backup": true, "nuke": true, "reinstall": $2},
+ "boot_entries": {"analyze": true, "backup": true, "nuke": false, "reinstall": $2},
  "reinstall": {"platform": "$3"},
- "unattend": {"answer_file": "$4"}}
+ "unattend": {"answer_file": "$4"},
+ "backup_target": {"kind": "direct-usb"},
+ "safety": {"require_image_proof": true, "allow_skip_image_gate": false, "abort_countdown_seconds": 5},
+ "target_disks": []}
 EOF
 }
 mkconfig "$TMP/cfg-ok.json" true windows "/autounattend.xml"
@@ -194,6 +200,21 @@ echo "== flow CLI =="
 
 "$FLOW" --config "$TMP/cfg-ok.json" --unattend "$TMP/autounattend.xml" --iso "$TMP/win11.iso" --bogus 1 >/dev/null 2>&1; [[ $? -eq 3 ]] \
   && ok "unknown flag exits 3" || bad "unknown flag did not exit 3"
+
+# --- 5b. USB-config (stick policy) gate ---------------------------------------
+echo "== USB-config gate =="
+
+"$FLOW" --config "$TMP/cfg-off.json" --unattend "$TMP/autounattend.xml" --iso "$TMP/win11.iso" 1 >/dev/null 2>&1; [[ $? -eq 2 ]] \
+  && ok "stick with reinstall disabled exits 2" || bad "reinstall-disabled stick did not exit 2"
+
+"$FLOW" --config "$TMP/cfg-off.json" --unattend "$TMP/autounattend.xml" --iso "$TMP/win11.iso" 1 2>&1 | grep -q "disables the REINSTALL boot entry" \
+  && ok "reinstall-disabled refusal names the stick policy" || bad "reinstall-disabled refusal is silent"
+
+"$FLOW" --config "$TMP/cfg-bad.json" --unattend "$TMP/autounattend.xml" --iso "$TMP/win11.iso" 1 >/dev/null 2>&1; [[ $? -eq 2 ]] \
+  && ok "invalid JSON config exits 2" || bad "invalid JSON config did not exit 2"
+
+"$FLOW" --config "$TMP/cfg-linux.json" --unattend "$TMP/autounattend.xml" --iso "$TMP/win11.iso" 1 2>&1 | grep -q "only 'windows' is implemented" \
+  && ok "linux platform refused at the stick-policy gate" || bad "linux platform not refused at stick policy"
 
 # full happy path reaches the TTY gate (fails without a terminal -- gates 1-4 passed)
 cp "$FP_BLANK" "$STATE/disk-fingerprints.json"
