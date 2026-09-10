@@ -56,3 +56,19 @@ Rules:
 Both engines default to **plan mode** (read-only listing of what WOULD be
 backed up, what would be validated, and what would be skipped). Nothing is
 copied until you pass `-Execute` / `--execute`.
+
+## Restore rules
+
+The restore engines (`scripts/backup/restore-selective.ps1` /
+`restore-selective.sh`, documented in `scripts/backup/RESTORE.md`) enforce
+these profiles on the way back in — policy lives here, not in code:
+
+- Every manifest entry is classified by matching its *target* path against
+  this profile's `windows`/`linux` locations.
+- `data` restores (hash-verified before and after the copy); `config` restores
+  only after revalidation (`.json` must parse — anything else is quarantined
+  and never written).
+- `cache` / `executable` entries are **never restored**, even if someone
+  hand-edits them into a manifest — the engine prints them as kill-list SKIPs.
+- `--app <id>` restores only that profile's files. New app = new
+  `profiles/<app>.json`, zero engine changes.
