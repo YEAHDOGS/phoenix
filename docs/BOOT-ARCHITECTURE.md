@@ -117,43 +117,65 @@ the same GUI shell can drive future macOS/Linux blades.
 Boot-side scripts read the config headless: the WinPE startup hook and the
 answer-file generator consume this one file today; future blades consume the
 same file tomorrow. **Schema rule:** plain OS-agnostic JSON — no Windows-only
-assumptions baked into the top-level keys. Windows-specific options live under
-`os.answerFile` where non-Windows blades ignore them.
+assumptions baked into the top-level keys. Platform-specific bits nest under
+`reinstall.platform` and below, where other blades ignore them.
+
+The normative spec is `docs/CONFIG-SCHEMA.md`, the machine-readable schema is
+`config/usb-config.schema.json`, and the dependency-free validator is
+`tools/Validate-UsbConfig.py` — this section is an overview only and must not
+contradict them. (A stale draft of this section once showed a different shape
+with `machine`/`credentials`/`os`/`apps` keys — that shape was superseded by
+the v1 schema below; the single source of truth is the schema file.)
 
 ```jsonc
 {
-  "schemaVersion": 1,
-  "machine": {
-    "computerName": "BRANDON-PC",
-    "timezone": "Central Standard Time"
+  "schema_version": 1,                 // const 1; readers reject unknown versions
+  "boot_entries": {                    // which Ventoy menu entries this stick stages
+    "analyze": true, "backup": true, "nuke": true, "reinstall": true
   },
-  "credentials": {
-    "username": "brandon",
-    "password": "correct-horse-battery-staple"   // see security note below
+  "target_disks": [                    // NUKE allowlist: serials copied verbatim
+    { "serial": "WD-WCC4N1234567", "model": "WD Blue 1TB", "note": "laptop drive" }
+  ],                                   // from the enumeration table; empty = no disk may be nuked
+  "backup_target": { "kind": "direct-usb" },   // or "castle-smb" (provisional, see CONFIG-SCHEMA §4)
+  "unattend": { "answer_file": "/autounattend.xml" },  // Ventoy auto_install target, USB-root-relative
+  "safety": {
+    "require_image_proof": true,       // runbook invariant 1, enforced in code
+    "allow_skip_image_gate": false,     // false = the escape hatch is compiled out of this stick
+    "abort_countdown_seconds": 5
   },
-  "os": {
-    "family": "windows",          // "windows" today; "linux" / "macos" later
-    "edition": "Professional",
-    "productKey": "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",  // or null for digital license
-    "answerFile": {               // windows-only; ignored by other blades
-      "disableWPBT": true,
-      "partitionLayout": "gpt-uefi"
-    }
-  },
-  "apps": [
-    { "id": "googlechrome", "source": "choco" },
-    { "id": "steam",        "source": "choco" }
-  ]
+  "reinstall": { "platform": "windows" }       // "linux" reserved for a future blade
 }
 ```
+
+**Where the other inputs live.** The v1 schema deliberately carries no
+machine identity, no credentials, and no app list — it is the *boot-side
+policy file*, not the install manifest. Those inputs are GUI-session data
+that flow into the *generated artifacts on the stick*, never into the config:
+
+- **Machine identity, local accounts, passwords** → parameters of
+  `tools/New-UnattendXml.ps1`, which fills the credential-free
+  `win-install/autounattend.template.xml` and writes the gitignored
+  `/autounattend.xml` at the USB root. The filled answer file carries the
+  real passwords (the unattend format requires them — even the "obscured"
+  form is reversible), so it is never committed and never lives in
+  `phoenix-config.json`.
+- **App selection** → the config GUI's app picker, feeding
+  `tools/New-AppInstallScript.ps1` (which generates the setup-time Chocolatey
+  installer from `data/choco-install/apps.json`) and the answer file's
+  FirstLogonCommands. The OS-agnostic config does not name apps.
+- **Disk allowlist serials** → the GUI copies them verbatim from a disk
+  enumeration (never hand-typed from memory) into `target_disks`; the boot
+  side's `tools/Invoke-Nuke.sh --config` enforces them (NUKE-SAFETY
+  interlock 12).
 
 **Security note (non-negotiable):** unattend requires the password in a
 reversible form (base64-obfuscated = effectively plaintext). The USB is a
 **key** — anyone holding it can read the password. Physical-security rules:
 keep the stick on your person, never leave it in the machine, rotate the
 install-time password at first logon (the runbook enforces this), and never
-commit a real `phoenix-config.json` to the repo. This is the known tradeoff
-of the unattended-install approach, not a bug to fix later.
+commit a real `phoenix-config.json` or `autounattend.xml` to the repo. This
+is the known tradeoff of the unattended-install approach, not a bug to fix
+later.
 
 ## 6. File explorer story (founder requirement)
 
