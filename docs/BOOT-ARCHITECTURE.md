@@ -72,7 +72,7 @@ menu reads exactly like the founder's flow:
 
 | Boot menu entry | ISO | Founder phase |
 |---|---|---|
-| `[1] ANALYZE — SystemRescue` | `systemrescue-<ver>-amd64.iso` | Analyze: inspect the suspect machine without booting its OS (file manager, terminal, disk tools; bootable AV rescue ISOs can be added here later) |
+| `[1] ANALYZE — SystemRescue` | `systemrescue-<ver>-amd64.iso` | Analyze: inspect the suspect machine without booting its OS (file manager, terminal, disk tools; bootable AV rescue ISOs can be added here later). The headless triage payload is `tools/Invoke-Analyze.sh` (read-only disk enumeration + hardware inventory + JSON report; WinPE twin `tools/Invoke-Analyze.ps1`) — see `docs/ANALYZE-MODULE.md`; the operator-driven forensics kit is `docs/ANALYSIS-TOOLKIT.md` |
 | `[2] BACKUP — Rescuezilla` | `rescuezilla-<ver>-64bit.iso` | Backup: full-disk image to direct-attached USB, verified, before anything destructive |
 | `[3] NUKE — ShredOS` | `ShredOS-<ver>_x86_64.iso` | Nuke: method-per-media sanitization (§8) |
 | `[4] REINSTALL — Windows 11 (unattended)` | `Win11_24H2_English_x64.iso` + Ventoy `auto_install` → `/autounattend.xml` | Reinstall: unattended install driven by the generated answer file |
