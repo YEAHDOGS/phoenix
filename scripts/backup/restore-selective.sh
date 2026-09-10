@@ -5,6 +5,15 @@
 # Usage:
 #   restore-selective.sh --manifest-dir DIR --target-root DIR [--app chrome|all]
 #                        [--profile-dir DIR] [--apply] [--confirm-word WORD]
+#                        [--config phoenix-config.json] [--chain STATE-DIR]
+#
+#   --config FILE  USB stick policy: fully validates phoenix-config.json via
+#                  tools/Read-UsbConfig.py and refuses unless the stick's
+#                  Backup lane is enabled. Opt-in; without it nothing changes.
+#   --chain DIR    chain-of-custody ordering: refuses unless DIR holds a
+#                  verified backup-image-proof.json AND nuke-completed.json.
+#                  Ordering-only (selective manifests are fs-level, not disk-
+#                  serial bound). Opt-in; without it nothing changes.
 #
 #   PHOENIX_HOME overrides ~ expansion when matching profile paths (default: $HOME).
 #   Defaults to read-only plan mode. Nothing is written without --apply.
@@ -28,8 +37,11 @@ APP="all"
 APPLY=0
 CONFIRM_WORD=""
 ALLOW_SAME_DISK=0
+CONFIG=""
+CHAIN_DIR=""
 PROFILE_DIR="$(cd "$(dirname "$0")/../../profiles" && pwd)"
 HOME_ROOT="${PHOENIX_HOME:-$HOME}"
+TOOLS_DIR="$(cd "$(dirname "$0")/../../tools" && pwd)"
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -41,6 +53,8 @@ while [ $# -gt 0 ]; do
         --allow-same-disk) ALLOW_SAME_DISK=1; shift ;;
         --confirm-word) CONFIRM_WORD="$2"; shift 2 ;;
         --profile-dir)  PROFILE_DIR="$2"; shift 2 ;;
+        --config)       CONFIG="$2"; shift 2 ;;
+        --chain)        CHAIN_DIR="$2"; shift 2 ;;
         *) echo "unknown arg: $1" >&2; exit 1 ;;
     esac
 done
@@ -50,6 +64,56 @@ command -v jq >/dev/null || { echo "error: jq is required" >&2; exit 1; }
 [ -n "$TARGET_ROOT" ]  || { echo "error: --target-root is required (no default — restore never guesses the target)" >&2; exit 1; }
 [ -f "$MANIFEST_DIR/manifest.json" ] || { echo "error: manifest.json not found in $MANIFEST_DIR" >&2; exit 1; }
 [ -d "$TARGET_ROOT" ] || { echo "error: --target-root '$TARGET_ROOT' does not exist or is not a directory" >&2; exit 1; }
+
+# --config: USB stick policy. The config is FULLY validated (JSON Schema +
+# CONFIG-SCHEMA.md section 6) by tools/Read-UsbConfig.py; restoring data
+# makes sense only when the stick's Backup lane was enabled (the data came
+# from a Phoenix backup). Fail closed on every problem. Opt-in: without
+# --config the script behaves exactly as before.
+if [ -n "$CONFIG" ]; then
+    command -v python3 >/dev/null || { echo "error: --config requires python3 (Read-UsbConfig.py)" >&2; exit 1; }
+    READER="$TOOLS_DIR/Read-UsbConfig.py"
+    [ -f "$READER" ] || { echo "error: config reader missing: $READER (stick image incomplete)" >&2; exit 1; }
+    CFG_ERR="$(mktemp)"; trap 'rm -f "$CFG_ERR"' EXIT
+    if ! CFG_OUT="$("$READER" --shell "$CONFIG" 2>"$CFG_ERR")"; then
+        echo "INTERLOCK: invalid phoenix-config.json — refusing to restore against an unvalidated stick:" >&2
+        cat "$CFG_ERR" >&2; exit 1
+    fi
+    # shellcheck disable=SC1090
+    eval "$CFG_OUT"   # sets CFG_BACKUP_ENABLED, ...
+    if [ "${CFG_BACKUP_ENABLED:-0}" != "1" ]; then
+        echo "INTERLOCK: stick policy disables the BACKUP lane (boot_entries.backup=false) — restore refuses" >&2; exit 1
+    fi
+    echo "[+] stick policy: backup lane enabled"
+fi
+
+# --chain: chain-of-custody ordering. Requires the state dir from the same
+# USB to hold the verified backup image-proof and the nuke completion record
+# -- i.e. restore happens only after the full-disk backup + wipe were
+# recorded. Enforcement is ORDERING: selective manifests are filesystem-level
+# (source_fs_id/source_uuid), not disk-serial bound, so this cannot prove the
+# wipe covered the restored data's origin disk -- the restore interlocks (2-4)
+# remain the primary defense. Opt-in: without --chain nothing changes.
+if [ -n "$CHAIN_DIR" ]; then
+    command -v python3 >/dev/null || { echo "error: --chain requires python3" >&2; exit 1; }
+    PROOF_JSON="$CHAIN_DIR/backup-image-proof.json"
+    [ -f "$PROOF_JSON" ] || { echo "INTERLOCK: --chain: no backup-image-proof.json in $CHAIN_DIR — the full-disk backup was never recorded" >&2; exit 1; }
+    python3 - "$PROOF_JSON" <<'EOF' >/dev/null 2>&1 || { echo "INTERLOCK: --chain: backup-image-proof.json is invalid or not verified" >&2; exit 1; }
+import json, sys
+p = json.load(open(sys.argv[1]))
+assert p.get("schema") == "phoenix-image-proof/1", "schema"
+assert p.get("verified") is True, "not verified"
+EOF
+    NUKE_JSON="$CHAIN_DIR/nuke-completed.json"
+    [ -f "$NUKE_JSON" ] || { echo "INTERLOCK: --chain: no nuke-completed.json in $CHAIN_DIR — the wipe was never recorded" >&2; exit 1; }
+    python3 - "$NUKE_JSON" <<'EOF' >/dev/null 2>&1 || { echo "INTERLOCK: --chain: nuke-completed.json is invalid" >&2; exit 1; }
+import json, sys
+n = json.load(open(sys.argv[1]))
+assert n.get("schema") == "phoenix-nuke-completion/1", "schema"
+assert n.get("completed_at"), "no completed_at"
+EOF
+    echo "[+] chain of custody: verified backup + completed nuke on record"
+fi
 
 TARGET_CANON="$(readlink -f "$TARGET_ROOT")"
 MANIFEST_CANON="$(readlink -f "$MANIFEST_DIR")"
