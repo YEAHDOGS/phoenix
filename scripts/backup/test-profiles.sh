@@ -86,5 +86,85 @@ echo "$out2" | grep -q "QUARANTINED" && pass "quarantine reported" || fail "quar
 [ -f "$DEST2/vscode/.config/Code/User/snippets/a.json" ] && pass "snippets (data) still copied" || fail "snippets (data) still copied"
 
 echo
+echo "== 5. new profiles: discord, stardew, powershell, git, terminal =="
+mkdir -p "$FH/.config/discord/Local Storage/leveldb" "$FH/.config/discord/Cache" \
+         "$FH/.config/StardewValley/Saves/Farm_12345" "$FH/.config/StardewValley/Mods" \
+         "$FH/.config/StardewValley/ErrorLogs" \
+         "$FH/.config/powershell" "$FH/.local/share/powershell/Modules/Tool" \
+         "$FH/.local/share/powershell/PSReadLine" "$FH/.config/git" "$FH/.ssh"
+
+echo '{"BACKGROUND_COLOR":"#121214"}' > "$FH/.config/discord/settings.json"          # config, valid
+echo "tokenblob" > "$FH/.config/discord/Local Storage/leveldb/MANIFEST-0001"       # cache -> skip
+echo "cachedata" > "$FH/.config/discord/Cache/f_000001"                            # cache -> skip
+echo '<SaveGame></SaveGame>' > "$FH/.config/StardewValley/Saves/Farm_12345/Farm_12345"   # data
+echo '<info/>' > "$FH/.config/StardewValley/Saves/Farm_12345/SaveGameInfo"          # data
+echo '<prefs/>' > "$FH/.config/StardewValley/startup_preferences"                  # config
+echo "dll" > "$FH/.config/StardewValley/Mods/Mod.dll"                              # executable -> skip
+echo "error" > "$FH/.config/StardewValley/ErrorLogs/SMAPI-latest.txt"              # cache -> skip
+echo 'Set-Alias g git' > "$FH/.config/powershell/profile.ps1"                     # config (non-json)
+echo 'oh-my-posh' > "$FH/.config/powershell/Microsoft.PowerShell_profile.ps1"     # config (non-json)
+echo "psm1" > "$FH/.local/share/powershell/Modules/Tool/x.psm1"                    # executable -> skip
+echo "secret command" > "$FH/.local/share/powershell/PSReadLine/ConsoleHost_history.txt" # cache -> skip
+printf '[user]\n\tname = Test\n' > "$FH/.gitconfig"                                # config
+printf '[core]\n\teditor = vim\n' > "$FH/.config/git/config"                      # config
+echo "PRIVATE KEY" > "$FH/.ssh/id_ed25519"                                         # cache -> skip
+
+P="$(PHOENIX_HOME="$FH" "$ENGINE" --app discord --plan)"
+echo "$P" | grep -q "VALIDATE-THEN-BACKUP.*settings.json" && pass "plan: discord settings.json validate" || fail "plan: discord settings.json validate"
+echo "$P" | grep "Local Storage" | grep -q "SKIP (cache)" && pass "plan: discord Local Storage skipped" || fail "plan: discord Local Storage skipped"
+echo "$P" | grep "/Cache " | grep -q "SKIP (cache)" && pass "plan: discord Cache skipped" || fail "plan: discord Cache skipped"
+
+P="$(PHOENIX_HOME="$FH" "$ENGINE" --app stardew --plan)"
+echo "$P" | grep -q "BACKUP .*Saves" && pass "plan: stardew Saves selected" || fail "plan: stardew Saves selected"
+echo "$P" | grep -q "VALIDATE-THEN-BACKUP.*startup_preferences" && pass "plan: stardew prefs validate" || fail "plan: stardew prefs validate"
+echo "$P" | grep "Mods" | grep -q "SKIP (executable" && pass "plan: stardew Mods skipped" || fail "plan: stardew Mods skipped"
+echo "$P" | grep "ErrorLogs" | grep -q "SKIP (cache)" && pass "plan: stardew ErrorLogs skipped" || fail "plan: stardew ErrorLogs skipped"
+
+P="$(PHOENIX_HOME="$FH" "$ENGINE" --app powershell --plan)"
+echo "$P" | grep -q "VALIDATE-THEN-BACKUP.*profile.ps1" && pass "plan: ps profile.ps1 validate" || fail "plan: ps profile.ps1 validate"
+echo "$P" | grep "Modules" | grep -q "SKIP (executable" && pass "plan: ps Modules skipped" || fail "plan: ps Modules skipped"
+echo "$P" | grep "ConsoleHost_history" | grep -q "SKIP (cache)" && pass "plan: ps history skipped" || fail "plan: ps history skipped"
+
+P="$(PHOENIX_HOME="$FH" "$ENGINE" --app git --plan)"
+echo "$P" | grep -q "VALIDATE-THEN-BACKUP.*\.gitconfig" && pass "plan: git .gitconfig validate" || fail "plan: git .gitconfig validate"
+echo "$P" | grep "git/config" | grep -q "VALIDATE-THEN-BACKUP" && pass "plan: git xdg config validate" || fail "plan: git xdg config validate"
+echo "$P" | grep "\.ssh" | grep -q "SKIP (cache)" && pass "plan: git .ssh skipped" || fail "plan: git .ssh skipped"
+
+# terminal is Windows-only (empty linux arrays): engine must handle it without error
+P="$(PHOENIX_HOME="$FH" "$ENGINE" --app terminal --plan)" && pass "plan: terminal runs clean (windows-only)" || fail "plan: terminal runs clean (windows-only)"
+
+DEST5="$FIX/dest5"
+PHOENIX_HOME="$FH" "$ENGINE" --app stardew --execute --dest "$DEST5" >/dev/null 2>&1
+[ -f "$DEST5/stardew/.config/StardewValley/Saves/Farm_12345/Farm_12345" ] && pass "exec: stardew save copied" || fail "exec: stardew save copied"
+[ -f "$DEST5/stardew/.config/StardewValley/startup_preferences" ] && pass "exec: stardew prefs copied" || fail "exec: stardew prefs copied"
+[ ! -e "$DEST5/stardew/.config/StardewValley/Mods" ] && pass "exec: stardew Mods NOT copied" || fail "exec: stardew Mods NOT copied"
+[ ! -e "$DEST5/stardew/.config/StardewValley/ErrorLogs" ] && pass "exec: stardew ErrorLogs NOT copied" || fail "exec: stardew ErrorLogs NOT copied"
+src_h="$(sha256sum "$FH/.config/StardewValley/Saves/Farm_12345/Farm_12345" | cut -d' ' -f1)"
+man_h="$(jq -r '.[] | select(.file | contains("Farm_12345/Farm_12345")) | .sha256' "$DEST5/manifest.json")"
+[ "$src_h" = "$man_h" ] && pass "exec: stardew manifest SHA-256 matches" || fail "exec: stardew manifest SHA-256 matches"
+
+DEST6="$FIX/dest6"
+PHOENIX_HOME="$FH" "$ENGINE" --app discord --execute --dest "$DEST6" >/dev/null 2>&1
+[ -f "$DEST6/discord/.config/discord/settings.json" ] && pass "exec: discord settings copied" || fail "exec: discord settings copied"
+[ ! -e "$DEST6/discord/.config/discord/Local Storage" ] && pass "exec: discord Local Storage NOT copied" || fail "exec: discord Local Storage NOT copied"
+[ ! -e "$DEST6/discord/.config/discord/Cache" ] && pass "exec: discord Cache NOT copied" || fail "exec: discord Cache NOT copied"
+
+DEST7="$FIX/dest7"
+PHOENIX_HOME="$FH" "$ENGINE" --app git --execute --dest "$DEST7" >/dev/null 2>&1
+[ -f "$DEST7/git/.gitconfig" ] && pass "exec: git .gitconfig copied" || fail "exec: git .gitconfig copied"
+[ -f "$DEST7/git/.config/git/config" ] && pass "exec: git xdg config copied" || fail "exec: git xdg config copied"
+[ ! -e "$DEST7/git/.ssh" ] && pass "exec: git .ssh NOT copied" || fail "exec: git .ssh NOT copied"
+
+DEST8="$FIX/dest8"
+PHOENIX_HOME="$FH" "$ENGINE" --app powershell --execute --dest "$DEST8" >/dev/null 2>&1
+[ -f "$DEST8/powershell/.config/powershell/profile.ps1" ] && pass "exec: ps profile copied" || fail "exec: ps profile copied"
+[ ! -e "$DEST8/powershell/.local/share/powershell/Modules" ] && pass "exec: ps Modules NOT copied" || fail "exec: ps Modules NOT copied"
+[ ! -e "$DEST8/powershell/.local/share/powershell/PSReadLine" ] && pass "exec: ps history NOT copied" || fail "exec: ps history NOT copied"
+
+DEST9="$FIX/dest9"
+PHOENIX_HOME="$FH" "$ENGINE" --app terminal --execute --dest "$DEST9" >/dev/null 2>&1 && pass "exec: terminal runs clean" || fail "exec: terminal runs clean"
+[ ! -e "$DEST9/terminal" ] && pass "exec: terminal copied nothing (windows-only)" || fail "exec: terminal copied nothing (windows-only)"
+
+echo
 echo "PASS=$PASS FAIL=$FAIL"
 [ "$FAIL" -eq 0 ]
