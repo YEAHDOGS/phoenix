@@ -23,6 +23,10 @@ Usage:
             CFG_ABORT_COUNTDOWN         safety.abort_countdown_seconds (integer)
             CFG_ALLOW_SERIAL_COUNT      number of allowlisted target_disks serials
             CFG_ALLOW_SERIAL_<i>        allowlisted serial, uppercased + trimmed
+            CFG_BACKUP_ENABLED          1 when boot_entries.backup is true
+            CFG_BACKUP_KIND             backup_target.kind (direct-usb | castle-smb)
+            CFG_BACKUP_LABEL_PREFIX     backup_target.label_prefix
+            CFG_BACKUP_SMB_PATH         backup_target.smb_path (castle-smb only)
     python3 tools/Read-UsbConfig.py --json <config.json>
         The same policy as a JSON object (serials under "allow_serials").
 
@@ -57,7 +61,7 @@ def load_validator_module():
 
 
 def extract_policy(cfg):
-    """Nuke-relevant policy from a validated config.
+    """Nuke- and backup-relevant policy from a validated config.
 
     Serials are normalized (uppercased, whitespace trimmed) exactly as the
     schema describes them, so a GUI that wrote 'satatest001' still matches
@@ -71,12 +75,17 @@ def extract_policy(cfg):
         serial = entry.get("serial", "").strip().upper()
         if serial:
             serials.append(serial)
+    backup = cfg.get("backup_target", {})
     return {
         "nuke_enabled": bool(boot.get("nuke", False)),
         "require_image_proof": bool(safety.get("require_image_proof", True)),
         "allow_skip_image_gate": bool(safety.get("allow_skip_image_gate", False)),
         "abort_countdown": int(safety.get("abort_countdown_seconds", 5)),
         "allow_serials": serials,
+        "backup_enabled": bool(boot.get("backup", False)),
+        "backup_kind": backup.get("kind", ""),
+        "backup_label_prefix": backup.get("label_prefix", "PHOENIX-IMAGE"),
+        "backup_smb_path": backup.get("smb_path", ""),
     }
 
 
@@ -107,6 +116,10 @@ def print_shell(policy):
     print("CFG_ALLOW_SERIAL_COUNT=%d" % len(serials))
     for i, serial in enumerate(serials):
         print("CFG_ALLOW_SERIAL_%d=%s" % (i, shlex.quote(serial)))
+    print("CFG_BACKUP_ENABLED=%s" % ("1" if policy["backup_enabled"] else "0"))
+    print("CFG_BACKUP_KIND=%s" % shlex.quote(policy["backup_kind"]))
+    print("CFG_BACKUP_LABEL_PREFIX=%s" % shlex.quote(policy["backup_label_prefix"]))
+    print("CFG_BACKUP_SMB_PATH=%s" % shlex.quote(policy["backup_smb_path"]))
 
 
 def print_json(policy):
@@ -117,6 +130,10 @@ def print_json(policy):
             "allow_skip_image_gate": policy["allow_skip_image_gate"],
             "abort_countdown": policy["abort_countdown"],
             "allow_serials": policy["allow_serials"],
+            "backup_enabled": policy["backup_enabled"],
+            "backup_kind": policy["backup_kind"],
+            "backup_label_prefix": policy["backup_label_prefix"],
+            "backup_smb_path": policy["backup_smb_path"],
         },
         indent=2,
     ))
