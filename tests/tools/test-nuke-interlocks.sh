@@ -29,6 +29,17 @@
 #     nuke-without-proof refused, missing/wrong-serial proof refused,
 #     valid proof passes the image gate (next gate fires), piped
 #     --skip-image-gate refused.
+#   STICK POLICY (--config, phoenix-config.json; SAFETY interlock 12):
+#   UNIT (sourced functions): load_usb_config (valid config loads policy,
+#     serial normalization, invalid/missing config refused), normalize_serial,
+#     check_usb_config_policy (nuke-disabled stick refuses, allowlist miss
+#     refuses, allowlist hit passes, skip-gate compiled out refuses
+#     --skip-image-gate, skip-gate enabled passes the policy check).
+#   INTEGRATION (subprocess, mocked lsblk): nuke-disabled config refuses,
+#     allowlist miss refuses, allowlist hit reaches the block-device gate,
+#     --skip-image-gate refused when compiled out, piped skip still refused
+#     on a real-console check when the hatch is enabled, invalid config
+#     refused, missing config refused.
 #
 # Deliberately NOT covered here (VM-only, see docs/NUKE-TEST-PLAN.md T5-T8):
 #   typed-confirmation accept/abort against a real block device, and any
@@ -116,6 +127,9 @@ chmod +x "$MOCKBIN/lsblk"
 #--- source the real script's functions (strip the trailing `main "$@"`) -------
 SRC_STRIPPED="$T/invoke-nuke-src.sh"
 grep -v '^main "\$@"$' "$NUKE" > "$SRC_STRIPPED"
+# The stripped copy lives in $T, so the script's own tools-dir detection
+# would point at $T -- aim it at the real tools/ for the config-reader tests.
+export PHOENIX_TOOLS_DIR="$REPO/tools"
 # shellcheck disable=SC1090
 source "$SRC_STRIPPED"
 
@@ -363,6 +377,116 @@ bash "$PROOFWRITER" --image-name data-disk-test \
     --sha256 "$GOODSHA" --verified --verified-by harness --out "$T" >/dev/null
 SDDPROOF="$(ls "$T"/image-proof-SDDTEST004-*.proof)"
 
+#--- stick policy: phoenix-config.json (unit) ---------------------------------
+echo "== stick policy: phoenix-config.json (unit) =="
+CFG_OK="$T/cfg-ok.json"
+CFG_SKIP="$T/cfg-skip.json"
+CFG_NONUKE="$T/cfg-nonuke.json"
+CFG_MISS="$T/cfg-miss.json"
+CFG_BAD="$T/cfg-bad.json"
+write_cfg() { # write_cfg <path> <nuke> <allow_skip> <serials-json-array>
+    cat > "$1" <<JSON
+{
+  "schema_version": 1,
+  "boot_entries": {"analyze": true, "backup": true, "nuke": $2, "reinstall": true},
+  "target_disks": $4,
+  "backup_target": {"kind": "direct-usb"},
+  "unattend": {"answer_file": "/autounattend.xml"},
+  "safety": {"require_image_proof": true, "allow_skip_image_gate": $3, "abort_countdown_seconds": 5}
+}
+JSON
+}
+write_cfg "$CFG_OK" true false '[{"serial": "SATATEST001", "model": "Test SATA HDD"}, {"serial": "sddtest004", "model": "Mounted Data SSD", "note": "lowercase on purpose: the reader must normalize it"}]'
+write_cfg "$CFG_SKIP" true true '[{"serial": "SATATEST001"}]'
+write_cfg "$CFG_NONUKE" false false '[]'
+write_cfg "$CFG_MISS" true false '[{"serial": "SOMETHINGELSE"}]'
+write_cfg "$CFG_BAD" true false '[]'
+# CFG_BAD is invalid on purpose: nuke=true with an empty target_disks
+# violates docs/CONFIG-SCHEMA.md section 6 (structural rule 2).
+
+# C1: valid config loads; policy values land in CFG_* globals.
+CONFIG="$CFG_OK"
+load_usb_config
+[[ "${CFG_NUKE_ENABLED:-}" == "1" ]] && pass "C1 nuke enabled flag" \
+    || fail "C1 nuke enabled flag" "got '${CFG_NUKE_ENABLED:-}'"
+[[ "${CFG_ALLOW_SERIAL_COUNT:-}" == "2" ]] && pass "C1 allowlist count" \
+    || fail "C1 allowlist count" "got '${CFG_ALLOW_SERIAL_COUNT:-}'"
+[[ "${CFG_ALLOW_SERIAL_0:-}" == "SATATEST001" ]] && pass "C1 allowlisted serial 0" \
+    || fail "C1 allowlisted serial 0" "got '${CFG_ALLOW_SERIAL_0:-}'"
+[[ "${CFG_ALLOW_SERIAL_1:-}" == "SDDTEST004" ]] && pass "C1 lowercase serial normalized" \
+    || fail "C1 lowercase serial normalized" "got '${CFG_ALLOW_SERIAL_1:-}'"
+[[ "${CFG_ALLOW_SKIP_IMAGE_GATE:-}" == "0" ]] && pass "C1 skip-gate flag" \
+    || fail "C1 skip-gate flag" "got '${CFG_ALLOW_SKIP_IMAGE_GATE:-}'"
+[[ "${CFG_ABORT_COUNTDOWN:-}" == "5" ]] && pass "C1 countdown" \
+    || fail "C1 countdown" "got '${CFG_ABORT_COUNTDOWN:-}'"
+# C2: normalize_serial (whitespace trim + uppercase).
+[[ "$(normalize_serial ' sataTest001 ')" == "SATATEST001" ]] \
+    && pass "C2 normalize_serial trims + uppercases" \
+    || fail "C2 normalize_serial trims + uppercases" "got '$(normalize_serial ' sataTest001 ')'"
+# C3: allowlisted serial passes the policy check.
+check_usb_config_policy "SATATEST001" >/dev/null 2>&1 \
+    && pass "C3 policy allows allowlisted serial" \
+    || fail "C3 policy allows allowlisted serial" "allowlisted serial was refused"
+# C4: serial NOT on the allowlist is refused (subshell -- die() exits).
+if (CONFIG="$CFG_OK"; load_usb_config >/dev/null 2>&1; check_usb_config_policy "NOSUCH999" >/dev/null 2>&1); then
+    fail "C4 policy refuses non-allowlisted serial"
+else
+    pass "C4 policy refuses non-allowlisted serial"
+fi
+# C5: invalid config (nuke=true, empty target_disks) is refused by the loader.
+if (CONFIG="$CFG_BAD"; load_usb_config >/dev/null 2>&1); then
+    fail "C5 loader refuses invalid config"
+else
+    pass "C5 loader refuses invalid config"
+fi
+# C6: missing config file is refused by the loader.
+if (CONFIG="$T/does-not-exist.json"; load_usb_config >/dev/null 2>&1); then
+    fail "C6 loader refuses missing config file"
+else
+    pass "C6 loader refuses missing config file"
+fi
+# C7: nuke=false loads fine (flag 0), but the policy refuses any arming.
+CONFIG="$CFG_NONUKE"
+load_usb_config
+[[ "${CFG_NUKE_ENABLED:-}" == "0" ]] && pass "C7 nuke-disabled flag" \
+    || fail "C7 nuke-disabled flag" "got '${CFG_NUKE_ENABLED:-}'"
+if (check_usb_config_policy "SATATEST001" >/dev/null 2>&1); then
+    fail "C7 policy refuses arming on nuke-disabled stick"
+else
+    pass "C7 policy refuses arming on nuke-disabled stick"
+fi
+# C8: --skip-image-gate is refused when the stick compiled it out...
+CONFIG="$CFG_OK"
+load_usb_config
+SKIP_IMAGE_GATE=1
+if (check_usb_config_policy "SATATEST001" >/dev/null 2>&1); then
+    fail "C8 skip-gate compiled out refuses --skip-image-gate"
+else
+    pass "C8 skip-gate compiled out refuses --skip-image-gate"
+fi
+# C9: ...but passes the policy check when the stick's hatch is enabled.
+#     (The human TTY gate still stands -- see integration I22.)
+CONFIG="$CFG_SKIP"
+load_usb_config
+check_usb_config_policy "SATATEST001" >/dev/null 2>&1 \
+    && pass "C9 skip-gate enabled passes policy check" \
+    || fail "C9 skip-gate enabled passes policy check" "policy refused with the hatch enabled"
+SKIP_IMAGE_GATE=0
+# C10: the reader's --json mode emits the same policy.
+out="$(python3 "$REPO/tools/Read-UsbConfig.py" --json "$CFG_OK")"
+if [[ "$out" == *'"nuke_enabled": true'* && "$out" == *'"SDDTEST004"'* ]]; then
+    pass "C10 reader --json policy output"
+else
+    fail "C10 reader --json policy output" "unexpected output: $(echo "$out" | head -c 200)"
+fi
+# C11: the reader validates before printing -- the invalid fixture exits 2.
+if python3 "$REPO/tools/Read-UsbConfig.py" --shell "$CFG_BAD" >/dev/null 2>&1; then
+    fail "C11 reader exits 2 on invalid config"
+else
+    [[ $? == 2 ]] && pass "C11 reader exits 2 on invalid config" \
+        || fail "C11 reader exits 2 on invalid config" "got exit $?"
+fi
+
 echo "== integration tests (mocked lsblk subprocess) =="
 # run_case <name> <expected-exit> <expected-substring> [script args...]
 # stdin comes from /dev/null unless NUKE_STDIN is set.
@@ -433,6 +557,26 @@ run_case "I16 valid proof passes image gate" 1 "not a block device" --image-proo
 #      a human-at-the-console action only.
 NUKE_STDIN="NUKE WITHOUT BACKUP" run_case "I17 piped image-gate skip refused" 1 "real console" --skip-image-gate --nuke 1
 unset NUKE_STDIN
+# --- stick policy: phoenix-config.json (SAFETY interlock 12) -----------------
+# I18: --config with boot_entries.nuke=false refuses before any other gate.
+run_case "I18 config nuke disabled refuses" 1 "boot_entries.nuke" --config "$CFG_NONUKE" --image-proof "$GOODPROOF" --nuke 1
+# I19: --config whose allowlist does not contain the target serial refuses.
+run_case "I19 config allowlist miss refuses" 1 "allowlist" --config "$CFG_MISS" --image-proof "$GOODPROOF" --nuke 1
+# I20: --config with the target on the allowlist passes the policy gates;
+#      the next gate (fixture paths are not block devices on the host) fires.
+run_case "I20 config allowlist hit passes policy" 1 "not a block device" --config "$CFG_OK" --image-proof "$GOODPROOF" --nuke 1
+# I21: --skip-image-gate is refused when the stick compiled it out.
+run_case "I21 config skip-gate compiled out refuses" 1 "compiled out" --config "$CFG_OK" --skip-image-gate --nuke 1
+# I22: --skip-image-gate with the stick's hatch ENABLED still requires a
+#      human at a real console -- the config opens the hatch, it does not
+#      bypass the console. Piped input is refused by the TTY gate.
+NUKE_STDIN="NUKE WITHOUT BACKUP" run_case "I22 config skip-gate enabled still needs TTY" 1 "real console" --config "$CFG_SKIP" --skip-image-gate --nuke 1
+unset NUKE_STDIN
+# I23: an INVALID config (nuke=true, empty target_disks -- violates
+#      docs/CONFIG-SCHEMA.md section 6) is refused by the loader.
+run_case "I23 invalid config refused" 1 "INVALID" --config "$CFG_BAD" --nuke 1
+# I24: a missing config file is refused.
+run_case "I24 missing config refused" 1 "not a readable file" --config "$T/does-not-exist.json" --nuke 1
 
 echo "== summary =="
 echo "PASS: $PASS  FAIL: $FAIL"
