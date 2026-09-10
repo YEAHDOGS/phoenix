@@ -57,7 +57,7 @@ run before it becomes safe to ship.
 A `stage-usb.ps1` that runs on a connected machine and produces a
 `usb-staging/` tree + `manifest.json`:
 - Windows ISO download with **SHA-512 verification** (extend
-  `checksum/check.ps1`; Brandon already verifies ISOs this way)
+  `checksum/check.ps1`; The founder already verifies ISOs this way)
 - Driver packs per machine profile into `$WinPEDriver$/`
 - App installers: Chocolatey `.nupkg` cache (`choco download`) and/or
   standalone `.exe`/`.msi` into `cache/apps/`
@@ -90,7 +90,7 @@ debloat applied, snapshot/rollback on failure. `scripts/qemu/start.ps1`
 is the starting point; it needs parameterization and assertions.
 
 ### Phase 5 - The GUI app
-**Recommendation: Tauri v2 + Svelte 5 + Tailwind.** It's Brandon's exact
+**Recommendation: Tauri v2 + Svelte 5 + Tailwind.** It's the founder's exact
 web stack, ships as a single small binary (no Electron bloat - on-brand
 for a debloat tool), and Tauri's shell/command APIs can drive the
 PowerShell stager scripts as sidecars. The app owns three jobs:
@@ -104,7 +104,7 @@ tweak tool; the installer app is a separate product.
 
 ## Adapting reviOS-offline (read-only analysis)
 
-Brandon's `cptnbrando/reviOS-offline` fork is the reference implementation
+The founder's `cptnbrando/reviOS-offline` fork is the reference implementation
 of the air-gap pattern. Analyzed, not copied; nothing is pushed there.
 
 **Borrow:**
@@ -144,7 +144,7 @@ of the air-gap pattern. Analyzed, not copied; nothing is pushed there.
   differently - test in the QEMU loop before assuming parity.
 - The offline fork still trusts pre-staged binaries; the stager must
   hash-verify every downloaded asset at stage time (SHA-512, per
-  Brandon's existing practice) and re-verify from `manifest.json` on the
+  the founder's existing practice) and re-verify from `manifest.json` on the
   target.
 
 ## Air-gap staging spec (what must be on the USB)

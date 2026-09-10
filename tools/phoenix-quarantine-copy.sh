@@ -45,7 +45,7 @@
 # USAGE:
 #   phoenix-quarantine-copy.sh --source /media/usb-target/laptop-fulldisk-2026-09-09 \
 #       --target /media/castle-10tb \
-#       --date 2026-09-09 --operator brandon
+#       --date 2026-09-09 --operator founder
 #
 #   phoenix-quarantine-copy.sh --source /media/usb-target/rescuezilla-img \
 #       --target /media/castle-10tb \

@@ -68,7 +68,7 @@
 
 .EXAMPLE
     .\New-PhoenixQuarantineCopy.ps1 -Source E:\laptop-fulldisk-2026-09-09 `
-        -Target F:\ -Date 2026-09-09 -Operator brandon
+        -Target F:\ -Date 2026-09-09 -Operator founder
 
 .EXAMPLE
     .\New-PhoenixQuarantineCopy.ps1 -Source E:\rescuezilla-img -Target F:\ `
