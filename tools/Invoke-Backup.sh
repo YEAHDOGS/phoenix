@@ -13,9 +13,10 @@
 # refuses the image write there, pointing at the Ventoy [2] BACKUP entry).
 #
 # SAFETY MODEL (see docs/BACKUP-MODULE.md):
-#   1. --config <phoenix-config.json> is REQUIRED, never auto-discovered.
-#      boot_entries.backup must be true; unknown config fields fail closed
-#      (schema additionalProperties: false).
+#   1. --config <phoenix-config.json> is REQUIRED for anything beyond bare
+#      enumeration (plan, dry-run, --tool rescuezilla, armed run), never
+#      auto-discovered. boot_entries.backup must be true; unknown config
+#      fields fail closed (schema additionalProperties: false).
 #   2. Serial resolution, never letters: source and target are resolved by
 #      SERIAL (row number or /dev node are aliases of the enumerated table).
 #      A duplicated serial is identity failure and is refused.
@@ -127,7 +128,9 @@ Usage:
   --allow-network    Allow imaging with a network interface up. Still
                      requires typing ALLOW NETWORK on a real TTY.
 
-No flags = enumerate disks and exit (dry-run, the default). Backup only
+No flags = enumerate disks and exit (dry-run, the default). --config is
+required for everything beyond enumeration: --dry-run, --tool rescuezilla,
+and the armed image run. Backup only
 READS the source disk, so there is no typed serial confirmation -- but
 every identity gate (serial resolution, boot-USB guard, air-gap) applies,
 because the emitted proof binds to the source serial for the Nuke gate.
@@ -678,7 +681,21 @@ main() {
         *) die "Unknown --tool '$TOOL' (dd|rescuezilla)" ;;
     esac
 
-    # --- stick policy: --config is REQUIRED, always (even dry-run) ---
+    # --- enumerate first, always (dry-run posture) ---
+    # The stick policy loads only when actually planning or running a
+    # backup -- bare enumeration never needs python3, mirroring the Nuke
+    # module's convention.
+    if (( TEST_MODE != 1 )); then
+        enumerate
+    fi
+
+    if [[ -z "$SOURCE_ID" && $DRY_RUN -eq 0 && "$TOOL" != "rescuezilla" ]]; then
+        # Bare enumeration: no flags given, nothing planned, nothing written.
+        exit 0
+    fi
+
+    # --- stick policy: --config is REQUIRED for everything beyond bare
+    # --- enumeration (plan, dry-run, rescuezilla checklist, armed run) ---
     [[ -n "$CONFIG" ]] || die "REFUSED: --config <phoenix-config.json> is required. The stick's own policy gates every Backup run."
     load_usb_config
     check_backup_policy
@@ -687,6 +704,13 @@ main() {
     if [[ "$TOOL" == "rescuezilla" ]]; then
         print_rescuezilla_checklist "$(sanitize_name "$label")"
         exit 0
+    fi
+
+    # --- dry-run needs its identifiers too ---
+    if (( DRY_RUN == 1 )); then
+        [[ -n "$SOURCE_ID" ]]    || die "--dry-run needs --source <id>."
+        [[ -n "$TARGET_SERIAL" ]] || die "--dry-run needs --target <serial>."
+        [[ -n "$TARGET_MOUNT" ]]  || die "--dry-run needs --target-mount <dir>."
     fi
 
     # --- air-gap gate (before any disk is even resolved) ---
@@ -712,7 +736,6 @@ main() {
         [[ -n "$TARGET_SERIAL" ]] || die "--target <serial> is required."
         [[ -n "$TARGET_MOUNT" ]] || die "--target-mount <dir> is required."
     else
-        enumerate
         [[ -n "$SOURCE_ID" ]] || die "--source <id> is required (serial preferred)."
         [[ -n "$TARGET_SERIAL" ]] || die "--target <serial> is required."
         [[ -n "$TARGET_MOUNT" ]] || die "--target-mount <dir> is required."
@@ -785,12 +808,18 @@ EOF
     [[ -n "$proof_dir" ]] || proof_dir="$(dirname "$LOGFILE")"
 
     local sha
-    sha="$(do_image "$src_dev" "$img_path" "$comp")"
+    # Only the LAST stdout line of do_image is the hash -- its log lines go
+    # to stdout too (and to the logfile), so tail -n1 keeps them out of $sha.
+    sha="$(do_image "$src_dev" "$img_path" "$comp" | tail -n1)"
     log "Image sha256: $sha"
     local img_bytes
     img_bytes="$(stat -c %s "$img_path")"
     log "Image size: $(human_size "$img_bytes") ($img_bytes bytes)"
-    (( img_bytes >= 1048576 )) || die "Image is suspiciously small ($img_bytes bytes) -- verification FAILED, refusing to write a proof."
+    # Tripwire against a truncated/empty image. In test mode the fake source
+    # is tiny (zeros compress to KB), so the bar drops to 1 KiB there.
+    local min_size=1048576
+    (( TEST_MODE == 1 )) && min_size=1024
+    (( img_bytes >= min_size )) || die "Image is suspiciously small ($img_bytes bytes) -- verification FAILED, refusing to write a proof."
     if ! smoke_check_image "$img_path" "$ext"; then
         die "Mount-ability smoke check FAILED: '$img_path' carries no recognizable MBR/GPT signature. The image may be garbage -- refusing to write a proof. Investigate before proceeding."
     fi
