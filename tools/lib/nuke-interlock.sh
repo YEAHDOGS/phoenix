@@ -149,23 +149,39 @@ EOF
 }
 
 # nuke_require_allowlist <config.json> <serial>
-# Demands the target serial appear verbatim in phoenix-config.json target_disks.
+# Demands the target serial appear on phoenix-config.json target_disks.
+# Comparison is NORMALIZED on both sides (uppercased, whitespace-trimmed)
+# per docs/NUKE-SAFETY.md interlock 12 -- a GUI-copied serial with a stray
+# space or different case must not produce a confusing false refusal that
+# pushes the operator toward the --skip-image-gate escape hatch. Only
+# leading/trailing whitespace is trimmed; internal whitespace is significant
+# ("AB 12" != "AB12").
+nuke_normalize_serial() {
+    # Same semantics as normalize_serial() in tools/Invoke-Nuke.sh.
+    printf '%s' "$1" | command tr '[:lower:]' '[:upper:]' \
+        | command sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+}
+
 nuke_require_allowlist() {
     local cfg="$1" serial="$2"
     [[ -f "$cfg" ]] || { echo "[nuke-interlock] REFUSED: config file not found: $cfg" >&2; return 1; }
-    python3 - "$cfg" "$serial" <<'EOF' || return 1
+    local want
+    want="$(nuke_normalize_serial "$serial")"
+    python3 - "$cfg" "$want" <<'EOF' || return 1
 import json, sys
-cfg_path, serial = sys.argv[1], sys.argv[2]
+cfg_path, want = sys.argv[1], sys.argv[2]
 try:
     cfg = json.load(open(cfg_path))
 except Exception as e:
     print(f"[nuke-interlock] REFUSED: config is not valid JSON: {e}", file=sys.stderr)
     sys.exit(1)
+def norm(s):
+    return (s or "").strip().upper()
 allow = [t.get("serial") for t in cfg.get("target_disks", []) if isinstance(t, dict)]
-if serial in allow:
-    print(f"[nuke-interlock] allowlist OK: {serial} is approved in target_disks.")
+if want and any(norm(a) == want for a in allow):
+    print(f"[nuke-interlock] allowlist OK: {want} is approved in target_disks.")
     sys.exit(0)
-print(f"[nuke-interlock] REFUSED: serial {serial} is NOT in target_disks -- this disk may not be nuked.", file=sys.stderr)
+print(f"[nuke-interlock] REFUSED: serial {want} is NOT in target_disks -- this disk may not be nuked.", file=sys.stderr)
 sys.exit(1)
 EOF
 }
