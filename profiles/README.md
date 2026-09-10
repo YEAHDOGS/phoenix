@@ -60,7 +60,7 @@ copied until you pass `-Execute` / `--execute`.
 ## Restore rules
 
 The restore engines (`scripts/backup/restore-selective.ps1` /
-`restore-selective.sh`, documented in `scripts/backup/RESTORE.md`) enforce
+`restore-selective.sh`, documented in `docs/RESTORE-MODULE.md`) enforce
 these profiles on the way back in — policy lives here, not in code:
 
 - Every manifest entry is classified by matching its *target* path against

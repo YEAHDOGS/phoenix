@@ -18,11 +18,18 @@ make that structurally impossible, not merely unlikely.
 | File | Role |
 |---|---|
 | `tools/lib/reinstall-gates.sh` | Bash gate library, sourced by the flow. Blank-target gate, artifact gate, config-consistency gate, chain-of-custody gate, TTY + typed-confirmation (reuses `tools/lib/nuke-interlock.sh`). |
-| `tools/Reinstall-Windows.sh` | Linux / boot-environment flow: enumerate → gates → hand off to Windows Setup (via Ventoy `auto_install`) or direct `dism` apply. |
-| `tools/Reinstall-Windows.ps1` | WinPE / staging-side twin: same gate contract against `Get-Disk`/`Get-Partition` enumeration, same JSON shapes. |
+| `tools/Reinstall-Windows.sh` | Linux / boot-environment flow: USB-config stick-policy gate → enumerate → gates → hand off to Windows Setup (via Ventoy `auto_install`). Never launches Setup itself. |
+| `tools/Reinstall-Windows.ps1` | WinPE / staging-side twin: same gate contract against `Get-Disk`/`Get-Partition` enumeration, same JSON shapes. Enforces the same stick-policy gates (reinstall enabled, platform windows) against the config; full JSON-schema validation stays in the Linux-side reader (no python3 in WinPE). |
 | `tests/tools/test-reinstall.sh` | Regression suite (fully mocked — no real disks, no real install). |
 
-## 2. The five gates (all fail closed)
+## 2. The six gates (all fail closed)
+
+0. **USB-config (stick-policy) gate** (`reinstall_load_usb_config`): the
+   config is *fully* validated by `tools/Read-UsbConfig.py` (JSON Schema +
+   `docs/CONFIG-SCHEMA.md` §6 — the same single reader Invoke-Nuke and
+   Invoke-Backup use) and the stick's Reinstall lane must be enabled
+   (`boot_entries.reinstall`, platform `windows`). A stick that disables
+   the lane cannot arm a reinstall. Runs before every other gate.
 
 1. **Blank-target gate** (`reinstall_require_target_blank`): the target
    disk must be provably blank — no GPT/MBR partition table, no
