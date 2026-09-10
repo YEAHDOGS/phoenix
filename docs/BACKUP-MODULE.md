@@ -66,7 +66,11 @@ instead of imaging.
 4. `tools/New-ImageProof.sh --verified` is invoked with the **real** values
    (real sha256, real size, real `source_serial`); `--verified` is passed only
    because steps 1–3 passed. The `.proof` lands on the Phoenix USB next to the
-   backup log, ready for `Invoke-Nuke.sh --image-proof`.
+   backup log, ready for `Invoke-Nuke.sh --image-proof`. With
+   `--json-out <state-dir>` the writer also emits `backup-image-proof.json`
+   (schema `phoenix-image-proof/1`) — the JSON sibling the **Reinstall**
+   chain-of-custody gate consumes. Both records are written from the same
+   source data, so they can never disagree about serial/hash/verified.
 
 Free-space rule: the target filesystem must hold at least **half the source
 disk's size** (compressed images usually land far below that, but the module

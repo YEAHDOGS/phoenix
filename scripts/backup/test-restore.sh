@@ -140,6 +140,59 @@ else
     fail "wrong confirmation word aborts"
 fi
 
+echo "== 13. --config: stick policy gate =="
+cat > "$FIX/cfg-restore.json" <<'JSONEOF'
+{"schema_version": 1,
+ "boot_entries": {"analyze": true, "backup": true, "nuke": false, "reinstall": false},
+ "backup_target": {"kind": "direct-usb"},
+ "unattend": {"answer_file": "/autounattend.xml"},
+ "safety": {"require_image_proof": true, "allow_skip_image_gate": false, "abort_countdown_seconds": 5},
+ "target_disks": []}
+JSONEOF
+if rout env PHOENIX_HOME="$NEW3" "$RESTORE" --manifest-dir "$FIX/dest" --target-root "$NEW3" --plan --allow-same-disk --config "$FIX/cfg-restore.json" | grep -q "stick policy"; then
+    pass "backup-enabled stick policy accepted"
+else
+    fail "backup-enabled stick policy accepted"
+fi
+jq '.boot_entries.backup = false' "$FIX/cfg-restore.json" > "$FIX/cfg-restore-off.json"
+if rout env PHOENIX_HOME="$NEW3" "$RESTORE" --manifest-dir "$FIX/dest" --target-root "$NEW3" --plan --allow-same-disk --config "$FIX/cfg-restore-off.json" | grep -q "disables the BACKUP lane"; then
+    pass "backup-disabled stick refused"
+else
+    fail "backup-disabled stick refused"
+fi
+echo 'not json' > "$FIX/cfg-restore-bad.json"
+if rout env PHOENIX_HOME="$NEW3" "$RESTORE" --manifest-dir "$FIX/dest" --target-root "$NEW3" --plan --allow-same-disk --config "$FIX/cfg-restore-bad.json" | grep -q "invalid phoenix-config.json"; then
+    pass "invalid config refused"
+else
+    fail "invalid config refused"
+fi
+
+echo "== 14. --chain: chain-of-custody ordering gate =="
+CHAIN="$FIX/chain"; mkdir -p "$CHAIN"
+if rout env PHOENIX_HOME="$NEW3" "$RESTORE" --manifest-dir "$FIX/dest" --target-root "$NEW3" --plan --allow-same-disk --chain "$CHAIN" | grep -q "no backup-image-proof.json"; then
+    pass "chain without backup proof refused"
+else
+    fail "chain without backup proof refused"
+fi
+echo '{"schema": "phoenix-image-proof/1", "serial": "X", "verified": true}' > "$CHAIN/backup-image-proof.json"
+if rout env PHOENIX_HOME="$NEW3" "$RESTORE" --manifest-dir "$FIX/dest" --target-root "$NEW3" --plan --allow-same-disk --chain "$CHAIN" | grep -q "no nuke-completed.json"; then
+    pass "chain without nuke record refused"
+else
+    fail "chain without nuke record refused"
+fi
+echo '{"schema": "phoenix-nuke-completion/1", "serial": "X", "completed_at": "2026-09-10T00:00:00Z"}' > "$CHAIN/nuke-completed.json"
+if rout env PHOENIX_HOME="$NEW3" "$RESTORE" --manifest-dir "$FIX/dest" --target-root "$NEW3" --plan --allow-same-disk --chain "$CHAIN" | grep -q "chain of custody"; then
+    pass "full chain records accepted"
+else
+    fail "full chain records accepted"
+fi
+echo '{"schema": "phoenix-image-proof/1", "serial": "X", "verified": false}' > "$CHAIN/backup-image-proof.json"
+if rout env PHOENIX_HOME="$NEW3" "$RESTORE" --manifest-dir "$FIX/dest" --target-root "$NEW3" --plan --allow-same-disk --chain "$CHAIN" | grep -q "not verified"; then
+    pass "unverified backup proof refused by chain gate"
+else
+    fail "unverified backup proof refused by chain gate"
+fi
+
 echo
 echo "PASS=$PASS FAIL=$FAIL"
 [ "$FAIL" -eq 0 ]
