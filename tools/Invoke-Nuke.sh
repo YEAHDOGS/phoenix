@@ -587,7 +587,10 @@ check_image_proof() {
 # the table; normalization is only for allowlist membership, so a GUI that
 # wrote 'satatest001' matches the 'SATATEST001' the boot side enumerates.
 normalize_serial() {
-    echo "$1" | tr '[:lower:]' '[:upper:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+    # NOTE: `command` bypasses any shell function named tr/sed in the
+    # caller's environment -- the script must not depend on the absence of
+    # such functions (the regression harness defines a `tr` helper).
+    echo "$1" | command tr '[:lower:]' '[:upper:]' | command sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
 }
 
 # load_usb_config -- validate the stick's phoenix-config.json and import its
