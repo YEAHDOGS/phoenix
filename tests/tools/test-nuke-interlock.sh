@@ -186,6 +186,28 @@ echo '{"target_disks": []}' > "$TMP/empty.json"
 gate_al "$TMP/empty.json" "S5YBNJ0R123456A"; [[ $? -ne 0 ]] \
   && ok "empty allowlist = no disk may be nuked" || bad "empty allowlist ACCEPTED"
 
+# --- 4b. allowlist serial normalization (docs/NUKE-SAFETY.md interlock 12) -----
+echo "== allowlist serial normalization =="
+
+cat > "$TMP/config-messy.json" <<'EOF'
+{"target_disks": [{"serial": "  s5ybnj0r123456a  ", "model": "Samsung SSD 870 EVO 1TB"}]}
+EOF
+
+gate_al "$TMP/config-messy.json" "S5YBNJ0R123456A"; [[ $? -eq 0 ]] \
+  && ok "lowercase+padded allowlist entry matches" || bad "normalized serial refused"
+
+gate_al "$TMP/config.json" "  s5ybnj0r123456a  "; [[ $? -eq 0 ]] \
+  && ok "lowercase+padded target serial matches" || bad "padded target serial refused"
+
+cat > "$TMP/config-space.json" <<'EOF'
+{"target_disks": [{"serial": "S5YBNJ0R1234 56A", "model": "Samsung SSD 870 EVO 1TB"}]}
+EOF
+gate_al "$TMP/config-space.json" "S5YBNJ0R123456A"; [[ $? -ne 0 ]] \
+  && ok "internal whitespace still refused (not collapsed)" || bad "internal-whitespace serial ACCEPTED"
+
+gate_al "$TMP/config.json" ""; [[ $? -ne 0 ]] \
+  && ok "empty serial fails closed" || bad "empty serial ACCEPTED"
+
 echo "----------------------------------------"
 echo "RESULT: $pass PASS / $fail FAIL"
 [[ $fail -eq 0 ]]
