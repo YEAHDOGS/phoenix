@@ -28,6 +28,9 @@ Usage:
             CFG_BACKUP_LABEL_PREFIX     backup_target.label_prefix
             CFG_BACKUP_SMB_PATH         backup_target.smb_path (castle-smb only)
             CFG_ANALYZE_ENABLED         1 when boot_entries.analyze is true
+            CFG_REINSTALL_ENABLED       1 when boot_entries.reinstall is true
+            CFG_REINSTALL_PLATFORM      reinstall.platform (windows | linux)
+            CFG_UNATTEND_FILE           unattend.answer_file (root-relative USB path)
     python3 tools/Read-UsbConfig.py --json <config.json>
         The same policy as a JSON object (serials under "allow_serials").
 
@@ -77,6 +80,8 @@ def extract_policy(cfg):
         if serial:
             serials.append(serial)
     backup = cfg.get("backup_target", {})
+    reinstall = cfg.get("reinstall", {})
+    unattend = cfg.get("unattend", {})
     return {
         "nuke_enabled": bool(boot.get("nuke", False)),
         "require_image_proof": bool(safety.get("require_image_proof", True)),
@@ -88,6 +93,9 @@ def extract_policy(cfg):
         "backup_label_prefix": backup.get("label_prefix", "PHOENIX-IMAGE"),
         "backup_smb_path": backup.get("smb_path", ""),
         "analyze_enabled": bool(boot.get("analyze", False)),
+        "reinstall_enabled": bool(boot.get("reinstall", False)),
+        "reinstall_platform": reinstall.get("platform", "windows"),
+        "unattend_file": unattend.get("answer_file", "/autounattend.xml"),
     }
 
 
@@ -123,6 +131,9 @@ def print_shell(policy):
     print("CFG_BACKUP_LABEL_PREFIX=%s" % shlex.quote(policy["backup_label_prefix"]))
     print("CFG_BACKUP_SMB_PATH=%s" % shlex.quote(policy["backup_smb_path"]))
     print("CFG_ANALYZE_ENABLED=%s" % ("1" if policy["analyze_enabled"] else "0"))
+    print("CFG_REINSTALL_ENABLED=%s" % ("1" if policy["reinstall_enabled"] else "0"))
+    print("CFG_REINSTALL_PLATFORM=%s" % shlex.quote(policy["reinstall_platform"]))
+    print("CFG_UNATTEND_FILE=%s" % shlex.quote(policy["unattend_file"]))
 
 
 def print_json(policy):
@@ -138,6 +149,9 @@ def print_json(policy):
             "backup_label_prefix": policy["backup_label_prefix"],
             "backup_smb_path": policy["backup_smb_path"],
             "analyze_enabled": policy["analyze_enabled"],
+            "reinstall_enabled": policy["reinstall_enabled"],
+            "reinstall_platform": policy["reinstall_platform"],
+            "unattend_file": policy["unattend_file"],
         },
         indent=2,
     ))
