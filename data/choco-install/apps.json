@@ -1,0 +1,496 @@
+[
+  {
+    "package": "Nvidia-App",
+    "description": "Start gaming at 60fps in 4k in no time",
+    "category": "Drivers",
+    "defaultSelected": true
+  },
+  {
+    "package": "Nvidia-Display-Driver",
+    "description": "Like putting glasses on your monitor",
+    "category": "Drivers",
+    "defaultSelected": true
+  },
+  {
+    "package": "7zip",
+    "description": "zip, unzip, wow!",
+    "category": "Utilities",
+    "defaultSelected": true
+  },
+  {
+    "package": "Bleachbit",
+    "description": "When you need to erase all traces, or free up drive space",
+    "category": "Utilities",
+    "defaultSelected": false
+  },
+  {
+    "package": "Handbrake",
+    "description": "mp4 to everything else",
+    "category": "Utilities",
+    "defaultSelected": false
+  },
+  {
+    "package": "QBittorrent",
+    "description": "[insert pirate logo here]",
+    "category": "Utilities",
+    "defaultSelected": false
+  },
+  {
+    "package": "f.lux",
+    "description": "Makes your sexy computer easier on the eyes",
+    "category": "Utilities",
+    "defaultSelected": false
+  },
+  {
+    "package": "Meld",
+    "description": "Useful if you're playing Where's Waldo with folders",
+    "category": "Utilities",
+    "defaultSelected": false
+  },
+  {
+    "package": "VirtualBox",
+    "description": "When you want a machine, inside your machine!",
+    "category": "Utilities",
+    "defaultSelected": false
+  },
+  {
+    "package": "QEMU",
+    "description": "Like VirtualBox but sexier",
+    "category": "Utilities",
+    "defaultSelected": true
+  },
+  {
+    "package": "PowerShell-Core",
+    "description": "We live in a world where even the damn terminal gets updates now. And what are they even adding? It's a bit faster tho",
+    "category": "Utilities",
+    "defaultSelected": true
+  },
+  {
+    "package": "Filezilla",
+    "description": "Drag and drop files to wherever you want",
+    "category": "File Management",
+    "defaultSelected": false
+  },
+  {
+    "package": "PuTTY",
+    "description": "Connect to other machines",
+    "category": "File Management",
+    "defaultSelected": true
+  },
+  {
+    "package": "cURL",
+    "description": "Get stuff",
+    "category": "File Management",
+    "defaultSelected": false
+  },
+  {
+    "package": "WinSCP",
+    "description": "Networking",
+    "category": "File Management",
+    "defaultSelected": false
+  },
+  {
+    "package": "NotepadPlusPlus",
+    "description": "The sequal to Notepad, created and adored by nerds everywhere!",
+    "category": "Documents",
+    "defaultSelected": true
+  },
+  {
+    "package": "SumatraPDF",
+    "description": "Can you believe Adobe charges monthly now? Ew",
+    "category": "Documents",
+    "defaultSelected": true
+  },
+  {
+    "package": "LibreOffice-Fresh",
+    "description": "Can you believe Microsoft charges monthly for Office now? Ew",
+    "category": "Documents",
+    "defaultSelected": false
+  },
+  {
+    "package": "VSCode",
+    "description": "The Gen-Z Vim",
+    "category": "Dev Tools",
+    "defaultSelected": true
+  },
+  {
+    "package": "Git",
+    "description": "Git er done y'all",
+    "category": "Dev Tools",
+    "defaultSelected": true
+  },
+  {
+    "package": "GitHub-Desktop",
+    "description": "Git er done with a GUI and Microsoft cloud trackers y'all",
+    "category": "Dev Tools",
+    "defaultSelected": true
+  },
+  {
+    "package": "IntelliJIdea-Community",
+    "description": "It's like a Java sumo wrestler, heavy but powerful",
+    "category": "Dev Tools",
+    "defaultSelected": false
+  },
+  {
+    "package": "AndroidStudio",
+    "description": "Now you can make your own TikTok",
+    "category": "Dev Tools",
+    "defaultSelected": false
+  },
+  {
+    "package": "Postman",
+    "description": "GET, POST, PUT, DELETE, wowee!",
+    "category": "Dev Tools",
+    "defaultSelected": false
+  },
+  {
+    "package": "Docker-Desktop",
+    "description": "Containerize the world, or die trying",
+    "category": "Dev Tools",
+    "defaultSelected": true
+  },
+  {
+    "package": "wsl2",
+    "description": "Windows Subsystem for Linux. Snazzy af",
+    "category": "Dev Tools",
+    "defaultSelected": true
+  },
+  {
+    "package": "NodeJS",
+    "description": "A web developer's favorite Dollar Tree",
+    "category": "SDKs",
+    "defaultSelected": true
+  },
+  {
+    "package": "Python",
+    "description": "The most used language on planet earth",
+    "category": "SDKs",
+    "defaultSelected": true
+  },
+  {
+    "package": "GOLang",
+    "description": "Go go go go go go go!",
+    "category": "SDKs",
+    "defaultSelected": false
+  },
+  {
+    "package": "OpenJDK",
+    "description": "It's Java, but Open!",
+    "category": "SDKs",
+    "defaultSelected": false
+  },
+  {
+    "package": "jdk-7",
+    "description": "Java before Oracle shoved their dick in it",
+    "category": "SDKs",
+    "defaultSelected": false
+  },
+  {
+    "package": "jdk-8",
+    "description": "Java Development Kit 8",
+    "category": "SDKs",
+    "defaultSelected": false
+  },
+  {
+    "package": "jdk-11",
+    "description": "Java Development Kit 11",
+    "category": "SDKs",
+    "defaultSelected": false
+  },
+  {
+    "package": "jdk-12",
+    "description": "Java Development Kit 12",
+    "category": "SDKs",
+    "defaultSelected": false
+  },
+  {
+    "package": "jdk-17",
+    "description": "Java Development Kit 17",
+    "category": "SDKs",
+    "defaultSelected": false
+  },
+  {
+    "package": "jdk-21",
+    "description": "Java Development Kit 21",
+    "category": "SDKs",
+    "defaultSelected": false
+  },
+  {
+    "package": "jdk-22",
+    "description": "Java Development Kit 22",
+    "category": "SDKs",
+    "defaultSelected": false
+  },
+  {
+    "package": "Spotify",
+    "description": "Gotta have the tunes bro",
+    "category": "Media",
+    "defaultSelected": true
+  },
+  {
+    "package": "Audacity",
+    "description": "Makes anything audio file related a breeze",
+    "category": "Media",
+    "defaultSelected": true
+  },
+  {
+    "package": "MuseScore",
+    "description": "Beethoven would have loved this",
+    "category": "Media",
+    "defaultSelected": false
+  },
+  {
+    "package": "DaVinci-Resolve",
+    "description": "Can you believe Adobe charges monthly for Premiere? No way jose",
+    "category": "Media",
+    "defaultSelected": false
+  },
+  {
+    "package": "GIMP",
+    "description": "Can you believe Adobe charges monthly for Photshop? No way jose",
+    "category": "Media",
+    "defaultSelected": true
+  },
+  {
+    "package": "Inkscape",
+    "description": "Vectors and stuff, good for logo design",
+    "category": "Media",
+    "defaultSelected": true
+  },
+  {
+    "package": "OBS-Studio",
+    "description": "Record yourself, record the screen, record everything",
+    "category": "Media",
+    "defaultSelected": false
+  },
+  {
+    "package": "Streamlabs-OBS",
+    "description": "Record everything, and share it live!",
+    "category": "Media",
+    "defaultSelected": false
+  },
+  {
+    "package": "Kodi",
+    "description": "If you've got Blu-Ray discs or video files, this will take care of you",
+    "category": "Media",
+    "defaultSelected": false
+  },
+  {
+    "package": "VLC",
+    "description": "Because the Windows player is bloated and laggy",
+    "category": "Media",
+    "defaultSelected": true
+  },
+  {
+    "package": "mpc-hc",
+    "description": "Because VLC is bloated and laggy",
+    "category": "Media",
+    "defaultSelected": false
+  },
+  {
+    "package": "Blender",
+    "description": "3D file editor",
+    "category": "Media",
+    "defaultSelected": false
+  },
+  {
+    "package": "Discord",
+    "description": "The Gen-Z AOL Messenger",
+    "category": "Comms",
+    "defaultSelected": true
+  },
+  {
+    "package": "em-client",
+    "description": "Because Windows Mail spies on you",
+    "category": "Comms",
+    "defaultSelected": false
+  },
+  {
+    "package": "Zoom",
+    "description": "Still don't know how this overtook Skype so quickly",
+    "category": "Comms",
+    "defaultSelected": false
+  },
+  {
+    "package": "Slack",
+    "description": "Say hello to all your unknown co-workers",
+    "category": "Comms",
+    "defaultSelected": false
+  },
+  {
+    "package": "Webex-Meetings",
+    "description": "Like Zoom, which is like Skype, but this one is uh... not those ones",
+    "category": "Comms",
+    "defaultSelected": false
+  },
+  {
+    "package": "MalwareBytes",
+    "description": "This used to be the de facto anti-virus. Now, it's still decent enough",
+    "category": "Security",
+    "defaultSelected": false
+  },
+  {
+    "package": "Wireshark",
+    "description": "Listen to the ticks of your router, what's it doing? Why's it sending ten thousand data packets every second?",
+    "category": "Security",
+    "defaultSelected": true
+  },
+  {
+    "package": "SysInternals",
+    "description": "Like a stethoscope for Windows",
+    "category": "Security",
+    "defaultSelected": true
+  },
+  {
+    "package": "WireGuard",
+    "description": "When you need to connect to your own things",
+    "category": "VPNs",
+    "defaultSelected": true
+  },
+  {
+    "package": "Tailscale",
+    "description": "Wireguard on steroids",
+    "category": "VPNs",
+    "defaultSelected": true
+  },
+  {
+    "package": "ProtonVPN",
+    "description": "It's probably government spyware but you didn't hear that from me lol",
+    "category": "VPNs",
+    "defaultSelected": false
+  },
+  {
+    "package": "NordVPN",
+    "description": "I think Pewdiepie advertised this once, so it must be good",
+    "category": "VPNs",
+    "defaultSelected": false
+  },
+  {
+    "package": "ExpressVPN",
+    "description": "I think LinusTechTips advertised this once, so it must be good",
+    "category": "VPNs",
+    "defaultSelected": false
+  },
+  {
+    "package": "MullvadVPN",
+    "description": "My VPN of choice. 5 bucks and they don't id you. Nice",
+    "category": "VPNs",
+    "defaultSelected": false
+  },
+  {
+    "package": "Windscribe",
+    "description": "They got the coolest vpn website ngl",
+    "category": "VPNs",
+    "defaultSelected": false
+  },
+  {
+    "package": "Steam",
+    "description": "A gamer's Wal-Mart",
+    "category": "Gaming",
+    "defaultSelected": true
+  },
+  {
+    "package": "EA-App",
+    "description": "A gamer's Wendy's",
+    "category": "Gaming",
+    "defaultSelected": false
+  },
+  {
+    "package": "EpicGamesLauncher",
+    "description": "A gamer's Ross",
+    "category": "Gaming",
+    "defaultSelected": false
+  },
+  {
+    "package": "PCSX2",
+    "description": "PlayStation 2 emulator",
+    "category": "Gaming",
+    "defaultSelected": true
+  },
+  {
+    "package": "RetroArch",
+    "description": "Multi-system emulator",
+    "category": "Gaming",
+    "defaultSelected": true
+  },
+  {
+    "package": "DS4Windows",
+    "description": "Makes pairing and using DualShock4 controllers with Windows a bit easier",
+    "category": "Gaming",
+    "defaultSelected": true
+  },
+  {
+    "package": "Dolphin",
+    "description": "Wii and Gamecube emulator",
+    "category": "Gaming",
+    "defaultSelected": true
+  },
+  {
+    "package": "ppsspp",
+    "description": "PlayStation Portable emulator",
+    "category": "Gaming",
+    "defaultSelected": false
+  },
+  {
+    "package": "SNES9x",
+    "description": "Super Nintendo Entertainment System emulator",
+    "category": "Gaming",
+    "defaultSelected": true
+  },
+  {
+    "package": "Mupen64plus",
+    "description": "Nintendo 64 emulator",
+    "category": "Gaming",
+    "defaultSelected": false
+  },
+  {
+    "package": "LeagueOfLegends",
+    "description": "Bop it twist it pull it, you know the drill",
+    "category": "Gaming",
+    "defaultSelected": false
+  },
+  {
+    "package": "Valorant",
+    "description": "Pew pew pew PHOENIX STOP FLASHING ME",
+    "category": "Gaming",
+    "defaultSelected": false
+  },
+  {
+    "package": "GoogleChrome",
+    "description": "Probably the most popular browser to ever browser",
+    "category": "Browsers",
+    "defaultSelected": true
+  },
+  {
+    "package": "Firefox",
+    "description": "For those fearful of big tech, yet unafraid of big corporation",
+    "category": "Browsers",
+    "defaultSelected": true
+  },
+  {
+    "package": "Brave",
+    "description": "When all else fails and the flies begin to come, it's all the same anyway",
+    "category": "Browsers",
+    "defaultSelected": false
+  },
+  {
+    "package": "Tor-Browser",
+    "description": "The true incognito mode, at the speed of snails",
+    "category": "Browsers",
+    "defaultSelected": false
+  },
+  {
+    "package": "ublockorigin-chrome",
+    "description": "Get those trackers outta here",
+    "category": "Browser Extensions",
+    "defaultSelected": true
+  },
+  {
+    "package": "Ableton",
+    "description": "Deadmau5, Skrillex, Flume, Charli XCX, Frank Ocean, they use this so it's gotta be good",
+    "category": "Manual Install",
+    "defaultSelected": false,
+    "source": "manual",
+    "note": "Not available on Chocolatey — install by hand after provisioning."
+  }
+]

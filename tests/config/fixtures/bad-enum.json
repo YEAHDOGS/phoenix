@@ -1,0 +1,1 @@
+{"backup_target":{"kind":"dropbox"},"boot_entries":{"analyze":true,"backup":true,"nuke":false,"reinstall":true},"safety":{"require_image_proof":true},"schema_version":1,"target_disks":[],"unattend":{"answer_file":"/autounattend.xml"}}

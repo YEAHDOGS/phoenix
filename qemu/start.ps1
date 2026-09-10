@@ -29,8 +29,10 @@ Write-Host "   • CPU Model: $CpuProfile ($CpuVendor)"
 # ---
 
 # 2. ---- ENVIRONMENT SETUP ----
-$IsoImg = ".\data\cachyos-server-latest.iso"
-$DiskImg = ".\data\castle_root.qcow2"
+# NOTE: this must match the destination used by get-iso.ps1 (qemu/data/...),
+# otherwise the VM boots with a missing ISO.
+$IsoImg = Join-Path $PSScriptRoot "data\cachyos-server-latest.iso"
+$DiskImg = Join-Path $PSScriptRoot "data\castle_root.qcow2"
 
 if (-not (Test-Path $DiskImg)) {
     Write-Host "📦 [Castle] Virtual storage disk not found. Provisioning 40GB raw block..." -ForegroundColor Cyan

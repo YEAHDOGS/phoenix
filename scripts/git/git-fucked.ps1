@@ -1,6 +1,15 @@
 param (
-    [Switch]$Delete
+    [Switch]$Delete,
+    # By default every push in this script is --dry-run (safe rehearsal).
+    # Pass -RealPush to actually move remote refs. Modes that rewrite
+    # history will tell you which mode they're in.
+    [Switch]$RealPush
 )
+
+$PushFlags = if ($RealPush) { @() } else { @("--dry-run") }
+if (-not $RealPush) {
+    Write-Host "[dry-run] No remote refs will be moved. Pass -RealPush to execute for real." -ForegroundColor DarkYellow
+}
 
 # ==========================================
 # --- REUSABLE UTILITY FUNCTIONS ---
@@ -41,7 +50,7 @@ function Invoke-GitHubCachePurge {
 
     # Push blank state up to force GitHub's head-pointer cache to break
     git commit --allow-empty -m "Purging remote history cache" --quiet
-    git push --dry-run origin "temporary-purge-branch:$Branch" --force
+    git push @PushFlags origin "temporary-purge-branch:$Branch" --force
 
     # Optional cooldown (used for Mode 3, skipped for Mode 4)
     if ($CooldownSeconds -gt 0) {
@@ -56,7 +65,7 @@ function Invoke-GitHubCachePurge {
     # Re-establish clean local tracking state back onto remote
     Write-Host "Restoring clean working directory graph to origin..." -ForegroundColor Green
     git checkout $Branch --quiet
-    git push --dry-run origin $Branch --force
+    git push @PushFlags origin $Branch --force
 
     # Clean up the local dummy tracking branch
     git branch -D temporary-purge-branch --quiet
@@ -121,10 +130,10 @@ if ($Scope -eq "2") {
 
     Invoke-LocalReset -Count $CommitCount -HardWipe $Delete
         
-    git push --dry-run origin $CurrentBranch --force-with-lease
+    git push @PushFlags origin $CurrentBranch --force-with-lease
     if ($LASTEXITCODE -ne 0) {
         $Override = Read-Host "--force-with-lease failed. Force overwrite anyway? (y/N)"
-        if ($Override -match "^[yY](es)?$") { git push --dry-run origin $CurrentBranch --force }
+        if ($Override -match "^[yY](es)?$") { git push @PushFlags origin $CurrentBranch --force }
     }
 }
 
@@ -203,7 +212,7 @@ if ($Scope -eq "5") {
     git commit -m "Rollback: Reverted last $CommitCount commit(s) due to issues" --quiet
 
     Write-Host "Pushing clean history adjustment up to origin..." -ForegroundColor Green
-    git push --dry-run origin $CurrentBranch
+    git push @PushFlags origin $CurrentBranch
 
     if ($LASTEXITCODE -ne 0) {
         Write-Host "`n[!] Push failed. You may need to pull incoming changes first." -ForegroundColor Red
