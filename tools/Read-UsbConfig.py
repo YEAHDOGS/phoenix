@@ -17,12 +17,12 @@ Usage:
     python3 tools/Read-UsbConfig.py --shell <config.json>
         Prints shell assignments (values shlex-quoted) -- safe to `eval`
         in bash. Keys:
-            PHX_NUKE_ENABLED            1 when boot_entries.nuke is true
-            PHX_REQUIRE_IMAGE_PROOF     1 when safety.require_image_proof is true
-            PHX_ALLOW_SKIP_IMAGE_GATE   1 when safety.allow_skip_image_gate is true
-            PHX_ABORT_COUNTDOWN         safety.abort_countdown_seconds (integer)
-            PHX_ALLOW_SERIAL_COUNT      number of allowlisted target_disks serials
-            PHX_ALLOW_SERIAL_<i>        allowlisted serial, uppercased + trimmed
+            CFG_NUKE_ENABLED            1 when boot_entries.nuke is true
+            CFG_REQUIRE_IMAGE_PROOF     1 when safety.require_image_proof is true
+            CFG_ALLOW_SKIP_IMAGE_GATE   1 when safety.allow_skip_image_gate is true
+            CFG_ABORT_COUNTDOWN         safety.abort_countdown_seconds (integer)
+            CFG_ALLOW_SERIAL_COUNT      number of allowlisted target_disks serials
+            CFG_ALLOW_SERIAL_<i>        allowlisted serial, uppercased + trimmed
     python3 tools/Read-UsbConfig.py --json <config.json>
         The same policy as a JSON object (serials under "allow_serials").
 
@@ -99,14 +99,14 @@ def validate_config(config_path, schema_path):
 
 
 def print_shell(policy):
-    print("PHX_NUKE_ENABLED=%s" % ("1" if policy["nuke_enabled"] else "0"))
-    print("PHX_REQUIRE_IMAGE_PROOF=%s" % ("1" if policy["require_image_proof"] else "0"))
-    print("PHX_ALLOW_SKIP_IMAGE_GATE=%s" % ("1" if policy["allow_skip_image_gate"] else "0"))
-    print("PHX_ABORT_COUNTDOWN=%d" % policy["abort_countdown"])
+    print("CFG_NUKE_ENABLED=%s" % ("1" if policy["nuke_enabled"] else "0"))
+    print("CFG_REQUIRE_IMAGE_PROOF=%s" % ("1" if policy["require_image_proof"] else "0"))
+    print("CFG_ALLOW_SKIP_IMAGE_GATE=%s" % ("1" if policy["allow_skip_image_gate"] else "0"))
+    print("CFG_ABORT_COUNTDOWN=%d" % policy["abort_countdown"])
     serials = policy["allow_serials"]
-    print("PHX_ALLOW_SERIAL_COUNT=%d" % len(serials))
+    print("CFG_ALLOW_SERIAL_COUNT=%d" % len(serials))
     for i, serial in enumerate(serials):
-        print("PHX_ALLOW_SERIAL_%d=%s" % (i, shlex.quote(serial)))
+        print("CFG_ALLOW_SERIAL_%d=%s" % (i, shlex.quote(serial)))
 
 
 def print_json(policy):
