@@ -28,9 +28,11 @@
 #     refused, USB disk refused without --override-boot-protection and
 #     passing the guard WITH it (override logged), unknown/wildcard/row
 #     identifiers refused (fail closed), duplicated-serial fixture refuses
-#     at resolution and at arm time, mistyped double-confirmation aborts
-#     (pty), correct double-confirmation reaches the block-device gate
-#     (audit CONFIRMED, dd never invoked), audit record fields present
+#     at resolution and at arm time, ARM-CODE transcription gate first on
+#     the armed path (wrong code aborts exit 2; piped stdin refused; code
+#     derived independently via python3), then mistyped double-confirmation
+#     aborts (pty), correct double-confirmation reaches the block-device
+#     gate (audit CONFIRMED, dd never invoked), audit record fields present
 #     (timestamp, disk id, mode, operator confirmation), --help, bad flag.
 #     IMAGE-PROOF GATE (runbook invariant 1): --nuke with no proof refused;
 #     gate precedes the boot-protection check; bad-format / unverified /
@@ -38,6 +40,11 @@
 #     refused; valid proof passes (IMAGE-PROOF audit record) and arming
 #     continues; --skip-image-gate piped refused, pty exact phrase proceeds
 #     (WARNING audit), wrong phrase aborts; proof beats the skip flag.
+#     CONFIG-PROTECTED EXCLUSIONS: a fixture phoenix-config.json naming a
+#     serial + a /dev path removes them from the candidate rows (rows
+#     renumber), lists them in the hidden summary, and no identifier
+#     (serial, /dev path, stale row) can select them -- --override-boot-
+#     protection cannot reach them either.
 #   PARITY (static): the .ps1 exposes the same flags, gates, and audit modes
 #     as the .sh (pwsh is not installed here, so the .ps1 is checked
 #     structurally; behavioral tests run against the .sh twin). KNOWN GAP:
@@ -66,6 +73,16 @@ PASS=0; FAIL=0; FAILED_CASES=()
 
 pass() { PASS=$((PASS+1)); echo "  PASS: $1"; }
 fail() { FAIL=$((FAIL+1)); FAILED_CASES+=("$1"); echo "  FAIL: $1${2:+ -- $2}"; }
+
+# armcode <serial> <model> <size-bytes> -> the ARM-CODE per the design
+# formula, derived INDEPENDENTLY in python3 (not by calling the script's
+# pdi_arm_code). Agreement between the two is the cross-implementation
+# check; a mismatch means one side drifted from docs/NUKE-INTERLOCKS.md §2.
+armcode() {
+    python3 -c "import hashlib,sys
+print(hashlib.sha256(('phoenix-nuke-arm|'+sys.argv[1]+'|'+sys.argv[2]+'|'+sys.argv[3]).encode()).hexdigest()[:6].upper())" \
+        "$1" "$2" "$3"
+}
 
 #--- preflight -----------------------------------------------------------------
 echo "== preflight =="
@@ -155,6 +172,14 @@ chmod +x "$MOCKBIN/lsblk"
 #--- source the real script's functions (strip the trailing `main "$@"`) -------
 SRC_STRIPPED="$T/phoenix-nuke-src.sh"
 grep -v '^main "\$@"$' "$SH" > "$SRC_STRIPPED"
+# The script sources tools/lib/phoenix-disk-inventory.sh relative to its own
+# location -- mirror that layout so the stripped copy finds it too.
+mkdir -p "$T/lib"
+cp "$REPO/tools/lib/phoenix-disk-inventory.sh" "$T/lib/"
+# Hermetic config: the lib would otherwise read ./phoenix-config.json from
+# whatever cwd the suite runs in. Point it at a path that cannot exist; the
+# protected-exclusion tests override it with a real fixture.
+export PHOENIX_PDI_CONFIG="$T/no-such-config.json"
 # shellcheck disable=SC1090
 source "$SRC_STRIPPED"
 
@@ -219,7 +244,7 @@ tp /dev/vda /dev/vda
 #--- resolve_id ------------------------------------------------------------------
 D_DEV=(/dev/sda /dev/sdb /dev/nvme0n1); D_SERIAL=(SATATEST001 USBTEST002 NVMETEST003)
 D_COUNT=3
-tr() { # tr <id> <expected-idx-or-FAIL>
+tri() { # tri <id> <expected-idx-or-FAIL>
     local got rc
     if got="$(resolve_id "$1" 2>/dev/null)"; then rc=0; else rc=1; fi
     if [[ "$2" == "FAIL" ]]; then
@@ -230,12 +255,12 @@ tr() { # tr <id> <expected-idx-or-FAIL>
             || fail "resolve_id($1)" "expected idx $2, got '$got' rc=$rc"
     fi
 }
-tr 1 0; tr 2 1; tr 3 2
-tr SATATEST001 0; tr USBTEST002 1; tr NVMETEST003 2
-tr /dev/sda 0; tr /dev/nvme0n1 2
-tr 0 FAIL; tr 4 FAIL; tr 99 FAIL; tr bogus FAIL
+tri 1 0; tri 2 1; tri 3 2
+tri SATATEST001 0; tri USBTEST002 1; tri NVMETEST003 2
+tri /dev/sda 0; tri /dev/nvme0n1 2
+tri 0 FAIL; tri 4 FAIL; tri 99 FAIL; tri bogus FAIL
 # wildcards are never resolved -- fail closed
-tr '*' FAIL; tr '/dev/sd*' FAIL; tr 'sda[0-9]' FAIL; tr '?' FAIL
+tri '*' FAIL; tri '/dev/sd*' FAIL; tri 'sda[0-9]' FAIL; tri '?' FAIL
 out="$(resolve_id '/dev/sd*' 2>&1)" || true
 [[ "$out" == *"wildcard"* ]] && pass "wildcard refusal explains itself" \
     || fail "wildcard refusal explains itself" "message lacks 'wildcard'"
@@ -245,7 +270,7 @@ D_DEV=(/dev/sda /dev/nvme0n1); D_SERIAL=(DUP111 DUP111); D_COUNT=2
 [[ "$(serial_count DUP111)" == "2" ]] && pass "serial_count(DUP111)=2" \
     || fail "serial_count(DUP111)"
 tr DUP111 FAIL                      # serial resolution refuses...
-tr 1 0; tr /dev/sda 0               # ...but rows/nodes still resolve mechanically
+tri 1 0; tri /dev/sda 0               # ...but rows/nodes still resolve mechanically
 # restore fixture
 D_DEV=(/dev/sda /dev/sdb /dev/nvme0n1); D_SERIAL=(SATATEST001 USBTEST002 NVMETEST003)
 D_COUNT=3
@@ -311,6 +336,41 @@ if pty_confirm2 'NUKE SATATEST001' 'NUKE SATATEST001' 'SATATEST001' /dev/sda; th
 else
     pass "pty: 'NUKE <serial>' rejected (only the exact identifier is accepted)"
 fi
+
+#--- pdi_arm_code: determinism + independent python3 cross-check ----------------
+# The ARM-CODE is the transcription challenge the operator types to arm a
+# wipe; it must match docs/NUKE-INTERLOCKS.md §2 byte for byte in every
+# implementation (bash lib, .ps1 twin). The python3 derivation above is the
+# independent check: if either side drifts from the formula, arming breaks
+# visibly instead of silently.
+echo "== pdi_arm_code unit tests (determinism, format, cross-check) =="
+CODE_A="$(pdi_arm_code SATATEST001 'Test SATA HDD' 1000204886016)"
+CODE_A_PY="$(armcode SATATEST001 'Test SATA HDD' 1000204886016)"
+[[ "$CODE_A" == "$CODE_A_PY" ]] \
+    && pass "arm-code matches independent python3 derivation ($CODE_A)" \
+    || fail "arm-code matches independent python3 derivation" \
+        "bash='$CODE_A' python3='$CODE_A_PY'"
+[[ "$CODE_A" =~ ^[0-9A-F]{6}$ ]] \
+    && pass "arm-code is 6 uppercase hex chars" \
+    || fail "arm-code is 6 uppercase hex chars" "got '$CODE_A'"
+[[ "$(pdi_arm_code SATATEST001 'Test SATA HDD' 1000204886016)" == "$CODE_A" ]] \
+    && pass "arm-code is deterministic" \
+    || fail "arm-code is deterministic"
+CODE_B="$(pdi_arm_code USBTEST005 'Spare USB Stick' 16000000000)"
+[[ "$CODE_B" != "$CODE_A" ]] \
+    && pass "arm-code differs per disk identity ($CODE_B)" \
+    || fail "arm-code differs per disk identity"
+# the code binds the DISPLAYED size: a size change must change the code
+CODE_C="$(pdi_arm_code SATATEST001 'Test SATA HDD' 1000204886017)"
+[[ "$CODE_C" != "$CODE_A" ]] \
+    && pass "arm-code binds the size (1-byte change changes the code)" \
+    || fail "arm-code binds the size (1-byte change changes the code)"
+# hostile firmware strings stay data inside the derivation (no execution,
+# no error) -- the code just binds whatever identity was reported
+CODE_EVIL="$(pdi_arm_code 'EVILTEST001' 'x$(touch /tmp/nope)' 100)"
+[[ "$CODE_EVIL" =~ ^[0-9A-F]{6}$ ]] \
+    && pass "arm-code derivation treats hostile strings as data" \
+    || fail "arm-code derivation treats hostile strings as data"
 
 #--- check_image_proof: proof-manifest validation (sourced function) --------------
 # Fixture proofs: valid + every refusal class. A proof is the machine-readable
@@ -418,6 +478,10 @@ fi
 
 echo "== integration tests (mocked lsblk + mocked dd subprocess) =="
 PROOFS="$T/proofs"   # fixture manifests built in the unit section above
+# Fixture ARM-CODEs, derived independently (python3) -- the same derivation
+# the armed path must demand on the console.
+CODE_SDA="$(armcode SATATEST001 'Test SATA HDD' 1000204886016)"
+CODE_SDE="$(armcode USBTEST005 'Spare USB Stick' 16000000000)"
 # run_case <name> <expected-exit> <expected-substring> [script args...]
 # stdin comes from /dev/null unless CASE_STDIN is set.
 run_case() {
@@ -439,7 +503,7 @@ run_case() {
 }
 
 # K1: dry-run default -- enumerate only, exit 0.
-run_case "K1 enumerate-only default" 0 "5 disk(s) detected"
+run_case "K1 enumerate-only default" 0 "5 candidate disk(s)"
 # K2: --whatif behaves identically.
 run_case "K2 whatif" 0 "dry-run" --whatif
 # K2b: hostile firmware payload -- enumeration must stay dry-run AND the
@@ -471,15 +535,19 @@ run_case "K6 usb-disk refused without override" 1 "self-protected" --image-proof
 # K7: spare USB stick (row 5) passes the guard WITH --override-boot-protection
 # (on a real pty, confirmation succeeds); the override is logged as a
 # WARNING, and the next gate (not a block device on the host) is what fires.
-pty_case() { # pty_case <name> <line1> <line2> <exp-exit> <exp-sub> [args...]
-    local name="$1" l1="$2" l2="$3" exp_exit="$4" exp_sub="$5"; shift 5
+pty_case() { # pty_case <name> <arm-line> <line1> <line2> <exp-exit> <exp-sub> [args...]
+    # The armed path is three typed gates: the ARM-CODE transcription
+    # challenge first, then the double-typed serial confirmation. All three
+    # lines are fed on a real pty (the script's [ -t 0 ] check passes).
+    local name="$1" arm="$2" l1="$3" l2="$4" exp_exit="$5" exp_sub="$6"; shift 6
     local child="$T/pty-int.sh" logdir="$T/logs-$name" out rc
     mkdir -p "$logdir"
     printf 'export PATH=%q:"$PATH"\n' "$MOCKBIN" > "$child"
     printf 'export MOCK_DUPS=%q\n' "${MOCK_DUPS:-0}" >> "$child"
+    printf 'export PHOENIX_PDI_CONFIG=%q\n' "${PHOENIX_PDI_CONFIG:-}" >> "$child"
     printf 'exec bash %q --log-dir %q --no-countdown %s\n' "$SH" "$logdir" "$*" >> "$child"
     chmod +x "$child"
-    out="$(printf '%s\n%s\n' "$l1" "$l2" | PATH="$MOCKBIN:$PATH" timeout 20 \
+    out="$(printf '%s\n%s\n%s\n' "$arm" "$l1" "$l2" | PATH="$MOCKBIN:$PATH" timeout 20 \
         script -qec "$child" /dev/null 2>&1)" && rc=0 || rc=$?
     if (( rc == exp_exit )) && [[ "$out" == *"$exp_sub"* ]]; then
         pass "$name (exit $rc)"
@@ -487,7 +555,7 @@ pty_case() { # pty_case <name> <line1> <line2> <exp-exit> <exp-sub> [args...]
         fail "$name" "expected exit $exp_exit + '$exp_sub'; got exit $rc; output: $(echo "$out" | head -c 400)"
     fi
 }
-pty_case "K7 usb-disk override passes guard" "USBTEST005" "USBTEST005" 1 "not a block device" --image-proof "$PROOFS/usb.proof" --override-boot-protection --nuke 5
+pty_case "K7 usb-disk override passes guard" "$CODE_SDE" "USBTEST005" "USBTEST005" 1 "not a block device" --image-proof "$PROOFS/usb.proof" --override-boot-protection --nuke 5
 auditf="$(ls "$T"/logs-K7*override*passes*guard/phoenix-nuke-audit-*.log)"
 grep -q 'mode=WARNING' "$auditf" && grep -q 'boot-protection-overridden' "$auditf" \
     && pass "K7 audit logs the override as WARNING" \
@@ -508,13 +576,13 @@ MOCK_DUPS=1 run_case "K11b dup serial arm refused" 1 "multiple disks" --image-pr
 # K12: pty, correct serial typed twice on an unprotected disk: confirmation
 #      succeeds (audit CONFIRMED), then the block-device gate fires (fixture
 #      paths are not block devices on the host) -- dd is never reached.
-pty_case "K12 double-confirm reaches block-device gate" "SATATEST001" "SATATEST001" 1 "not a block device" --image-proof "$PROOFS/good.proof" --nuke 1
+pty_case "K12 arm-code + double-confirm reaches block-device gate" "$CODE_SDA" "SATATEST001" "SATATEST001" 1 "not a block device" --image-proof "$PROOFS/good.proof" --nuke 1
 auditf="$(ls "$T"/logs-K12*double-confirm*/phoenix-nuke-audit-*.log)"
 grep -q 'mode=CONFIRMED' "$auditf" && grep -q "typed1='SATATEST001' typed2='SATATEST001'" "$auditf" \
     && pass "K12 audit CONFIRMED records operator confirmation" \
     || fail "K12 audit CONFIRMED records operator confirmation"
 # K13: pty, mistyped second confirmation aborts (exit 2), dd never invoked.
-pty_case "K13 mistyped second prompt aborts" "SATATEST001" "SATATEST00X" 2 "Aborted" --image-proof "$PROOFS/good.proof" --nuke 1
+pty_case "K13 mistyped second prompt aborts" "$CODE_SDA" "SATATEST001" "SATATEST00X" 2 "Aborted" --image-proof "$PROOFS/good.proof" --nuke 1
 # K14: --help exits 0.
 run_case "K14 help" 0 "Usage" --help
 # K15: unknown flag exits 1.
@@ -550,7 +618,7 @@ grep -q 'mode=IMAGE-PROOF' "$auditf" && grep -q "serial=SATATEST001" "$auditf" \
     || fail "K24 audit IMAGE-PROOF records the gate pass"
 # K25: pty, valid proof + correct double-typed serial reaches the
 # block-device gate (fixture paths are not block devices on the host).
-pty_case "K25 valid proof + pty confirm reaches block-device gate" "SATATEST001" "SATATEST001" 1 "not a block device" --image-proof "$PROOFS/good.proof" --nuke 1
+pty_case "K25 valid proof + pty confirm reaches block-device gate" "$CODE_SDA" "SATATEST001" "SATATEST001" 1 "not a block device" --image-proof "$PROOFS/good.proof" --nuke 1
 auditf="$(ls "$T"/logs-K25*valid*proof*pty*/phoenix-nuke-audit-*.log)"
 grep -q 'mode=IMAGE-PROOF' "$auditf" && grep -q 'mode=CONFIRMED' "$auditf" \
     && pass "K25 audit has IMAGE-PROOF and CONFIRMED records" \
@@ -559,14 +627,15 @@ grep -q 'mode=IMAGE-PROOF' "$auditf" && grep -q 'mode=CONFIRMED' "$auditf" \
 run_case "K26 skip-gate piped refuses" 1 "real console" --skip-image-gate --nuke 1
 # K27: pty, --skip-image-gate + exact phrase + correct serial proceeds past
 # the gate (logged WARNING); the block-device gate then fires. 3 input lines.
-pty_skip_case() { # pty_skip_case <name> <skip-line> <l1> <l2> <exp-exit> <exp-sub> [args...]
-    local name="$1" sl="$2" l1="$3" l2="$4" exp_exit="$5" exp_sub="$6"; shift 6
+pty_skip_case() { # pty_skip_case <name> <skip-line> <arm-line> <l1> <l2> <exp-exit> <exp-sub> [args...]
+    local name="$1" sl="$2" arm="$3" l1="$4" l2="$5" exp_exit="$6" exp_sub="$7"; shift 7
     local child="$T/pty-skip-int.sh" logdir="$T/logs-$name" out rc
     mkdir -p "$logdir"
     printf 'export PATH=%q:"$PATH"\n' "$MOCKBIN" > "$child"
+    printf 'export PHOENIX_PDI_CONFIG=%q\n' "${PHOENIX_PDI_CONFIG:-}" >> "$child"
     printf 'exec bash %q --log-dir %q --no-countdown %s\n' "$SH" "$logdir" "$*" >> "$child"
     chmod +x "$child"
-    out="$(printf '%s\n%s\n%s\n' "$sl" "$l1" "$l2" | PATH="$MOCKBIN:$PATH" timeout 20 \
+    out="$(printf '%s\n%s\n%s\n%s\n' "$sl" "$arm" "$l1" "$l2" | PATH="$MOCKBIN:$PATH" timeout 20 \
         script -qec "$child" /dev/null 2>&1)" && rc=0 || rc=$?
     if (( rc == exp_exit )) && [[ "$out" == *"$exp_sub"* ]]; then
         pass "$name (exit $rc)"
@@ -574,13 +643,13 @@ pty_skip_case() { # pty_skip_case <name> <skip-line> <l1> <l2> <exp-exit> <exp-s
         fail "$name" "expected exit $exp_exit + '$exp_sub'; got exit $rc; output: $(echo "$out" | head -c 400)"
     fi
 }
-pty_skip_case "K27 skip-gate typed phrase proceeds" "NUKE WITHOUT BACKUP" "SATATEST001" "SATATEST001" 1 "not a block device" --skip-image-gate --nuke 1
+pty_skip_case "K27 skip-gate typed phrase proceeds" "NUKE WITHOUT BACKUP" "$CODE_SDA" "SATATEST001" "SATATEST001" 1 "not a block device" --skip-image-gate --nuke 1
 auditf="$(ls "$T"/logs-K27*skip-gate*typed*phrase*proceeds/phoenix-nuke-audit-*.log)"
 grep -q 'mode=WARNING' "$auditf" && grep -q "reason='image-proof-gate-skipped'" "$auditf" \
     && pass "K27 audit WARNING records the gate skip" \
     || fail "K27 audit WARNING records the gate skip"
 # K28: pty, --skip-image-gate with a WRONG phrase aborts (exit 1).
-pty_skip_case "K28 skip-gate wrong phrase aborts" "yes" "SATATEST001" "SATATEST001" 1 "not confirmed" --skip-image-gate --nuke 1
+pty_skip_case "K28 skip-gate wrong phrase aborts" "yes" "$CODE_SDA" "SATATEST001" "SATATEST001" 1 "not confirmed" --skip-image-gate --nuke 1
 # K29: --skip-image-gate + valid proof together: the proof wins, no skip
 # prompt is needed -- gate passes on the proof alone.
 run_case "K29 proof wins over skip flag" 2 "Aborted" --image-proof "$PROOFS/good.proof" --skip-image-gate --nuke 1
@@ -588,6 +657,51 @@ auditf="$(ls "$T"/logs-K29*proof*wins*over*skip*flag/phoenix-nuke-audit-*.log)"
 grep -q 'mode=IMAGE-PROOF' "$auditf" && ! grep -q 'image-proof-gate-skipped' "$auditf" \
     && pass "K29 audit shows proof gate, no skip" \
     || fail "K29 audit shows proof gate, no skip"
+
+echo "== integration: ARM-CODE gate + config-protected exclusions =="
+# Fixture config: sdd protected BY SERIAL, sde protected BY /dev PATH.
+PROT_CFG="$T/phoenix-config-protected.json"
+cat > "$PROT_CFG" <<'JSON'
+{
+  "nuke": {
+    "protectedDisks": ["SDDTEST004", "/dev/sde"]
+  }
+}
+JSON
+# P1: protected disks are excluded from the candidate rows (3 remain, rows
+# renumber) and named in the hidden summary instead.
+PHOENIX_PDI_CONFIG="$PROT_CFG" run_case "P1 protected disks excluded from rows" 0 "3 candidate disk(s)"
+PHOENIX_PDI_CONFIG="$PROT_CFG" run_case "P1b hidden summary names sdd" 0 "hidden: /dev/sdd (PROTECTED(config))"
+PHOENIX_PDI_CONFIG="$PROT_CFG" run_case "P1c hidden summary names sde" 0 "hidden: /dev/sde (PROTECTED(config))"
+# P2: a protected serial selects nothing -- fail closed, no arming.
+PHOENIX_PDI_CONFIG="$PROT_CFG" run_case "P2 protected serial refuses" 1 "no disk matches" --nuke SDDTEST004
+# P3: protected beats the override -- even --override-boot-protection cannot
+# reach a config-protected disk (exclusion, not warning).
+PHOENIX_PDI_CONFIG="$PROT_CFG" run_case "P3 protected beats override" 1 "no disk matches" --override-boot-protection --nuke /dev/sde
+# P4: rows renumber after exclusion -- old row 5 (sde) is out of range now.
+PHOENIX_PDI_CONFIG="$PROT_CFG" run_case "P4 rows renumber after exclusion" 1 "no disk matches" --nuke 5
+# P5: ARM-CODE transcription gate on the armed path (pty).
+# P5a: a wrong code aborts (exit 2) BEFORE the double-typed confirmation is
+# ever offered -- the mistyped serials on lines 2/3 are never consumed.
+pty_case "P5a wrong arm-code aborts" "ZZZZZZ" "SATATEST001" "SATATEST001" 2 "did not match" --image-proof "$PROOFS/good.proof" --nuke 1
+auditf="$(ls "$T"/logs-P5a*wrong*arm-code*aborts/phoenix-nuke-audit-*.log)"
+grep -q "mode=ABORTED" "$auditf" && grep -q "reason='arm-code-mismatch'" "$auditf" \
+    && pass "P5a audit ABORTED records reason=arm-code-mismatch" \
+    || fail "P5a audit ABORTED records reason=arm-code-mismatch"
+# P5b: piped (non-tty) stdin refuses the arm-code gate structurally.
+run_case "P5b arm-code gate piped refuses" 2 "real terminal" --image-proof "$PROOFS/good.proof" --nuke 1
+# P5c: the exact serial ALSO satisfies the arm-code gate (design: code OR
+# exact serial), then the double-typed confirmation proceeds normally.
+pty_case "P5c exact serial satisfies arm gate" "SATATEST001" "SATATEST001" "SATATEST001" 1 "not a block device" --image-proof "$PROOFS/good.proof" --nuke 1
+auditf="$(ls "$T"/logs-P5c*exact*serial*satisfies*/phoenix-nuke-audit-*.log)"
+grep -q 'mode=ARM-CODE' "$auditf" && grep -q 'mode=CONFIRMED' "$auditf" \
+    && pass "P5c audit has ARM-CODE and CONFIRMED records" \
+    || fail "P5c audit has ARM-CODE and CONFIRMED records"
+# P5d: correct code + correct double-type audits the code that was typed.
+auditf="$(ls "$T"/logs-K12*double-confirm*/phoenix-nuke-audit-*.log)"
+grep -q "mode=ARM-CODE" "$auditf" && grep -q "arm_code=$CODE_SDA" "$auditf" \
+    && pass "P5d audit ARM-CODE records the typed code" \
+    || fail "P5d audit ARM-CODE records the typed code"
 
 # K16: dd was NEVER invoked in any path above.
 if [[ -f "$DD_MARKER" ]]; then

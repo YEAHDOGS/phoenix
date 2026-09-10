@@ -9,27 +9,39 @@
 # SAFETY MODEL (exact rule parity with Invoke-PhoenixNuke.ps1):
 #   1. Dry-run is the DEFAULT: no flags (or --dry-run/--whatif) ONLY
 #      enumerates disks and exits 0. Destruction requires --nuke <id>.
-#   2. Explicit enumeration: numbered table (device, model, serial, size,
-#      bus, media, flags) is printed first.
+#   2. Explicit enumeration: numbered candidate table (device, model, serial,
+#      size, bus, media, ARM-CODE, flags) is printed first. Disks declared
+#      protected in phoenix-config.json are EXCLUDED from the table and
+#      named in a hidden summary instead -- they are never candidates.
 #   3. Never auto-select: no default target, ever. <id> must be a row
 #      number, a /dev node, or the exact serial. Wildcards (* ? [ ]) are
 #      NEVER resolved -- fail closed. An identifier matching more than one
 #      disk (e.g. duplicated serials) is an ambiguity refusal, never
 #      first-match-wins.
-#   4. Boot/USB self-protection: the boot disk (kernel cmdline root, or any
+#   4. Config-protected disks are EXCLUDED, not warned: a serial or /dev
+#      path listed in phoenix-config.json -> "nuke": { "protectedDisks":
+#      [...] } never becomes a candidate row, is named in a hidden summary,
+#      and cannot be armed -- not even with --override-boot-protection.
+#      Use it for the backup vault, the Castle drive, anything irreplaceable.
+#      (pdi_is_protected from tools/lib/phoenix-disk-inventory.sh.)
+#   5. Boot/USB self-protection: the boot disk (kernel cmdline root, or any
 #      disk with mounted partitions) and USB-attached disks are refused
 #      structurally UNLESS --override-boot-protection is given. The override
-#      is logged as a WARNING and still requires the double-typed
-#      confirmation.
-#   5. Double-typed confirmation: the operator must type the target disk's
-#      exact serial (or exact /dev path) TWICE, on a real terminal. Piped
-#      or scripted stdin is refused structurally ([ -t 0 ]) -- a mismatch on
-#      EITHER prompt aborts. Y/N is not accepted.
-#   6. Audit record: every run writes timestamp, disk id, mode, and the
+#      is logged as a WARNING and still requires the typed confirmations.
+#   6. Typed confirmation, TWO stages, both on a real terminal:
+#      (a) ARM-CODE transcription challenge (docs/NUKE-INTERLOCKS.md §2/§3):
+#          the operator types the target's 6-char ARM-CODE -- a deterministic
+#          sha256 over serial|model|size-bytes -- or its exact serial. This
+#          binds the typed identity to the serial AND the displayed size
+#          shown in the enumeration row: the operator cannot arm a disk they
+#          did not read deliberately. Piped input refused ([ -t 0 ]).
+#      (b) Double-typed serial confirmation (two attempts, serial or device
+#          path, exact match). A mismatch on EITHER prompt aborts.
+#   7. Audit record: every run writes timestamp, disk id, mode, and the
 #      operator-confirmation evidence to a log file.
-#   7. Final abort window: 5-second countdown after arming (Ctrl-C aborts;
+#   8. Final abort window: 5-second countdown after arming (Ctrl-C aborts;
 #      --no-countdown only for VM tests).
-#   8. Image-proof gate (runbook invariant 1: verified image or no wipe):
+#   9. Image-proof gate (runbook invariant 1: verified image or no wipe):
 #      --nuke refuses unless --image-proof <file> names a VALID proof
 #      manifest (format phoenix-image-proof/1, verified=YES, 64-hex sha256,
 #      positive image_size_bytes, source_serial matching the nuke target --
@@ -71,8 +83,27 @@
 #===============================================================================
 set -euo pipefail
 
-VERSION="0.1.0"
+VERSION="0.2.0"
 PROG="$(basename "$0")"
+
+# --- canonical interlock library ---------------------------------------------
+# tools/lib/phoenix-disk-inventory.sh is the NUKE-path gate library
+# (docs/NUKE-INTERLOCKS.md). This script sources it for:
+#   pdi_arm_code       deterministic ARM-CODE transcription challenge
+#                        (sha256 of "phoenix-nuke-arm|<serial>|<model>|<size>")
+#   pdi_is_protected   config-declared protected-disk exclusions
+#                        (phoenix-config.json -> "nuke": { "protectedDisks": [] })
+#   pdi_confirm_armed  the TTY-only typed arm-code confirmation gate
+# The library contains NO destructive primitive -- read-only helpers.
+_PDI_LIB="$(dirname "${BASH_SOURCE[0]}")/lib/phoenix-disk-inventory.sh"
+if [[ -f "$_PDI_LIB" ]]; then
+    # shellcheck disable=SC1090
+    source "$_PDI_LIB"
+else
+    echo "[$PROG] FATAL: cannot find tools/lib/phoenix-disk-inventory.sh" >&2
+    exit 1
+fi
+unset _PDI_LIB
 
 # --- options -----------------------------------------------------------------
 NUKE_ID=""               # disk identifier selected by the operator
@@ -85,8 +116,11 @@ SKIP_IMAGE_GATE=0        # emergency escape hatch; needs TTY-typed phrase
 
 # --- state -------------------------------------------------------------------
 AUDITFILE=""
-declare -a D_DEV D_MODEL D_SERIAL D_SIZE D_TRAN D_MEDIA D_FLAGS D_PROT
+declare -a D_DEV D_MODEL D_SERIAL D_SIZE D_TRAN D_MEDIA D_FLAGS D_PROT D_CODE
 D_COUNT=0
+# parallel arrays: disks excluded from candidacy (never rows, never armable)
+declare -a D_HIDDEN_DEV D_HIDDEN_WHY
+D_HIDDEN_COUNT=0
 
 #===============================================================================
 # audit + helpers
@@ -138,11 +172,14 @@ Usage:
 
 RULES: no flags = enumerate only. No default target. --nuke requires
 --image-proof <file> (runbook invariant 1: never wipe before a VERIFIED
-image exists) -- this gate runs before every other check. Boot disks and USB
-disks are refused unless --override-boot-protection. Arming requires typing
-the target disk's serial (or device path) TWICE on a real console --
-redirected stdin can never arm a wipe. Full audit log is written to the log
-directory. VM-ONLY TESTING. NEVER test destructive paths on bare metal.
+image exists) -- this gate runs before every other check. Disks declared
+protected in phoenix-config.json are excluded from candidacy entirely and
+can never be armed. Boot disks and USB disks are refused unless
+--override-boot-protection. Arming requires typing the target disk's
+ARM-CODE (or exact serial) once, then its serial (or device path) TWICE --
+all on a real console; redirected stdin can never arm a wipe. Full audit
+log is written to the log directory. VM-ONLY TESTING. NEVER test
+destructive paths on bare metal.
 EOF
 }
 
@@ -234,6 +271,8 @@ enumerate() {
     mapfile -t prot < <(detect_protected)
     local isprot p
     D_COUNT=0
+    D_HIDDEN_COUNT=0
+    D_HIDDEN_DEV=(); D_HIDDEN_WHY=()
     local line dev model serial size tran rm rota type media flags reason
     while IFS= read -r line; do
         # Parse the lsblk -P line with the eval-free parser. Model/serial
@@ -249,6 +288,17 @@ enumerate() {
         [[ -z "${LP[NAME]:-}" ]] && continue
         model="${LP[MODEL]:-unknown}"
         serial="${LP[SERIAL]:-unknown}"
+        # --- config-protected exclusion (structural, not advisory) ---
+        # A disk named in phoenix-config.json -> "nuke": { "protectedDisks":
+        # [...] } (by serial or /dev path) is EXCLUDED from candidacy: it
+        # never becomes a numbered row, so no identifier can select it and
+        # --override-boot-protection cannot reach it. (NUKE-INTERLOCKS.md §1)
+        if pdi_is_protected "$dev" "$serial"; then
+            D_HIDDEN_DEV+=("$dev")
+            D_HIDDEN_WHY+=("PROTECTED(config)")
+            D_HIDDEN_COUNT=$((D_HIDDEN_COUNT+1))
+            continue
+        fi
         media="$(classify_media "${LP[TRAN]:-?}" "${LP[ROTA]:-0}")"
         flags=""; reason=""
         isprot=0
@@ -261,6 +311,10 @@ enumerate() {
         D_DEV+=("$dev"); D_MODEL+=("$model"); D_SERIAL+=("$serial")
         D_SIZE+=("${LP[SIZE]:-0}"); D_TRAN+=("${LP[TRAN]:-?}"); D_MEDIA+=("$media")
         D_FLAGS+=("$flags"); D_PROT+=("$reason")
+        # Per-disk ARM-CODE: deterministic transcription challenge derived
+        # from serial|model|size-bytes -- the typed token binds the serial
+        # AND the displayed size shown in this row (NUKE-INTERLOCKS.md §2).
+        D_CODE+=("$(pdi_arm_code "$serial" "$model" "${LP[SIZE]:-0}")")
         D_COUNT=$((D_COUNT+1))
     done < <(lsblk -P -b -d -o NAME,MODEL,SERIAL,SIZE,TRAN,RM,ROTA,TYPE -e 7,11 2>/dev/null || true)
 
@@ -280,16 +334,25 @@ enumerate() {
     echo "======================================================================"
     echo " PHOENIX NUKE CORE -- disk enumeration ($(ts))"
     echo "======================================================================"
-    printf "%-3s %-12s %-28s %-22s %-9s %-6s %-14s %s\n" \
-        "#" "DEVICE" "MODEL" "SERIAL" "SIZE" "BUS" "MEDIA" "FLAGS"
+    printf "%-3s %-12s %-28s %-22s %-9s %-6s %-14s %-8s %s\n" \
+        "#" "DEVICE" "MODEL" "SERIAL" "SIZE" "BUS" "MEDIA" "ARM-CODE" "FLAGS"
     echo "----------------------------------------------------------------------"
     for (( i=0; i<D_COUNT; i++ )); do
-        printf "%-3d %-12s %-28.28s %-22.22s %-9s %-6s %-14s %s\n" \
+        printf "%-3d %-12s %-28.28s %-22.22s %-9s %-6s %-14s %-8s %s\n" \
             "$((i+1))" "${D_DEV[$i]}" "${D_MODEL[$i]}" "${D_SERIAL[$i]}" \
-            "$(human_size "${D_SIZE[$i]}")" "${D_TRAN[$i]}" "${D_MEDIA[$i]}" "${D_FLAGS[$i]}"
+            "$(human_size "${D_SIZE[$i]}")" "${D_TRAN[$i]}" "${D_MEDIA[$i]}" \
+            "${D_CODE[$i]}" "${D_FLAGS[$i]}"
     done
     echo "----------------------------------------------------------------------"
-    echo " $D_COUNT disk(s) detected. No --nuke given: dry-run, nothing destroyed."
+    if (( D_HIDDEN_COUNT > 0 )); then
+        echo " Excluded from candidacy ($D_HIDDEN_COUNT) -- cannot be armed, not even"
+        echo " with --override-boot-protection:"
+        for (( i=0; i<D_HIDDEN_COUNT; i++ )); do
+            echo "   hidden: ${D_HIDDEN_DEV[$i]} (${D_HIDDEN_WHY[$i]})"
+        done
+        echo "----------------------------------------------------------------------"
+    fi
+    echo " $D_COUNT candidate disk(s). No --nuke given: dry-run, nothing destroyed."
     echo "======================================================================"
 }
 
@@ -565,6 +628,25 @@ main() {
     echo "  Method : dd if=/dev/zero (full-device zero-fill)"
     echo ""
     echo "  This is NOT recoverable. There is no undo."
+    echo ""
+
+    # --- ARM-CODE transcription challenge (NUKE-INTERLOCKS.md §2/§3) ---
+    # First typed gate, real console only. The code binds serial + model +
+    # displayed size (sha256 of the identity tuple), so typing it proves the
+    # operator read THIS enumeration row deliberately -- a disk that was not
+    # looked at cannot be armed. Exact match, one attempt; failure aborts
+    # (exit 2) before the double-typed serial confirmation is even offered.
+    echo "  ARM-CODE for this disk: ${D_CODE[$idx]}"
+    echo "  (shown in the table above; type it exactly -- it binds the serial"
+    echo "   AND the size displayed for this disk)"
+    echo ""
+    if ! pdi_confirm_armed "$serial" "${D_CODE[$idx]}"; then
+        audit "ABORTED" "dev=$dev" "serial=$serial" "reason='arm-code-mismatch'"
+        echo "Aborted. The ARM-CODE (or exact serial) did not match. Nothing was destroyed."
+        exit 2
+    fi
+    audit "ARM-CODE" "dev=$dev" "serial=$serial" "arm_code=${D_CODE[$idx]}"
+    echo "ARM-CODE accepted -- transcription challenge passed."
     echo ""
 
     # --- double-typed confirmation, real console only ---
