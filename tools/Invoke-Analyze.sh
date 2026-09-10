@@ -59,7 +59,7 @@ PROCFS="${PHOENIX_PROC_ROOT:-/proc}"
 DEVFS="${PHOENIX_DEV_ROOT:-/dev}"
 
 CONFIG="" BOOT_ID="" IMAGE_PROOF="" OUT_DIR="" WRITE=0
-BOOT_DEVICE_NAME=""   # resolved kernel device name of the Phoenix USB
+declare -a BOOT_USB_NAMES=()   # kernel device names of the Phoenix USB (usually one)
 
 # --- usage -------------------------------------------------------------------
 usage() {
@@ -148,13 +148,32 @@ read1() {  # read1 <file> -> contents or ""
 resolve_boot_device() {
     local id="${BOOT_ID:-${PHOENIX_BOOT_DEVICE:-}}"
     [[ -z "$id" ]] && return 0
-    # Accept serial, /dev node, row number (resolved later), or kernel name.
-    local guess="${id##*/}"
-    if [[ -d "$(sys_block_dir)/$guess" ]]; then
-        BOOT_DEVICE_NAME="$guess"
-    else
+    # Accept a row number, /dev node, kernel name, or serial. On duplicate
+    # serials every matching disk is marked (the DUP-SERIAL flag + note
+    # already say identity is ambiguous) -- analyze is read-only, so marking
+    # is data, not a decision.
+    local guess="${id##*/}" i
+    if [[ "$id" =~ ^[0-9]+$ ]] && (( id >= 1 && id <= ${#D_NAMES[@]} )); then
+        BOOT_USB_NAMES+=("${D_NAMES[$((id-1))]}")
+        return 0
+    fi
+    for i in "${!D_NAMES[@]}"; do
+        if [[ "${D_NAMES[$i]}" == "$guess" ]] || \
+           [[ -n "${D_SERIALS[$i]}" && "${D_SERIALS[$i]}" == "$id" ]]; then
+            BOOT_USB_NAMES+=("${D_NAMES[$i]}")
+        fi
+    done
+    if [[ ${#BOOT_USB_NAMES[@]} -eq 0 ]]; then
         notes_add "boot-device id '$id' did not resolve to a block device; report marks none"
     fi
+}
+
+is_boot_usb() {  # $1=kernel name -> 0 when it is the Phoenix USB
+    local n="$1" x
+    for x in "${BOOT_USB_NAMES[@]}"; do
+        [[ "$x" == "$n" ]] && return 0
+    done
+    return 1
 }
 
 media_type_for() {  # $1=rotational(0/1), $2=transport
@@ -237,19 +256,6 @@ disk_is_mounted() {  # $1=kernel name -> true if any partition is mounted
     grep -qE "^$DEVFS/$name(p[0-9]+|[0-9]+)? " "$mounts" 2>/dev/null
 }
 
-resolve_id_to_index() {  # $1=id -> index into D_* (row number, /dev node, serial, kernel name)
-    local id="$1" guess="${1##*/}" i
-    if [[ "$id" =~ ^[0-9]+$ ]] && (( id >= 1 && id <= ${#D_NAMES[@]} )); then
-        echo $((id - 1)); return 0
-    fi
-    for i in "${!D_NAMES[@]}"; do
-        if [[ "${D_NAMES[$i]}" == "$guess" ]]; then echo "$i"; return 0; fi
-    done
-    for i in "${!D_SERIALS[@]}"; do
-        if [[ -n "${D_SERIALS[$i]}" && "${D_SERIALS[$i]}" == "$id" ]]; then echo "$i"; return 0; fi
-    done
-    return 1
-}
 
 # --- hardware inventory -------------------------------------------------------
 hw_cpu() {
@@ -388,7 +394,7 @@ printf 'Phoenix ANALYZE triage (%s) -- read-only, suspect OS never booted\n' "$(
 printf '%-4s %-10s %-14s %-20s %-8s %-7s %s\n' ROW DEVICE SERIAL MODEL SIZE MEDIA FLAGS
 for i in "${!D_NAMES[@]}"; do
     flags=""
-    [[ "${D_NAMES[$i]}" == "$BOOT_DEVICE_NAME" ]] && flags="${flags}BOOT-USB"
+    is_boot_usb "${D_NAMES[$i]}" && flags="${flags}BOOT-USB"
     [[ "${D_DUP[$i]}" == "yes" ]] && flags="${flags:+$flags }DUP-SERIAL"
     [[ "${D_MOUNTED[$i]}" == "yes" ]] && flags="${flags:+$flags }MOUNTED"
     printf '%-4s %-10s %-14s %-20s %-8s %-7s %s\n' \
@@ -443,7 +449,7 @@ if [[ $WRITE -eq 1 ]]; then
             printf '"smart_support": '; jstr "$(disk_smart_support "${D_NAMES[$i]}")"; printf ', '
             printf '"dup_serial": %s, ' "$([[ "${D_DUP[$i]}" == "yes" ]] && echo true || echo false)"
             printf '"has_mounted_partitions": %s, ' "$([[ "${D_MOUNTED[$i]}" == "yes" ]] && echo true || echo false)"
-            printf '"is_boot_usb": %s}' "$([[ "${D_NAMES[$i]}" == "$BOOT_DEVICE_NAME" ]] && echo true || echo false)"
+            printf '"is_boot_usb": %s}' "$(is_boot_usb "${D_NAMES[$i]}" && echo true || echo false)"
         done
         printf '\n  ],\n'
         printf '  "image_proof": {"provided": %s, "valid": %s, "source_serial": ' \
