@@ -114,6 +114,7 @@ done
 echo
 if [ "$EXECUTE" = 1 ]; then
     [ -n "$DEST" ] || { echo "error: --execute requires --dest" >&2; exit 1; }
+    mkdir -p "$DEST"   # an app with no present locations copies nothing, so the dest may not exist yet
     {
         printf '[\n'
         for ((k=0; k<${#manifest_entries[@]}; k++)); do

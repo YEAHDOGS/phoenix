@@ -112,6 +112,8 @@ $plan | Format-Table -AutoSize App, Class, Action, Path | Out-String | Write-Hos
 
 if ($Execute) {
     if (-not $Dest) { Write-Error "-Execute requires -Dest"; exit 1 }
+    # an app with no present locations copies nothing, so the dest may not exist yet
+    if (-not (Test-Path $Dest)) { New-Item -ItemType Directory -Path $Dest | Out-Null }
     $manifestPath = Join-Path $Dest "manifest.json"
     $manifest | ConvertTo-Json -Depth 4 | Set-Content $manifestPath
     # source fingerprint for the restore interlock: restore refuses to target
