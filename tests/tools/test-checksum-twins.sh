@@ -53,20 +53,20 @@ out="$("$COMPARE" "$T/manifest.csv")"
 
 #--- tamper is caught, exit 1, names the file ----------------------------------
 printf 'tampered' >> "$T/src/sub/b.txt"
-out="$("$COMPARE" "$T/manifest.csv" 2>&1)"; code=$?
+out="$("$COMPARE" "$T/manifest.csv" 2>&1)" && code=0 || code=$?
 [[ $code -eq 1 && "$out" == *"MISMATCH: $T/src/sub/b.txt"* ]] \
     && pass "tampered file -> exit 1 + MISMATCH" \
     || fail "tampered file -> exit 1 + MISMATCH" "code=$code out=$out"
 
 #--- missing file is caught ------------------------------------------------------
 rm "$T/src/a.txt"
-out="$("$COMPARE" "$T/manifest.csv" 2>&1)"; code=$?
+out="$("$COMPARE" "$T/manifest.csv" 2>&1)" && code=0 || code=$?
 [[ $code -eq 1 && "$out" == *"MISSING : $T/src/a.txt"* ]] \
     && pass "deleted file -> exit 1 + MISSING" \
     || fail "deleted file -> exit 1 + MISSING" "code=$code out=$out"
 
 #--- missing path fails ----------------------------------------------------------
-"$CHECK" "$T/does-not-exist" >/dev/null 2>&1; code=$?
+"$CHECK" "$T/does-not-exist" >/dev/null 2>&1 && code=0 || code=$?
 [[ $code -eq 1 ]] \
     && pass "missing path -> exit 1" \
     || fail "missing path -> exit 1" "code=$code"
