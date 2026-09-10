@@ -69,6 +69,14 @@ need tools/phoenix-quarantine-copy.sh 'QUARANTINE' \
   "quarantine copy writes the QUARANTINE-INFECTED layout"
 need tools/phoenix-quarantine-copy.sh 'verify=PASS' \
   "quarantine copy re-verifies every chunk on the target"
+need tools/New-PhoenixDataRestore.ps1 'phoenix-data-backup/1' \
+  "restore accepts only data-backup manifests (quarantine images structurally excluded)"
+need tools/New-PhoenixDataRestore.ps1 "verify.\] -ne 'PASS'" \
+  "restore refuses backups whose manifest is not verify=PASS"
+need tools/New-PhoenixDataRestore.ps1 'hash MISMATCH' \
+  "restore aborts the whole restore on any hash mismatch"
+need tools/New-PhoenixDataRestore.ps1 'DriveType.*Fixed' \
+  "restore targets a local fixed drive only"
 
 echo "== (C) runbook completeness =="
 for phase in "Phase 0" "Phase 1" "Phase 2" "Phase 3" "Phase 4"; do
