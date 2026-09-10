@@ -38,9 +38,9 @@
 #       <image-proof .proof>     (copied, when --image-proof was used)
 #       copy.log                 (full run log)
 #
-# Twin: none yet -- this tool runs on the clean machine (Linux). A WinPE/
-# Windows twin (New-PhoenixQuarantineCopy.ps1) is the next step; the manifest
-# schema below is the contract it must emit.
+# Twin: tools/New-PhoenixQuarantineCopy.ps1 -- the Windows/WinPE twin emits the
+# identical quarantine-copy.manifest contract (same keys, same order), so a
+# manifest written on Linux verifies identically on Windows and vice versa.
 #
 # USAGE:
 #   phoenix-quarantine-copy.sh --source /media/usb-target/laptop-fulldisk-2026-09-09 \
