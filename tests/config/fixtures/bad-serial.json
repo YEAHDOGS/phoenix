@@ -1,0 +1,1 @@
+{"backup_target":{"kind":"direct-usb"},"boot_entries":{"analyze":true,"backup":true,"nuke":true,"reinstall":true},"safety":{"require_image_proof":true},"schema_version":1,"target_disks":[{"model":"mystery disk","serial":"!!! not-a-serial !!!"}],"unattend":{"answer_file":"/autounattend.xml"}}
