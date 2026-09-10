@@ -487,10 +487,29 @@ USB, and configure a scheduled **entire-computer** backup job targeting Castle's
 makes the *next* emergency a restore instead of a crisis.
 
 **Step 4.5 — Restore data selectively.**
-From the **data-only** backup (Step 2.6), copy back what you need — and scan it
-with Defender first. Restore files, not installers; reinstall applications fresh
-from their sources. **Never boot or "restore" the quarantined full-disk image**
-except on an isolated forensics setup.
+From the **data-only** backup (Step 2.6), copy back what you need — with
+`tools\New-PhoenixDataRestore.ps1` on the fresh install:
+
+```powershell
+.\tools\New-PhoenixDataRestore.ps1 -BackupDir "E:\laptop-data-2026-09-09" -WhatIf
+.\tools\New-PhoenixDataRestore.ps1 -BackupDir "E:\laptop-data-2026-09-09" `
+    -Profiles brandon -TargetRoot "C:"
+```
+
+The restore tool enforces the dirty-data contract in code, not just by promise:
+it accepts **only** a `format=phoenix-data-backup/1` manifest with `verify=PASS`
+(this is what makes restoring from the quarantined full-disk image
+structurally impossible — the quarantine image has no data-backup manifest),
+**re-verifies every SHA-256 in `files.sha256` before copying anything** (one
+tampered byte aborts the whole restore), **never copies executables**
+(`.exe`, `.msi`, `.ps1`, `.lnk`, ... — even if the backup was taken with
+`-IncludeExe`), and refuses UNC/network targets and TargetRoot/BackupDir
+overlap. It also runs a Defender scan of the backup dir first (scan-before-restore),
+writes `data-restore.manifest` + `data-restore.log` + `refused-executables.txt`
+into the backup dir for the audit trail, and supports `-WhatIf` for a dry run.
+Scan it with Defender first anyway, restore files not installers, and reinstall
+applications fresh from their sources. **Never boot or "restore" the
+quarantined full-disk image** except on an isolated forensics setup.
 
 **Step 4.6 — Verify clean.**
 Full Defender scan. Windows Update to current. Eyeball Task Scheduler, Startup
