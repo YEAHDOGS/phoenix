@@ -36,6 +36,16 @@
 #      tools/New-ImageProof.sh in the Backup phase. --skip-image-gate exists
 #      for true emergencies only: it demands typing "NUKE WITHOUT BACKUP"
 #      on a real TTY and is logged.
+#   9. Stick policy (--config): when phoenix-config.json is passed, the
+#      stick's own policy is enforced in code, not just documentation:
+#      boot_entries.nuke must be true; the target's serial must be on the
+#      target_disks allowlist; --skip-image-gate is refused unless
+#      safety.allow_skip_image_gate is true (the escape hatch is compiled
+#      out of the stick otherwise); the abort countdown follows
+#      safety.abort_countdown_seconds. The config path is ALWAYS explicit
+#      (--config <file>): the script never auto-discovers a config from an
+#      arbitrary attached drive -- the boot menu launcher passes the stick's
+#      own /phoenix-config.json by path.
 #
 # USAGE:
 #   Invoke-Nuke.sh                        enumerate only (dry-run), exit 0
@@ -45,6 +55,9 @@
 #   Invoke-Nuke.sh --image-proof <file> --nuke <id>
 #                                         arm only with a valid verified-image
 #                                         proof bound to the target's serial
+#   Invoke-Nuke.sh --config /mnt/usb/phoenix-config.json --nuke <id>
+#                                         arm only when the stick's policy
+#                                         allows it (see interlock 12 above)
 #
 # <id> may be the row number from the table, a /dev node, a /dev/disk/by-id
 # path, or the disk serial number.
@@ -53,8 +66,12 @@
 #===============================================================================
 set -euo pipefail
 
-VERSION="0.1.0"
+VERSION="0.2.0"
 PROG="$(basename "$0")"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# The boot-side tools travel together (phoenix/tools/ on the stick).
+# Tests may point at a different tools dir via the environment.
+TOOLS_DIR="${PHOENIX_TOOLS_DIR:-$SCRIPT_DIR}"
 
 # --- options -----------------------------------------------------------------
 NUKE_ID=""            # disk identifier selected by the operator
@@ -65,6 +82,7 @@ IMAGE_PROOF=""        # path to a phoenix-image-proof manifest (gate: required)
 SKIP_IMAGE_GATE=0     # emergency escape hatch; needs TTY-typed phrase
 NO_COUNTDOWN=0
 WHATIF=0
+CONFIG=""             # path to phoenix-config.json (stick policy, --config)
 
 # --- state -------------------------------------------------------------------
 LOGFILE=""
@@ -104,6 +122,14 @@ Usage:
                                  Emergency only: arm with NO verified image
                                  on record. Requires typing
                                  'NUKE WITHOUT BACKUP' on a real TTY.
+  $PROG --config <config.json> --nuke <id>
+                                 Also enforce the stick's phoenix-config.json
+                                 policy: boot_entries.nuke must be true, the
+                                 target serial must be on the target_disks
+                                 allowlist, and --skip-image-gate is refused
+                                 unless safety.allow_skip_image_gate is true.
+                                 The boot menu launcher passes the stick's
+                                 own /phoenix-config.json explicitly.
   $PROG --method <m> --nuke <id>   Override HDD overwrite method
   $PROG --verify-all --nuke <id>    Verify every pass (slower, stronger)
   $PROG --log-dir <dir> --nuke <id> Override log location
@@ -552,6 +578,68 @@ check_image_proof() {
     return 0
 }
 
+#===============================================================================
+# stick policy: phoenix-config.json (--config)
+#===============================================================================
+# normalize_serial <serial> -> uppercased, whitespace-trimmed serial, exactly
+# as tools/Read-UsbConfig.py normalizes the allowlist entries. The typed
+# confirmation still compares against the RAW serial the operator read from
+# the table; normalization is only for allowlist membership, so a GUI that
+# wrote 'satatest001' matches the 'SATATEST001' the boot side enumerates.
+normalize_serial() {
+    echo "$1" | tr '[:lower:]' '[:upper:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+}
+
+# load_usb_config -- validate the stick's phoenix-config.json and import its
+# nuke policy into CFG_* variables. Fail closed on EVERY problem: missing
+# reader, missing python3, unreadable file, invalid config. Called only when
+# --config was passed (dry-run enumeration never requires python3).
+load_usb_config() {
+    local reader="$TOOLS_DIR/Read-UsbConfig.py"
+    [[ -f "$reader" ]] || \
+        die "REFUSED: --config requires tools/Read-UsbConfig.py next to Invoke-Nuke.sh (stick image incomplete)."
+    command -v python3 >/dev/null 2>&1 || \
+        die "REFUSED: --config requires python3 to read phoenix-config.json (stick image incomplete)."
+    [[ -n "$CONFIG" && -f "$CONFIG" ]] || \
+        die "REFUSED: --config '$CONFIG' is not a readable file."
+    local cfg_out
+    if ! cfg_out="$(python3 "$reader" --shell "$CONFIG" 2>&1)"; then
+        die "REFUSED: --config '$CONFIG' is not a valid phoenix-config.json: $cfg_out"
+    fi
+    # shellcheck disable=SC1090
+    eval "$cfg_out"   # sets CFG_NUKE_ENABLED, CFG_REQUIRE_IMAGE_PROOF,
+                      # CFG_ALLOW_SKIP_IMAGE_GATE, CFG_ABORT_COUNTDOWN,
+                      # CFG_ALLOW_SERIAL_<i>, CFG_ALLOW_SERIAL_COUNT.
+                      # Values are shlex-quoted by the reader -- eval-safe.
+    [[ -n "${CFG_NUKE_ENABLED:-}" ]] || \
+        die "REFUSED: config reader returned no policy (stick image incomplete)."
+    [[ "$CFG_ABORT_COUNTDOWN" =~ ^[0-9]+$ ]] && (( CFG_ABORT_COUNTDOWN <= 60 )) || \
+        die "REFUSED: config abort_countdown_seconds '$CFG_ABORT_COUNTDOWN' out of range (0-60)."
+}
+
+# check_usb_config_policy <target-serial> -- enforce the stick's own policy
+# (SAFETY interlock 12). Runs before every other gate: the stick's
+# phoenix-config.json is a precondition for everything, including whether
+# the image-proof gate may be skipped.
+check_usb_config_policy() {
+    local serial="$1"
+    if [[ "${CFG_NUKE_ENABLED:-0}" != "1" ]]; then
+        die "REFUSED: this stick's phoenix-config.json has boot_entries.nuke=false. The stick's boot menu would not offer Nuke either -- a CLI --nuke cannot override the stick's own policy."
+    fi
+    local want hit=0 i have
+    want="$(normalize_serial "$serial")"
+    for (( i=0; i<${CFG_ALLOW_SERIAL_COUNT:-0}; i++ )); do
+        have="CFG_ALLOW_SERIAL_$i"
+        if [[ "${!have}" == "$want" ]]; then hit=1; break; fi
+    done
+    if (( hit == 0 )); then
+        die "REFUSED: serial '$serial' is not on this stick's target_disks allowlist (phoenix-config.json). Allowlisted serials are copied verbatim from the enumeration table by the config GUI -- never typed from memory."
+    fi
+    if (( SKIP_IMAGE_GATE == 1 )) && [[ "${CFG_ALLOW_SKIP_IMAGE_GATE:-0}" != "1" ]]; then
+        die "REFUSED: --skip-image-gate is compiled out of this stick (safety.allow_skip_image_gate=false in phoenix-config.json). No escape hatch exists on this stick."
+    fi
+}
+
 # typed_skip_image_gate -> 0 when the operator types the exact emergency
 # phrase on a real TTY. Same structural rule as typed_confirmation: piped
 # stdin can never skip the image gate.
@@ -593,9 +681,16 @@ arm_and_nuke() {
     local size="${D_SIZE[$idx]}" tran="${D_TRAN[$idx]}" media="${D_MEDIA[$idx]}"
     local flags="${D_FLAGS[$idx]}"
 
+    # --- stick policy (SAFETY interlock 12): the stick's own phoenix-config.json
+    # --- is the OUTERMOST precondition -- it gates everything below, including
+    # --- whether the image-proof gate can even be skipped ---
+    if [[ -n "$CONFIG" ]]; then
+        check_usb_config_policy "$serial"
+    fi
+
     # --- image-proof gate (runbook invariant 1: verified image or no wipe) ---
-    # Runs FIRST: no verified image on record means no wipe, before any other
-    # structural check is even evaluated.
+    # Runs before the structural checks: no verified image on record means no
+    # wipe. (The stick policy above runs before even this.)
     if [[ -n "$IMAGE_PROOF" ]]; then
         if ! check_image_proof "$IMAGE_PROOF" "$serial"; then
             die "Image-proof gate failed -- nothing was destroyed."
@@ -664,11 +759,20 @@ arm_and_nuke() {
     log "CONFIRMED: operator typed serial '$serial' at $(ts) -- destruction ARMED."
 
     # --- final abort window ---
+    # Length comes from the stick's policy (safety.abort_countdown_seconds)
+    # when --config is used; otherwise the 5s default. --no-countdown skips
+    # it entirely (VM tests only).
+    local countdown=5
+    if [[ -n "$CONFIG" && -n "${CFG_ABORT_COUNTDOWN:-}" ]]; then
+        countdown="$CFG_ABORT_COUNTDOWN"
+    fi
     if (( NO_COUNTDOWN == 0 )); then
-        echo ""
-        echo "Armed. Starting destruction in 5 seconds -- press Ctrl-C to abort."
-        for s in 5 4 3 2 1; do echo -n "$s... "; sleep 1; done
-        echo ""
+        if (( countdown > 0 )); then
+            echo ""
+            echo "Armed. Starting destruction in $countdown seconds -- press Ctrl-C to abort."
+            for (( s=countdown; s>=1; s-- )); do echo -n "$s... "; sleep 1; done
+            echo ""
+        fi
     fi
 
     # --- last-second re-verification: the device must still be the same disk ---
@@ -709,6 +813,7 @@ main() {
             --log-dir)      LOG_DIR="${2:?--log-dir needs a path}"; shift 2 ;;
             --image-proof)  IMAGE_PROOF="${2:?--image-proof needs a file}"; shift 2 ;;
             --skip-image-gate) SKIP_IMAGE_GATE=1; shift ;;
+            --config)       CONFIG="${2:?--config needs a file}"; shift 2 ;;
             --no-countdown) NO_COUNTDOWN=1; shift ;;
             --whatif)       WHATIF=1; shift ;;
             -h|--help)      usage; exit 0 ;;
@@ -734,6 +839,11 @@ main() {
     local idx
     if ! idx="$(resolve_id "$NUKE_ID")"; then
         die "No disk matches identifier '$NUKE_ID'."
+    fi
+    # Stick policy is loaded only when arming (dry-run enumeration never
+    # needs python3). Fail closed on any config problem.
+    if [[ -n "$CONFIG" ]]; then
+        load_usb_config
     fi
     arm_and_nuke "$idx"
 }
