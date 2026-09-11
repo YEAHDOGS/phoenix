@@ -128,6 +128,35 @@ disk_mounted() { # <dev> -> 1 if any partition of the disk is mounted, else 0
     echo 0
 }
 
+disk_boot() { # <dev> -> 1 if this disk is the parent of the kernel's
+              # root/BOOT_IMAGE device (the booted disk), else 0.
+              # Read-only: inspects /proc/cmdline only, mounts nothing.
+    local dev="$1" base
+    base="$(basename "$dev")"
+    # PHOENIX_MOCK_BOOT="sda nvme0n1" overrides for tests
+    if [[ -n "${PHOENIX_MOCK_BOOT:-}" ]]; then
+        local b
+        for b in $PHOENIX_MOCK_BOOT; do
+            [[ "$b" == "$base" ]] && { echo 1; return; }
+        done
+        echo 0; return
+    fi
+    local cmdline tok rootdev parent
+    cmdline="$(cat /proc/cmdline 2>/dev/null || true)"
+    for tok in $cmdline; do
+        case "$tok" in
+            root=/dev/*|BOOT_IMAGE=/dev/*)
+                rootdev="${tok#*=}"
+                # parent disk: strip the partition suffix (sda1->sda,
+                # nvme0n1p2->nvme0n1, mmcblk0p1->mmcblk0)
+                parent="$(printf '%s' "$rootdev" | sed -E 's/p?[0-9]+$//')"
+                [[ "$(basename "$parent")" == "$base" ]] && { echo 1; return; }
+                ;;
+        esac
+    done
+    echo 0
+}
+
 # --- fingerprint ----------------------------------------------------------------
 partition_hash() { # <dev> -> "sha256:<hex>" of first 1 MiB, or "null"
     if [[ -n "${PHOENIX_MOCK_HASH:-}" ]]; then
@@ -159,6 +188,8 @@ for i in "${ORDER[@]}"; do
     [[ "$rm" == "1" ]] && removable=true || removable=false
     mounted="$(disk_mounted "$dev")"
     [[ "$mounted" == "1" ]] && mounted_j=true || mounted_j=false
+    boot="$(disk_boot "$dev")"
+    [[ "$boot" == "1" ]] && boot_j=true || boot_j=false
     media="$(classify_media "$dev" "$model")"
     size_human="$(format_gib "$size_bytes")"
 
@@ -169,7 +200,7 @@ for i in "${ORDER[@]}"; do
     media_j="\"$media\""
 
     inventory_json="$inventory_json
-    {\"id\": $row, \"dev\": $dev_j, \"model\": $model_j, \"serial\": $serial_j, \"size_bytes\": $size_bytes, \"size_human\": \"$size_human\", \"transport\": $tran_j, \"removable\": $removable, \"mounted\": $mounted_j, \"media\": $media_j},"
+    {\"id\": $row, \"dev\": $dev_j, \"model\": $model_j, \"serial\": $serial_j, \"size_bytes\": $size_bytes, \"size_human\": \"$size_human\", \"transport\": $tran_j, \"removable\": $removable, \"mounted\": $mounted_j, \"boot\": $boot_j, \"media\": $media_j},"
 
     if [[ -n "$SAVE_STATE_DIR" ]]; then
         ph="$(partition_hash "$dev")"
