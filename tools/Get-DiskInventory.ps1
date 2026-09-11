@@ -86,6 +86,8 @@ foreach ($d in $rawDisks) {
         transport   = $transport
         removable   = [bool]($d.BusType -eq "USB")
         mounted     = Get-DiskMounted $d
+        boot        = [bool]$d.IsBoot     # authoritative: the disk Windows booted from
+        system      = [bool]$d.IsSystem   # authoritative: holds the running system volume
         media       = Get-MediaClass $d
     }
 }
