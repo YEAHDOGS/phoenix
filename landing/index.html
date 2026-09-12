@@ -19,10 +19,13 @@
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Phoenix — wipe. plug in. rise.">
   <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <a class="skip" href="#content">Skip to content</a>
+  <a class="skip" href="#p-hatch">Skip to notify me</a>
 
   <header class="site">
     <div class="nav">
@@ -31,87 +34,72 @@
         <span class="wordmark">Phoenix</span>
       </a>
       <nav aria-label="Primary">
-        <a href="./privacy.html">Privacy</a>
+        <a href="#p-backup">The flow</a>
         <a class="btn-ghost" href="https://github.com/YEAHDOGS/phoenix">GitHub</a>
       </nav>
     </div>
   </header>
 
-  <main id="content">
-    <section class="hero" aria-label="Phoenix">
-      <canvas id="embers" aria-hidden="true"></canvas>
-      <div class="hero-inner">
-        <p class="eyebrow">DOGS &middot; a fresh start for Windows</p>
-        <h1 class="rise">Wipe. <span>Plug in.</span> Rise.</h1>
-        <p class="lede">One USB. Fifteen minutes. Any PC comes back as <em>your</em> PC: debloated, hardened, apps installed, no setup gauntlet.</p>
-        <div class="cta-row">
+  <main class="panels" id="panels">
+    <section class="panel hero" id="p-top" aria-labelledby="h-top">
+      <div class="bg" aria-hidden="true"><img src="./assets/hero.webp" alt="" fetchpriority="high"></div>
+      <div class="scrim scrim-bottom" aria-hidden="true"></div>
+      <p class="giant" aria-hidden="true">Phoenix</p>
+      <div class="copy copy-hero">
+        <p class="eyebrow rv" style="--d:.05s">DOGS &middot; a fresh start for Windows</p>
+        <h1 id="h-top" class="punch rv" style="--d:.15s">Wipe. <em>Plug in.</em> Rise.</h1>
+        <div class="cta-row rv" style="--d:.25s">
           <a class="btn" href="https://github.com/YEAHDOGS/phoenix">Get the scripts</a>
-          <a class="btn-ghost" href="#how">How it works</a>
+          <a class="btn-ghost" href="#p-backup">How it works</a>
         </div>
-        <p class="chip"><span class="pip" aria-hidden="true"></span> Working scripts today &middot; GUI app on the way</p>
       </div>
-      <a class="scroll" href="#how" aria-label="Scroll to how it works"><span></span></a>
+      <a class="scroll" href="#p-backup" aria-label="Scroll to the flow"><span></span></a>
     </section>
 
-    <section class="how" id="how" aria-labelledby="how-h">
-      <div class="wrap">
-        <p class="eyebrow">The flow</p>
-        <h2 id="how-h">Dead machine in.<br>Your machine out.</h2>
-        <ol class="steps">
-          <li class="reveal">
-            <span class="num" aria-hidden="true">01</span>
-            <h3>Back up everything</h3>
-            <p>Full-machine backup before anything gets touched. Your files survive the fire, guaranteed.</p>
-          </li>
-          <li class="reveal">
-            <span class="num" aria-hidden="true">02</span>
-            <h3>Wipe it clean</h3>
-            <p>A clean answer file drives the install: disk wiped, bloat stripped, telemetry and wake timers killed, the whole OOBE maze skipped.</p>
-          </li>
-          <li class="reveal">
-            <span class="num" aria-hidden="true">03</span>
-            <h3>Rise to your setup</h3>
-            <p>Your app list installs itself, settings lock down, and the desktop that greets you is already yours. Air-gapped mode: zero network, full install.</p>
-          </li>
-        </ol>
+    <section class="panel" id="p-backup" aria-labelledby="h-backup">
+      <div class="bg" aria-hidden="true"><img src="./assets/backup.webp" alt="" loading="lazy"></div>
+      <div class="scrim scrim-top" aria-hidden="true"></div>
+      <p class="giant giant-bottom" aria-hidden="true">Backup</p>
+      <div class="copy copy-top">
+        <p class="eyebrow rv" style="--d:.05s">Step one</p>
+        <h2 id="h-backup" class="punch rv" style="--d:.15s">Back it up <em>before</em> the fire.</h2>
+        <p class="sub rv" style="--d:.25s">Full-machine backup first. Everything you love survives.</p>
       </div>
     </section>
 
-    <section class="now" aria-labelledby="now-h">
-      <div class="wrap split">
-        <div class="reveal">
-          <p class="eyebrow">Where it is</p>
-          <h2 id="now-h">Honest status.</h2>
-          <p class="lede">No vapor. The toolbox runs today on real machines.</p>
-        </div>
-        <div class="cols">
-          <div class="col reveal">
-            <h3>Runs now</h3>
-            <ul>
-              <li>Debloat and hardening scripts, organized by job: Defender ASR, firewall, updates, registry, settings</li>
-              <li>Chocolatey app picker for one-sweep installs</li>
-              <li>Hand-built answer file, tested by hand: wipes the disk, skips the setup maze</li>
-              <li>Live-machine launcher for quick tweaks without reinstalling</li>
-            </ul>
-          </div>
-          <div class="col reveal">
-            <h3>On the way</h3>
-            <ul>
-              <li>USB builder: stage ISOs, drivers, and apps into one bootable stick</li>
-              <li>Answer-file generator: point, click, get a clean XML</li>
-              <li>One-click GUI app for the whole flow</li>
-            </ul>
-          </div>
-        </div>
+    <section class="panel" id="p-wipe" aria-labelledby="h-wipe">
+      <div class="bg" aria-hidden="true"><img src="./assets/wipe.webp" alt="" loading="lazy"></div>
+      <div class="scrim scrim-bottom" aria-hidden="true"></div>
+      <p class="giant giant-top" aria-hidden="true">Wipe</p>
+      <div class="copy copy-right">
+        <p class="eyebrow rv" style="--d:.05s">Step two</p>
+        <h2 id="h-wipe" class="punch rv" style="--d:.15s">Then <em>burn</em> it down.</h2>
+        <p class="sub rv" style="--d:.25s">One answer file. Disk wiped, bloat stripped, spyware killed, setup maze skipped.</p>
       </div>
     </section>
 
-    <section class="notify" id="notify" aria-labelledby="notify-h">
-      <div class="wrap narrow">
-        <p class="eyebrow">Stay in the loop</p>
-        <h2 id="notify-h">Tell me when it hatches.</h2>
-        <p class="lede">One email when Phoenix is ready to fly. Nothing else.</p>
-        <form data-notify novalidate>
+    <section class="panel" id="p-rise" aria-labelledby="h-rise">
+      <div class="bg" aria-hidden="true"><img src="./assets/rise.webp" alt="" loading="lazy"></div>
+      <div class="scrim scrim-left" aria-hidden="true"></div>
+      <p class="giant giant-bottom" aria-hidden="true">Rise</p>
+      <div class="copy copy-mid">
+        <p class="eyebrow rv" style="--d:.05s">Step three</p>
+        <h2 id="h-rise" class="punch rv" style="--d:.15s">Rise to <em>your</em> setup.</h2>
+        <p class="sub rv" style="--d:.25s">Apps install themselves. Air-gapped: zero network, full install.</p>
+      </div>
+    </section>
+
+    <section class="panel hatch" id="p-hatch" aria-labelledby="h-hatch">
+      <div class="scrim scrim-solid" aria-hidden="true"></div>
+      <p class="giant giant-back" aria-hidden="true">Hatch</p>
+      <div class="copy copy-hatch">
+        <p class="eyebrow rv" style="--d:.05s">Honest status</p>
+        <h2 id="h-hatch" class="punch rv" style="--d:.15s">Working scripts today. <em>GUI</em> on the way.</h2>
+        <div class="status rv" style="--d:.25s">
+          <p><strong>Runs now</strong> &mdash; debloat, firewall, ASR, registry &middot; Chocolatey app picker &middot; hand-built answer file</p>
+          <p><strong>On the way</strong> &mdash; USB builder &middot; answer-file generator &middot; one-click GUI app</p>
+        </div>
+        <form class="rv" style="--d:.32s" data-notify novalidate>
           <div class="fields">
             <div class="field">
               <label for="email">Email address</label>
@@ -120,9 +108,12 @@
             <button class="btn" type="submit"><span class="spinner" aria-hidden="true"></span><span>Notify me</span></button>
           </div>
           <p class="field-error" id="email-error" aria-live="polite"></p>
+          <p class="micro">One email when it hatches. Nothing else.</p>
         </form>
-        <footer class="foot">
-          <p class="madeby">This product was made by <a href="https://wearedogs.net">DOGS</a></p>
+        <footer class="foot rv" style="--d:.4s">
+          <a class="badge" href="https://wearedogs.net" aria-label="Made by DOGS — visit wearedogs.net">
+            <img src="./made-by-dogs.png" alt="This product was made by DOGS" width="220" height="62" loading="lazy" decoding="async">
+          </a>
           <nav aria-label="Footer">
             <a href="./">Home</a>
             <a href="./privacy.html">Privacy</a>
