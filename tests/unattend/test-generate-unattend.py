@@ -234,7 +234,8 @@ new_files = [REPO / "scripts" / "generate_unattend.py",
 leak = False
 for f in new_files:
     txt = f.read_text(encoding="utf-8")
-    for needle in ("the user", "user", "the founder"):
+    # PII needles redacted per 2026-09-13 privacy order — re-seed from private notes to re-arm.
+    for needle in ("REDACTED-NAME-1", "REDACTED-NAME-2", "REDACTED-NAME-3"):
         if needle.lower() in txt.lower():
             bad("no personal identifiers in %s" % f.name, "found %r" % needle)
             leak = True

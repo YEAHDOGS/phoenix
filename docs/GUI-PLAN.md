@@ -24,7 +24,7 @@ the menu. The GUI never constructs a boot menu.
 
 **Tauri 2 + Svelte 5 + Tailwind**, scaffolded from
 `npm create tauri-app -- --template svelte-ts`, living at
-`gui/phoenix-tauri/`. user's real stack, as a single small binary.
+`gui/phoenix-tauri/`. the user's real stack, as a single small binary.
 
 ### Tauri vs Electron — validation note (researched 2026-09-09)
 

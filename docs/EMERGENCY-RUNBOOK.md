@@ -1,6 +1,6 @@
 # Phoenix Emergency Runbook — Backup + Nuke + Reinstall
 
-**Purpose:** the exact steps user follows THIS WEEK to deal with a suspected-infected laptop.
+**Purpose:** the exact steps the user follows THIS WEEK to deal with a suspected-infected laptop.
 **Flow:** boot the **ONE Phoenix USB** → Ventoy menu: **Analyze / Backup / Nuke / Reinstall.**
 
 > Architecture: `docs/BOOT-ARCHITECTURE.md`. The separate-USB flow (one stick
@@ -131,7 +131,7 @@ the fresh install: `winget install -e --id Veeam.VeeamAgent`.)
 
 > **Why Veeam, not Macrium, not Time Freeze:** Macrium Reflect Free is
 > **discontinued** — do not standardize on it. ToolWiz Time Freeze (the "Time
-> Freeze" user half-remembered) is a **reboot-to-restore sandbox**, not a backup
+> Freeze" the user half-remembered) is a **reboot-to-restore sandbox**, not a backup
 > tool — it cannot produce an image of the infected disk and is no substitute for a
 > real backup. Standard: **Rescuezilla** for the emergency bootable image,
 > **Veeam Agent Free** for ongoing scheduled full-disk backups to Castle.
@@ -407,7 +407,7 @@ Sail to the desktop.
 `phoenix-config.json` / `autounattend.xml` are throwaway and effectively public
 (see BOOT-ARCHITECTURE.md §5). Set real passwords / PIN on first logon, and
 enable BitLocker — this time, store the recovery key somewhere safe **off** the
-machine (you'll thank Phase-0 user).
+machine (you'll thank Phase-0 the user).
 
 **Step 4.3 — Install apps via Chocolatey.**
 Run the repo's Chocolatey flow (`scripts/chocolatey/install-chocolatey-online.ps1`,
@@ -458,7 +458,7 @@ Microsoft/Google "My Devices" pages for the unknown devices that started this.
 - Don't leave the Phoenix USB in a machine or lying around — it carries
   install-time credentials in reversible form (BOOT-ARCHITECTURE.md §5).
 
-## Appendix C — Founder questions (need user's answers)
+## Appendix C — Founder questions (need the user's answers)
 
 1. Which machine is the **clean machine** for Phase 0? (Prep must not touch the
    infected laptop; if there's no second machine, say so — that changes the plan.)

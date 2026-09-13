@@ -25,7 +25,7 @@ bad `--method`, missing `--nuke` arg, gate ordering, plus unit tests of
 far (a `parent_disk` sed fallback mangling nvme names; an `lsblk -P`
 `eval` clobbering PATH and silently killing the mount guard).
 
-Everything below runs on user's Windows 11 host with QEMU
+Everything below runs on the user's Windows 11 host with QEMU
 (`C:\Program Files\qemu\`; see `scripts/qemu/start.ps1` for the WHPX pattern).
 PowerShell snippets assume that install path.
 

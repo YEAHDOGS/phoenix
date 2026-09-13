@@ -56,7 +56,7 @@ Unknown properties are rejected (`additionalProperties: false`) — a typo like
 currently images to a direct-attached USB drive (air-gapped), and the Castle
 share path / credentials model hasn't been decided. Until the founder answers,
 `castle-smb` configs validate syntactically but the boot side should treat the
-path as unconfirmed. **Open question for user:** what is the Castle SMB
+path as unconfirmed. **Open question:** what is the Castle SMB
 share for Phoenix images (host/share), and how should the boot side
 authenticate — or should images stay direct-USB-only until phase 2?
 
