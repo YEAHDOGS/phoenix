@@ -1,6 +1,6 @@
 # Phoenix Emergency Runbook — Backup + Nuke + Reinstall
 
-**Purpose:** the exact steps Brandon follows THIS WEEK to deal with a suspected-infected laptop.
+**Purpose:** the exact steps the user follows THIS WEEK to deal with a suspected-infected laptop.
 **Flow:** boot the **ONE Phoenix USB** → Ventoy menu: **Analyze / Backup / Nuke / Reinstall.**
 
 > Architecture: `docs/BOOT-ARCHITECTURE.md`. The separate-USB flow (one stick
@@ -86,7 +86,7 @@ written by either side verifies with the other side's comparer:
 
    ```powershell
    .\tools\Build-PhoenixUsb.ps1 -UsbDrive "E:" -IsoDir ".\iso-staging" `
-     -ComputerName "BRANDON-PC" -Username "brandon"
+     -ComputerName "USER-PC" -Username "user"
    ```
 
    On a **Linux** clean machine, the bash twin does the same job (reads the
@@ -95,7 +95,7 @@ written by either side verifies with the other side's comparer:
    ```bash
    ./tools/Build-PhoenixUsb.sh --usb-mount /media/phoenix --iso-dir ./iso-staging \
      --iso-hashes ./iso-staging/phoenix-iso-hashes.json \
-     --computer-name BRANDON-PC --username brandon
+     --computer-name USER-PC --username user
    ```
 
    It verifies Ventoy is present, copies the ISO set with hash checks, writes
@@ -131,7 +131,7 @@ the fresh install: `winget install -e --id Veeam.VeeamAgent`.)
 
 > **Why Veeam, not Macrium, not Time Freeze:** Macrium Reflect Free is
 > **discontinued** — do not standardize on it. ToolWiz Time Freeze (the "Time
-> Freeze" Brandon half-remembered) is a **reboot-to-restore sandbox**, not a backup
+> Freeze" the user half-remembered) is a **reboot-to-restore sandbox**, not a backup
 > tool — it cannot produce an image of the infected disk and is no substitute for a
 > real backup. Standard: **Rescuezilla** for the emergency bootable image,
 > **Veeam Agent Free** for ongoing scheduled full-disk backups to Castle.
@@ -299,7 +299,7 @@ image (runbook invariant 1, enforced in code). From the Backup environment
   --source-serial <serial-of-the-imaged-disk> \
   --source-dev /dev/nvme0n1 \
   --sha256 <64-hex-checksum-of-the-image> \
-  --verified --verified-by brandon \
+  --verified --verified-by user \
   --out /media/phoenix-usb/phoenix-logs/
 ```
 
@@ -407,7 +407,7 @@ Sail to the desktop.
 `phoenix-config.json` / `autounattend.xml` are throwaway and effectively public
 (see BOOT-ARCHITECTURE.md §5). Set real passwords / PIN on first logon, and
 enable BitLocker — this time, store the recovery key somewhere safe **off** the
-machine (you'll thank Phase-0 Brandon).
+machine (you'll thank Phase-0 the user).
 
 **Step 4.3 — Install apps via Chocolatey.**
 Run the repo's Chocolatey flow (`scripts/chocolatey/install-chocolatey-online.ps1`,
@@ -458,7 +458,7 @@ Microsoft/Google "My Devices" pages for the unknown devices that started this.
 - Don't leave the Phoenix USB in a machine or lying around — it carries
   install-time credentials in reversible form (BOOT-ARCHITECTURE.md §5).
 
-## Appendix C — Founder questions (need Brandon's answers)
+## Appendix C — Founder questions (need the user's answers)
 
 1. Which machine is the **clean machine** for Phase 0? (Prep must not touch the
    infected laptop; if there's no second machine, say so — that changes the plan.)

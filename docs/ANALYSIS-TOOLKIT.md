@@ -91,7 +91,7 @@ A 100%-portable, no-install malware scanner (GUI + command-line) with two
 detection engines, free and updated (2025.7.0.12683, June 2025). It runs from
 the USB's data partition on the staging machine against the mounted image, or
 — if the last-resort live boot is ever used — directly on the suspect box.
-License note that matters to Brandon: it is free for **private use only**;
+License note that matters to the user: it is free for **private use only**;
 commercial/helpdesk use requires Emsisoft Emergency Kit Pro. Personal laptop
 triage qualifies; any DOGS-company client work does not. The stager verifies
 its Authenticode signature (`Emsisoft Ltd`) on download.
@@ -118,7 +118,7 @@ artifact parsing, email, keyword search across the whole image, and report
 generation. This is explicitly **not** a USB tool — it needs a real install
 (Windows 64-bit or Linux), Java 11+, and a minimum of 8 GB RAM (16 GB
 recommended) plus room for case files and its Solr index. It lives on the
-staging machine (Brandon's clean box or Castle storage), where it ingests the
+staging machine (the user's clean box or Castle storage), where it ingests the
 Rescuezilla image for the deep-dive phase. The stager downloads the installer
 to staging media but never to the boot USB.
 

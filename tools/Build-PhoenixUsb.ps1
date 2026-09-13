@@ -24,7 +24,7 @@
 .EXAMPLE
     .\tools\Build-PhoenixUsb.ps1 -UsbDrive "E:" -IsoDir ".\iso-staging" `
         -IsoHashes ".\iso-staging\phoenix-iso-hashes.json" `
-        -ComputerName "BRANDON-PC" -Username "brandon"
+        -ComputerName "USER-PC" -Username "user"
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
@@ -101,7 +101,7 @@ if (-not $SkipHashCheck) {
     if ([string]::IsNullOrWhiteSpace($IsoHashes) -or -not (Test-Path $IsoHashes)) {
         throw ("No hash sidecar found. Pass -IsoHashes '<file>.json' with " +
                "{ '<iso filename>': '<sha256>' }, or -SkipHashCheck to bypass " +
-               "(not recommended -- Brandon verifies ISOs by hash as policy).")
+               "(not recommended -- the user verifies ISOs by hash as policy).")
     }
     # PS 5.1-compatible: no ConvertFrom-Json -AsHashtable (PS 6+ only).
     $hashes = @{}

@@ -4,7 +4,7 @@ param (
     [string]$Name
 )
 
-$TemplateRepo = "https://github.com/cptnbrando/svelte-template.git"
+$TemplateRepo = ""  # set to your Svelte template repo URL (never a personal-namespace URL)
 
 # Set the working directory to the Projects folder in the user's profile
 Set-Location $env:USERPROFILE\Projects

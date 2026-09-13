@@ -15,7 +15,7 @@
     Specific DirectShow audio device to record from. If not specified, the script attempts to find 'Microphone Array (Intel® Smart Sound Technology for Digital Microphones)', or falls back to the first available audio input.
 
 .PARAMETER OutputDir
-    Output directory where the recording will be saved. Defaults to 'C:\Users\Brando\Music\Dogs'.
+    Output directory where the recording will be saved. Defaults to 'C:\Users\user\Music\Dogs'.
 
 .EXAMPLE
     .\record.ps1 -Source Webcam -Duration 5
@@ -32,7 +32,7 @@ param (
 
     [string]$AudioDevice = $null,
 
-    [string]$OutputDir = 'C:\Users\Brando\Music\Dogs'
+    [string]$OutputDir = 'C:\Users\user\Music\Dogs'
 )
 
 # Enable error action preference

@@ -17,7 +17,7 @@ win-install/staging/, which is gitignored. NEVER commit a filled file.
 
 Usage:
     python3 scripts/generate_unattend.py --computer-name NIGHTMARE \\
-        --username brando --timezone "Central Standard Time"
+        --username user --timezone "Central Standard Time"
     # --password prompts via getpass when omitted (never in shell history)
 
     python3 scripts/generate_unattend.py --options-json config/machine.json --force

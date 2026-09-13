@@ -8,7 +8,7 @@
 # the Linux boot environment -- there is no .ps1 by design) with its actual
 # interlocks documented (dry-run default, enumeration, structural refusals,
 # two-factor typed confirmation on a real TTY). Exit 0 = the runbook is
-# executable as written; exit 1 = a gap that would strand Brandon mid-run.
+# executable as written; exit 1 = a gap that would strand the user mid-run.
 #===============================================================================
 set -euo pipefail
 

@@ -12,7 +12,7 @@ I'm currently plagued by Windows Update itself. Somehow bothersome things that I
 
 I've created this project to help automate the setup of freshly flashed PCs. This repo contains many scripts to remove bloatware, harden security, disable tasks, remove services, lock down settings, and install selected apps. The core idea is that I can wipe the SSD via bios, plug in my Win 11 install USB, plug in another USB with this project on it, and get my system just the way I like it in one swoop.
 
-This project goes hand in hand with Playbooks and [Ameliorated AME]. My current playbook of choice is [ReviOS]. If you wish to use these tools on air-gapped machines offline, I have modified the ReviOS Playbook to allow compilation and offline installation [here](https://github.com/cptnbrando/reviOS-offline).
+This project goes hand in hand with Playbooks and [Ameliorated AME]. My current playbook of choice is [ReviOS]. If you wish to use these tools on air-gapped machines offline, a modified ReviOS Playbook allows compilation and offline installation.
 
 Some people say it is impossible to use Windows 11 privately, as it is very shoddy by design. But I'll be damned if I'm switching to Linux. I'll be damned!
 

@@ -26,11 +26,11 @@ machine-specific value).
 
 ```powershell
 # Prompts for the password (SecureString - never touches shell history)
-.\tools\New-UnattendXml.ps1 -ComputerName NIGHTMARE -Username brando
+.\tools\New-UnattendXml.ps1 -ComputerName NIGHTMARE -Username user
 
 # Two accounts, explicit output, overwrite allowed
 $pw = Read-Host -AsSecureString -Prompt 'Admin password'
-.\tools\New-UnattendXml.ps1 -ComputerName NIGHTMARE -Username brando `
+.\tools\New-UnattendXml.ps1 -ComputerName NIGHTMARE -Username user `
     -Password $pw -StandardUsername guest -Force
 ```
 

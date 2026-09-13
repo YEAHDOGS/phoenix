@@ -1,6 +1,6 @@
 # Phoenix App Picker
 
-Installs Brandon's chosen Windows apps automatically at first logon via Chocolatey.
+Installs the user's chosen Windows apps automatically at first logon via Chocolatey.
 Three moving parts:
 
 | Piece | Path | Role |
@@ -30,7 +30,7 @@ Categories: Drivers, Utilities, File Management, Documents, Dev Tools, SDKs,
 Media, Comms, Security, VPNs, Gaming, Browsers, Browser Extensions,
 Manual Install.
 
-34 packages are `defaultSelected: true` — the stuff Brandon actually uses:
+34 packages are `defaultSelected: true` — the stuff the user actually uses:
 Chrome, Firefox, uBlock, VS Code, Git, GitHub Desktop, Docker Desktop, WSL2,
 NodeJS, Python, PuTTY, PowerShell Core, 7zip, QEMU, Steam + retro emulators
 (RetroArch, PCSX2, Dolphin, SNES9x, DS4Windows), Spotify, Audacity, VLC,
@@ -144,7 +144,7 @@ When there is no network, pre-stage the packages instead of pulling them live:
 - [ ] Full `autounattend.xml` first-logon run in a VM with the whole default
   set; confirm OOBE completes even with a failing package injected.
 
-## Open questions for Brandon
+## Open questions for the user
 
 1. **NVIDIA drivers on by default?** Currently `Nvidia-App` and
    `Nvidia-Display-Driver` are pre-selected. On non-NVIDIA machines they fail

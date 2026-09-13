@@ -28,7 +28,7 @@
 .PARAMETER ManifestDir
     Backup destination root containing manifest.json (+ manifest-meta.json).
 .PARAMETER TargetRoot
-    The NEW machine's user home (e.g. C:\Users\Brando). Required, no default.
+    The NEW machine's user home (e.g. C:\Users\user). Required, no default.
 .PARAMETER App
     One app id (e.g. "ableton") or "all". Default: all.
 .PARAMETER ProfileDir

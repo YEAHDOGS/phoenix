@@ -21,7 +21,7 @@
 .PARAMETER Target
     Castle quarantine root. Defaults to $env:PHOENIX_CASTLE_TARGET. Example:
     \\CASTLE\quarantine  (set the real share name before first use -- the
-    runbook's Appendix C asks Brandon for the exact path.)
+    runbook's Appendix C asks the user for the exact path.)
 
 .PARAMETER Label
     Folder name created under Target. Default: QUARANTINE-INFECTED-<yyyy-MM-dd>.

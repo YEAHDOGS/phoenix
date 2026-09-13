@@ -24,7 +24,7 @@ the menu. The GUI never constructs a boot menu.
 
 **Tauri 2 + Svelte 5 + Tailwind**, scaffolded from
 `npm create tauri-app -- --template svelte-ts`, living at
-`gui/phoenix-tauri/`. Brandon's real stack, as a single small binary.
+`gui/phoenix-tauri/`. the user's real stack, as a single small binary.
 
 ### Tauri vs Electron — validation note (researched 2026-09-09)
 
@@ -155,7 +155,7 @@ execution blades can plug into the same GUI later:
 {
   "version": 1,
   "platform": "windows",
-  "credentials": { "username": "brando", "password": "<plaintext, see §8>" },
+  "credentials": { "username": "user", "password": "<plaintext, see §8>" },
   "apps": ["git", "vscode"],
   "options": { "timeZone": "Central Standard Time", "locale": "en-US" },
   "platformOptions": {
