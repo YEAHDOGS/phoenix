@@ -17,7 +17,7 @@
 #       --image-path /media/usb-target/laptop-fulldisk-2026-09-09 \
 #       --source-serial SATATEST001 --source-dev /dev/nvme0n1 \
 #       --sha256 <64-hex of the image checksum file> \
-#       --verified --verified-by brandon
+#       --verified --verified-by user
 #
 #   --verified asserts YOU watched the backup tool's integrity check pass.
 #   Without it the manifest records verified=NO and the nuke gate rejects it.

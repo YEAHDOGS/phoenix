@@ -87,7 +87,7 @@
     Overwrite the output file if it already exists.
 
 .EXAMPLE
-    .\scripts\Generate-Unattend.ps1 -ComputerName NIGHTMARE -Username brando
+    .\scripts\Generate-Unattend.ps1 -ComputerName NIGHTMARE -Username user
     Prompts for the password, writes win-install/staging/autounattend.xml.
 
 .EXAMPLE

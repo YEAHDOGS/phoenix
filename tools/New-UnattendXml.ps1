@@ -61,12 +61,12 @@
     Overwrite the output file if it already exists.
 
 .EXAMPLE
-    .\tools\New-UnattendXml.ps1 -ComputerName NIGHTMARE -Username brando
+    .\tools\New-UnattendXml.ps1 -ComputerName NIGHTMARE -Username user
     Prompts for the password, writes win-install/staging/autounattend.xml.
 
 .EXAMPLE
     $pw = Read-Host -AsSecureString -Prompt 'Admin password'
-    .\tools\New-UnattendXml.ps1 -ComputerName NIGHTMARE -Username brando `
+    .\tools\New-UnattendXml.ps1 -ComputerName NIGHTMARE -Username user `
         -Password $pw -StandardUsername guest -Force
 
 .NOTES

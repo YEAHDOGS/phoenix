@@ -1,6 +1,6 @@
 # # Get paths for both files
-# $file1 = "C:\Users\Brando\Downloads\Antigravity IDE.exe"
-# $file2 = "C:\Users\Brando\Downloads\Antigravity IDE (1).exe"
+# $file1 = "C:\Users\user\Downloads\Antigravity IDE.exe"
+# $file2 = "C:\Users\user\Downloads\Antigravity IDE (1).exe"
 
 # $file1 = $file1.Trim("`"'")
 # $file2 = $file2.Trim("`"'")
@@ -71,8 +71,8 @@
 
 
 # Get paths for both files
-$file1 = "C:\Users\Brando\Downloads\Antigravity IDE.exe"
-$file2 = "C:\Users\Brando\Downloads\Antigravity IDE (1).exe"
+$file1 = "C:\Users\user\Downloads\Antigravity IDE.exe"
+$file2 = "C:\Users\user\Downloads\Antigravity IDE (1).exe"
 
 $file1 = $file1.Trim("`"'")
 $file2 = $file2.Trim("`"'")

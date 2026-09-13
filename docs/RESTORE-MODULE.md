@@ -7,12 +7,12 @@ Applies a backup manifest onto a **new machine**. Twin engines, same behavior:
 
 ```
 # see what would happen (default; read-only, verifies backup hashes too)
-restore-selective.sh --manifest-dir /mnt/castle/brando-laptop \
-                     --target-root /mnt/newdisk/Users/Brando --plan
+restore-selective.sh --manifest-dir /mnt/castle/user-laptop \
+                     --target-root /mnt/newdisk/Users/user --plan
 
 # actually restore one app's files
-restore-selective.sh --manifest-dir /mnt/castle/brando-laptop \
-                     --target-root /mnt/newdisk/Users/Brando \
+restore-selective.sh --manifest-dir /mnt/castle/user-laptop \
+                     --target-root /mnt/newdisk/Users/user \
                      --app ableton --apply
 # -> prints full plan, then you type RESTORE to proceed
 ```

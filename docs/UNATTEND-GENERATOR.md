@@ -25,7 +25,7 @@ and `tools/New-UnattendXml.sh` (bash twin, on `jack/phoenix-unattend-twin`).
 2. **Backup**: `tools/Invoke-Backup.*` — image the drive, copy data to Castle.
 3. **Generate the answer file** (on any working machine):
    ```powershell
-   .\scripts\Generate-Unattend.ps1 -ComputerName NIGHTMARE -Username brando
+   .\scripts\Generate-Unattend.ps1 -ComputerName NIGHTMARE -Username user
    # prompts for the password (SecureString -- never touches shell history)
    ```
    or headless, exactly how the GUI will call it:
@@ -57,7 +57,7 @@ and `tools/New-UnattendXml.sh` (bash twin, on `jack/phoenix-unattend-twin`).
 ```json
 {
   "computer_name": "NIGHTMARE",
-  "username": "brando",
+  "username": "user",
   "password": "…",
   "standard_username": "",
   "standard_password": "",

@@ -17,7 +17,7 @@
 # USAGE:
 #   Build-PhoenixUsb.sh --usb-mount /media/phoenix --iso-dir ./iso-staging \
 #       --iso-hashes ./iso-staging/phoenix-iso-hashes.json \
-#       --computer-name BRANDON-PC --username brandon
+#       --computer-name USER-PC --username user
 #
 # The hash sidecar is JSON: { "<iso filename>": "<sha256 hex>" } -- the same
 # file the PowerShell twin reads, so one sidecar serves both builders.
