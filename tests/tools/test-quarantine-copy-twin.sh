@@ -6,7 +6,7 @@
 #
 # Builds a REAL verified image fixture from scratch (3 x 1 MiB gzip chunks,
 # genuine phoenix-backup/1 manifest + .phoenix-backup.state with real
-# SHA-512s) -- no dependency on phoenix-backup.sh, everything in /tmp,
+# SHA-512s) -- no dependency on the backup tools, everything in /tmp,
 # no block devices, no root, no network. Exit 0 = all green.
 #
 # The quarantine-copy.manifest is a pinned contract: key order must match

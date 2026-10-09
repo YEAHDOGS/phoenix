@@ -6,7 +6,7 @@
     disk) out of an infected Windows volume -- typically C: under WinPE -- to a
     SECOND, SEPARATE direct-attached USB target: Documents, Desktop, Downloads,
     Pictures, Videos, Music, .ssh, plus operator-nominated extras. The full-disk
-    image (tools/phoenix-backup.sh or tools/New-PhoenixBackup.ps1) is the
+    image (tools/Invoke-Backup.sh or tools/Backup-DiskImage.ps1) is the
     quarantine archive; THIS backup is what Phase 4 restores from, so it is
     treated as DIRTY: executables are skipped by default (recorded in
     skipped-executables.txt), every file gets a SHA-256 hash, and the output

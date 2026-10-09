@@ -226,7 +226,7 @@ if [[ "$EVIDENCE" == "manifest" ]]; then
         echo "[$PROG] per-chunk SHA-512: $NCHUNKS/$NCHUNKS match"
     fi
     # whole-stream verification: decompress every target chunk in order and
-    # hash the stream, exactly like phoenix-backup.sh's own verify pass.
+    # hash the stream, like the backup tools' own verify pass.
     case "$MANIFEST_COMP" in
         zstd) command -v zstd >/dev/null 2>&1 || die2 "chunks are zstd-compressed but zstd is not installed -- cannot verify"
               decompress() { zstd -q -d -c -- "$1"; } ;;

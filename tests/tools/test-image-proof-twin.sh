@@ -7,8 +7,7 @@
 # (runbook invariant 1: verified image or no wipe). A drift in keys, order,
 # or filename between the twins silently breaks the Linux-side gate, so this
 # suite pins the .sh behavior functionally AND the .sh<->.ps1 contract.
-# (No pwsh on this box -- the .ps1 half is a static contract check, same as
-# test-phoenix-backup.sh does for its twin.)
+# (No pwsh on this box -- the .ps1 half is a static contract check.)
 #
 # Nothing destructive, nothing leaves /tmp. Exit 0 = all green.
 #

@@ -265,7 +265,7 @@ if ($Evidence -eq 'manifest') {
         Log "per-chunk SHA-512: $NChunks/$NChunks match"
     }
     # whole-stream verification: decompress every target chunk in order and
-    # hash the stream, exactly like phoenix-backup.sh's own verify pass.
+    # hash the stream, like the backup tools' own verify pass.
     $streamHash = [Security.Cryptography.SHA512]::Create()
     $concatHash = [Security.Cryptography.SHA256]::Create()
     $zstdExe = $null

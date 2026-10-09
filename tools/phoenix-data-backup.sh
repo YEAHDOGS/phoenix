@@ -6,7 +6,7 @@
 # Copies user data (NOT the whole disk) out of an infected Windows volume to a
 # SECOND, SEPARATE direct-attached target -- Documents, Desktop, Downloads,
 # Pictures, Videos, Music, .ssh, plus operator-nominated extras (Ableton
-# projects, license exports, ...). The full-disk image (tools/phoenix-backup.sh)
+# projects, license exports, ...). The full-disk image (tools/Invoke-Backup.sh)
 # is the quarantine archive; THIS backup is what Phase 4 restores from, so it
 # is treated as DIRTY by default: executables are skipped (recorded in
 # skipped-executables.txt), every file gets a SHA-256 hash, and the output
