@@ -10,7 +10,7 @@ The handheld runs a vendor build of ArkOS on a custom kernel. Only the stock BOO
 3. Run the updater:
 
    ```powershell
-   pwsh -File "C:\Users\Brando\Projects\phoenix\scripts\emulationstation\update-card.ps1"
+   pwsh -File ".\scripts\emulationstation\update-card.ps1"
    ```
 
    It writes a `gamelist.xml` in every system folder (clean names without region tags, artwork links when a matching PNG exists next to the game or in an `images` folder), extracts any PortMaster zips dropped into `F:\ports\`, warns about files the OS will ignore, and deletes empty system folders. It never deletes a game. Run it as often as you like.
@@ -33,7 +33,7 @@ The archive in `D:\backups\temu-gameboy\` is the untouched original card (files 
 
 ## Launch flash (DOGS logo)
 
-`launchimages\` next to the updater holds a 0.27 s DOGS-logo flash (`loading.mp4`, plus `loading.jpg` and `loading.gif` for the other launch-image modes). The updater copies these onto the card's `launchimages\` folder, replacing the BMO clip the handheld shipped with. Regenerate from `C:\Users\Brando\Projects\DOGS-CONTENT\dogs-logo-cropped.png` with ffmpeg if the logo changes.
+`launchimages\` next to the updater holds a 0.27 s DOGS-logo flash (`loading.mp4`, plus `loading.jpg` and `loading.gif` for the other launch-image modes). The updater copies these onto the card's `launchimages\` folder, replacing the BMO clip the handheld shipped with. Regenerate from `landing\dogs-logo-cropped.png` with ffmpeg if the logo changes.
 
 ## Using these scripts from other projects
 
