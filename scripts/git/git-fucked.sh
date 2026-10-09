@@ -6,8 +6,9 @@
 # seven modes, prompts, and confirmation words (FORCE / NUKE / SURGERY /
 # RESET / PURGE). Safety interlocks preserved:
 #   * Every destructive step asks for explicit confirmation first.
-#   * The GitHub "cache purge" routine pushes with --dry-run only, exactly
-#     like the .ps1 — it rehearses the force-push without sending anything.
+#   * Every push is --dry-run by default, exactly like the .ps1 — it
+#     rehearses the push without sending anything. Pass --real-push
+#     (the .ps1's -RealPush) to actually move remote refs.
 #   * -d (safe) is the default branch-delete mode; -D needs the PURGE word.
 # =============================================================================
 
@@ -15,12 +16,21 @@ RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; YELLOW=$'\033[0;33m'
 CYAN=$'\033[0;36m'; MAGENTA=$'\033[0;35m'; WHITE=$'\033[0;37m'; NC=$'\033[0m'
 
 DELETE_FLAG=0
+REAL_PUSH=0
 for arg in "$@"; do
     case "$arg" in
         -d|--delete) DELETE_FLAG=1 ;;
-        -h|--help) echo "Usage: $(basename "$0") [-d|--delete]"; exit 0 ;;
+        --real-push) REAL_PUSH=1 ;;
+        -h|--help) echo "Usage: $(basename "$0") [-d|--delete] [--real-push]"; exit 0 ;;
     esac
 done
+
+PUSH_FLAGS=(--dry-run)
+if [ "$REAL_PUSH" -eq 1 ]; then
+    PUSH_FLAGS=()
+else
+    echo "${YELLOW}[dry-run] No remote refs will be moved. Pass --real-push to execute for real.${NC}"
+fi
 
 # --- reusable utility functions ----------------------------------------------
 test_git_repository() {
@@ -51,9 +61,8 @@ invoke_github_cache_purge() { # $1 = branch, $2 = cooldown seconds
     git rm -rf . --quiet 2>/dev/null
 
     # Push blank state up to force GitHub's head-pointer cache to break.
-    # NOTE: --dry-run, mirroring the .ps1 — rehearses the push, sends nothing.
     git commit --allow-empty -m "Purging remote history cache" --quiet
-    git push --dry-run origin "temporary-purge-branch:$branch" --force
+    git push "${PUSH_FLAGS[@]}" origin "temporary-purge-branch:$branch" --force
 
     if [ "$cooldown" -gt 0 ]; then
         echo ""
@@ -67,7 +76,7 @@ invoke_github_cache_purge() { # $1 = branch, $2 = cooldown seconds
 
     echo "${GREEN}Restoring clean working directory graph to origin...${NC}"
     git checkout "$branch" --quiet
-    git push --dry-run origin "$branch" --force
+    git push "${PUSH_FLAGS[@]}" origin "$branch" --force
 
     git branch -D temporary-purge-branch --quiet
 }
@@ -128,12 +137,11 @@ if [ "$SCOPE" = "2" ]; then
 
     invoke_local_reset "$COMMIT_COUNT" "$DELETE_FLAG"
 
-    # NOTE: --dry-run everywhere here, mirroring the .ps1
-    git push --dry-run origin "$CURRENT_BRANCH" --force-with-lease
+    git push "${PUSH_FLAGS[@]}" origin "$CURRENT_BRANCH" --force-with-lease
     if [ $? -ne 0 ]; then
         read -r -p "--force-with-lease failed. Force overwrite anyway? (y/N) " override
         if [[ "$override" =~ ^[yY]([eE][sS])?$ ]]; then
-            git push --dry-run origin "$CURRENT_BRANCH" --force
+            git push "${PUSH_FLAGS[@]}" origin "$CURRENT_BRANCH" --force
         fi
     fi
 fi
@@ -210,8 +218,7 @@ if [ "$SCOPE" = "5" ]; then
     git commit -m "Rollback: Reverted last $COMMIT_COUNT commit(s) due to issues" --quiet
 
     echo "${GREEN}Pushing clean history adjustment up to origin...${NC}"
-    # NOTE: --dry-run, mirroring the .ps1
-    git push --dry-run origin "$CURRENT_BRANCH"
+    git push "${PUSH_FLAGS[@]}" origin "$CURRENT_BRANCH"
     if [ $? -ne 0 ]; then
         echo ""
         echo "${RED}[!] Push failed. You may need to pull incoming changes first.${NC}" >&2
