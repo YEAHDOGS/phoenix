@@ -49,6 +49,7 @@ PRODUCT_KEY="VK7JG-NPHTM-C97JM-9MPGT-3V66T"
 TEMPLATE="$REPO/win-install/autounattend.template.xml"
 OUTPUT="$REPO/win-install/staging/autounattend.xml"
 FORCE=0
+DEV_MODE=0
 
 usage() {
     cat <<EOF
@@ -70,6 +71,7 @@ Options:
   --product-key <k>     default: $PRODUCT_KEY (public generic key, not a license)
   --template <file>     default: win-install/autounattend.template.xml
   --output <file>       default: win-install/staging/autounattend.xml (gitignored)
+  --enable-developer-mode  add specialize step (order 6) enabling Windows Developer Mode
   --force               overwrite the output file if it already exists
 EOF
 }
@@ -89,6 +91,7 @@ while (( $# > 0 )); do
         --template)          TEMPLATE="${2:?}"; shift 2 ;;
         --output)            OUTPUT="${2:?}"; shift 2 ;;
         --force)             FORCE=1; shift ;;
+        --enable-developer-mode) DEV_MODE=1; shift ;;
         -h|--help)           usage; exit 0 ;;
         *)                   die "Unknown option: $1 (see --help)" ;;
     esac
@@ -138,13 +141,13 @@ fi
 # gate. Input via argv; the filled file is written as UTF-8, no BOM, LF only.
 python3 - "$TEMPLATE" "$OUTPUT" "$COMPUTER_NAME" "$USERNAME" "$PASSWORD" \
     "$STANDARD_USERNAME" "$STANDARD_PASSWORD" "$TIMEZONE" "$EDITION" \
-    "$PRODUCT_KEY" <<'PY' || exit 1
+    "$PRODUCT_KEY" "$DEV_MODE" <<'PY' || exit 1
 import base64, re, sys, urllib.parse, xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 
 (tpl, out, computer, user, pw,
- std_user, std_pw, tz, edition, key) = sys.argv[1:11]
+ std_user, std_pw, tz, edition, key, dev_mode) = sys.argv[1:12]
 
 def obscure(p):
     # Schneegans "ObscurePasswords": base64( UTF-16LE( password + "Password" ) )
@@ -209,6 +212,19 @@ else:
     # Remove the token's whole line so no blank indented line is left behind.
     content = re.sub(r"(?m)^\t*{{STANDARD_ACCOUNT_XML}}\r?\n", "", content)
 
+# -- optional Developer Mode section (specialize, RunSynchronous order 6) --
+if dev_mode == "1":
+    # First line inherits the template's 4-tab indent; the rest is explicit.
+    dev_block = ('<RunSynchronousCommand wcm:action="add">\n'
+                 '\t\t\t\t\t<Order>6</Order>\n'
+                 '\t\t\t\t\t<Path>reg.exe add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock" /v AllowDevelopmentWithoutDevLicense /t REG_DWORD /d 1 /f</Path>\n'
+                 '\t\t\t\t\t<Description>Enable Windows Developer Mode (sideloading, symlinks without elevation)</Description>\n'
+                 '\t\t\t\t</RunSynchronousCommand>')
+    content = content.replace("{{DEV_MODE_XML}}", dev_block)
+else:
+    # Remove the token's whole line so no blank indented line is left behind.
+    content = re.sub(r"(?m)^\t*{{DEV_MODE_XML}}\r?\n", "", content)
+
 content = content.replace("{{COMPUTER_NAME}}", xmlesc(computer))
 content = content.replace("{{PRODUCT_KEY}}", key)
 content = content.replace("{{TIME_ZONE}}", xmlesc(tz))
@@ -237,6 +253,7 @@ echo "Wrote $OUTPUT"
 echo "  Computer : $COMPUTER_NAME"
 echo "  Admin    : $USERNAME (Administrators, AutoLogon x1)"
 if [[ -n "$STANDARD_USERNAME" ]]; then echo "  Standard : $STANDARD_USERNAME (Users)"; fi
+if (( DEV_MODE )); then echo "  Dev mode : ENABLED (specialize, order 6)"; else echo "  Dev mode : off"; fi
 echo "  Timezone : $TIMEZONE"
 echo "  Edition  : $EDITION"
 echo ""

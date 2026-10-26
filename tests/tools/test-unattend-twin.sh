@@ -138,6 +138,7 @@ block = ('<LocalAccount wcm:action="add">\n'
  '\t\t\t\t\t\t</Password>\n'
  '\t\t\t\t\t</LocalAccount>')
 content = content.replace("{{STANDARD_ACCOUNT_XML}}", block)
+content = re.sub(r"(?m)^\t*{{DEV_MODE_XML}}\r?\n", "", content)
 content = content.replace("{{COMPUTER_NAME}}", xmlesc("TEST-PC"))
 content = content.replace("{{PRODUCT_KEY}}", "VK7JG-NPHTM-C97JM-9MPGT-3V66T")
 content = content.replace("{{TIME_ZONE}}", xmlesc("Central Standard Time"))
@@ -153,6 +154,22 @@ if diff -q "$TMP/sh.norm" "$TMP/py.norm" >/dev/null; then
     pass "twin output is byte-identical to the e2e port (modulo stamp)"
 else
     fail "twin output is byte-identical to the e2e port (modulo stamp)"
+fi
+
+# U6b: --enable-developer-mode adds exactly one order-6 AppModelUnlock step; default adds none.
+"$TWIN" --computer-name TEST-PC --username testadmin --password p \
+    --enable-developer-mode --output "$TMP/dev.xml" --force >/dev/null
+if [[ "$(grep -c 'AllowDevelopmentWithoutDevLicense' "$TMP/dev.xml")" == 1 ]] \
+   && grep -q '<Order>6</Order>' "$TMP/dev.xml" \
+   && python3 -c "import xml.dom.minidom,sys; xml.dom.minidom.parse(sys.argv[1])" "$TMP/dev.xml" 2>/dev/null; then
+    pass "--enable-developer-mode emits one well-formed order-6 step"
+else
+    fail "--enable-developer-mode emits one well-formed order-6 step"
+fi
+if grep -q 'AllowDevelopmentWithoutDevLicense\|DEV_MODE_XML' "$TMP/sh.xml"; then
+    fail "default output has no Developer Mode step and no token"
+else
+    pass "default output has no Developer Mode step and no token"
 fi
 
 # U7: nothing landed in the repo tree.

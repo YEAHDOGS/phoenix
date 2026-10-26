@@ -80,8 +80,9 @@ Flag mapping: `-ComputerName` -> `--computer-name`, `-Username` ->
 `--username`, `-Password` -> `--password`, `-StandardUsername` ->
 `--standard-username`, `-StandardPassword` -> `--standard-password`,
 `-TimeZone` -> `--timezone`, `-Edition` -> `--edition`, `-ProductKey` ->
-`--product-key`, `-OutputPath` -> `--output`, `-Force` -> `--force`.
-Regression suite: `bash tests/tools/test-unattend-twin.sh` (21 checks).
+`--product-key`, `-EnableDeveloperMode` -> `--enable-developer-mode`,
+`-OutputPath` -> `--output`, `-Force` -> `--force`.
+Regression suite: `bash tests/tools/test-unattend-twin.sh` (23 checks).
 
 ## Schneegans round-trip
 
