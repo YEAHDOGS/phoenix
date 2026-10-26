@@ -161,4 +161,4 @@ $allDirs | Sort-Object Length -Descending | ForEach-Object {
 # Eliminate the main root directory shell
 Remove-Item $AbsPath -Force -Recurse -ErrorAction SilentlyContinue
 
-Write-Host "[✓] Target successfully annihilated." -ForegroundColor Green
+Write-Host "Target successfully annihilated." -ForegroundColor Green
