@@ -1,13 +1,26 @@
 param (
     [Alias("n")]
     [Parameter(Mandatory = $false, HelpMessage = "Enter the name for your new Svelte project")]
-    [string]$Name
+    [string]$Name,
+
+    [Alias("b")]
+    [Parameter(Mandatory = $false, HelpMessage = "Template branch to create the app from")]
+    [string]$Branch = "master"
 )
 
-$TemplateRepo = ""  # set to your Svelte template repo URL (never a personal-namespace URL)
+# Where the template comes from: any git URL or folder in $env:DOGS_SVELTE_TEMPLATE, otherwise the local
+# svelte-template checkout in Projects. Read at run time so no personal repo URL is ever committed here.
+$TEMPLATE_ENV_VAR = "DOGS_SVELTE_TEMPLATE"
+$PROJECTS_DIR = Join-Path $env:USERPROFILE "Projects"
+$LOCAL_TEMPLATE_DIR = Join-Path $PROJECTS_DIR "svelte-template"
+$TemplateRepo = [Environment]::GetEnvironmentVariable($TEMPLATE_ENV_VAR)
+if ([string]::IsNullOrWhiteSpace($TemplateRepo)) { $TemplateRepo = $LOCAL_TEMPLATE_DIR }
+
+# Save the directory you are currently in
+$originalDir = Get-Location
 
 # Set the working directory to the Projects folder in the user's profile
-Set-Location $env:USERPROFILE\Projects
+Set-Location $PROJECTS_DIR
 
 Write-Host "--- Svelte App Creator ---" -ForegroundColor Cyan
 
@@ -39,23 +52,32 @@ if (Test-Path $Name) {
     exit 1
 }
 
-# Save the directory you are currently in
-$originalDir = Get-Location
+Write-Host "`nCopying svelte-template ($Branch) into ./$Name..." -ForegroundColor Green
 
-Write-Host "`nCloning svelte-template into ./$Name..." -ForegroundColor Green
-
-git clone --depth 1 $TemplateRepo $Name
+if (Test-Path $TemplateRepo) {
+    # A local checkout is exported with git archive: the branch's committed files, no history. Cloning a local repo
+    # needs git-upload-pack, which minimal git builds leave out.
+    $archive = Join-Path ([IO.Path]::GetTempPath()) "$Name-template.zip"
+    git -C $TemplateRepo archive --format=zip --output=$archive $Branch
+    if ($LASTEXITCODE -eq 0) {
+        Expand-Archive -Path $archive -DestinationPath $Name
+        Remove-Item $archive
+    }
+}
+else {
+    git clone --depth 1 --branch $Branch $TemplateRepo $Name
+}
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "`n[Error] Failed to clone the template repo."
+    Write-Error "`n[Error] Failed to copy the template from '$TemplateRepo' ($Branch). Set `$env:$TEMPLATE_ENV_VAR to the template's git URL, or keep a checkout at $LOCAL_TEMPLATE_DIR."
     Set-Location $originalDir
     exit 1
 }
 
 Set-Location $Name
 
-# Detach from the template repo and start fresh history
-Remove-Item -Recurse -Force .git
+# Detach from the template repo (a clone brings its .git along) and start fresh history
+if (Test-Path .git) { Remove-Item -Recurse -Force .git }
 git init | Out-Null
 
 # Template setup: name, title, description, optional desktop app, agent git workflow and AGENTS.md details.
