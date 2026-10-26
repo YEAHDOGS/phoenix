@@ -58,10 +58,17 @@ Set-Location $Name
 Remove-Item -Recurse -Force .git
 git init | Out-Null
 
-# Personalize package.json with the new project name
-$package = Get-Content package.json -Raw | ConvertFrom-Json
-$package.name = $Name
-$package | ConvertTo-Json -Depth 10 | Out-File -FilePath package.json -Encoding utf8
+# Template setup: name, title, description, optional desktop app, agent git workflow and AGENTS.md details.
+# It fills in package.json (the name defaults to this folder), then removes itself and addons/.
+Write-Host "`nSetting up the app..." -ForegroundColor Green
+
+node start.js
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "`n[Error] App setup (start.js) failed."
+    Set-Location $originalDir
+    exit 1
+}
 
 Write-Host "`nInstalling dependencies..." -ForegroundColor Green
 
