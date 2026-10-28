@@ -98,7 +98,7 @@ Expect: `FATAL: No disk matches identifier`, exit 1, nothing touched.
 
 ### T5 — Wrong serial aborts (the Y/N-that-isn't)
 1. Run: `sudo bash Invoke-Nuke.sh --nuke <target_sata row>`
-2. At the prompt, type anything that is NOT the exact serial (e.g. `y`, `yes`, a truncated serial).
+2. At the prompt, type anything that is NOT the exact serial and size (e.g. `y`, `yes`, a truncated serial, the serial alone, the right serial with a wrong size).
 Expect: `Aborted. Confirmation did not match.`, exit code `2`, log file
 exists on the USB recording the abort, target image unchanged.
 
@@ -107,8 +107,8 @@ exists on the USB recording the abort, target image unchanged.
 > --nuke <row>`) is refused with "stdin is not a TTY", exit 2 — the
 > confirmation only accepts input typed on a real terminal.
 
-### T6 — `NUKE <serial>` prefix is accepted
-Same as T5 but type `NUKE <exact-serial>`. Then **Ctrl-C during the 5s
+### T6 — `NUKE <serial> <size>` prefix is accepted
+Same as T5 but type `NUKE <exact-serial> <exact-size>` (size as displayed, e.g. `931.5 GB`). Then **Ctrl-C during the 5s
 countdown**.
 Expect: abort, exit code `130`/non-zero, log records the arming + the abort,
 target image unchanged. (Proves the countdown is a real abort window.)
@@ -117,7 +117,7 @@ target image unchanged. (Proves the countdown is a real abort window.)
 1. Write a known pattern: `sudo dd if=/dev/urandom of=/dev/sdX bs=1M count=100`
    (use the *enumerated* row for `target_sata.raw` — triple-check via serial/size).
 2. Run: `sudo bash Invoke-Nuke.sh --method zero --verify-off --no-countdown --nuke <row>`,
-   type the exact serial.
+   type the exact serial and size.
 Expect: nwipe completes, log on the USB contains the `CONFIRMED` timestamp
 line and `NUKE COMPLETE`.
 Verify (host side, VM powered off):
@@ -133,7 +133,7 @@ wsl hexdump -C $T\head.bin | grep -v " 00 00 00" | head   # expect empty
 
 ### T8 — NVMe path selects firmware purge
 1. Fresh `target_nvme.raw` (recreate it).
-2. Run: `sudo bash Invoke-Nuke.sh --no-countdown --nuke <nvme-row>`, type serial.
+2. Run: `sudo bash Invoke-Nuke.sh --no-countdown --nuke <nvme-row>`, type serial and size.
 Expect: log shows `NVMe Format with Secure Erase Setting=1 (crypto erase)`.
    (QEMU's emulated NVMe may not advertise crypto erase — then the log must
    show the sanitize fallback or the nwipe fallback **with the logged
