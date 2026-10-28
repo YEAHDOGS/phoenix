@@ -193,6 +193,8 @@ def generate(opts, out_path):
                                   _standard_account_block(std, opts["standard_password"]))
     else:
         content = re.sub(r"(?m)^\t*{{STANDARD_ACCOUNT_XML}}\r?\n", "", content)
+    # Developer Mode is a tools/New-UnattendXml.{ps1,sh} option; drop its slot here.
+    content = re.sub(r"(?m)^\t*{{DEV_MODE_XML}}\r?\n", "", content)
 
     content = content.replace("{{COMPUTER_NAME}}", xmlesc(opts["computer_name"]))
     content = content.replace("{{PRODUCT_KEY}}", opts["product_key"])

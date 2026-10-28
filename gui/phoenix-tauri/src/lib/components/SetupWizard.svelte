@@ -265,6 +265,25 @@
             <label class={labelCls} for="wz-driver">Driver-pack profile</label>
             <input id="wz-driver" class={inputCls} bind:value={setup.driverProfile} placeholder="(optional)" />
           </div>
+          <div class="border-t border-slate-200 pt-4">
+            <div class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Backup (Phase 2 — image before wipe)</div>
+            <div>
+              <label class={labelCls} for="wz-imgtarget">Image target path (direct-attached USB)</label>
+              <input id="wz-imgtarget" class={inputCls} bind:value={setup.imageTargetPath} placeholder="e.g. E:\phoenix-images or /media/usb-images" />
+            </div>
+            <div class="mt-3">
+              <label class={labelCls} for="wz-quar">Quarantine label pattern</label>
+              <input id="wz-quar" class={inputCls} bind:value={setup.quarantineLabel} placeholder="QUARANTINE-INFECTED-<date>" />
+            </div>
+            <div class="mt-3">
+              <label class={labelCls} for="wz-castle">Castle copy target (SMB share/path)</label>
+              <input id="wz-castle" class={inputCls} bind:value={setup.castleTarget} placeholder="e.g. \\CASTLE\backup\quarantine" />
+            </div>
+            <label class="mt-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <input type="checkbox" class="h-4 w-4 accent-sky-600" bind:checked={setup.requireVerifiedImage} />
+              Require verified image before NUKE (recommended)
+            </label>
+          </div>
         </div>
       {:else}
         <div class="rounded bg-slate-900 p-4 font-mono text-xs leading-6 text-slate-200">
@@ -278,6 +297,11 @@
           <div>Skip OOBE     : {setup.skipOobe ? 'yes' : 'no'}</div>
           <div>Disable WPBT  : {setup.disableWpbt ? 'yes' : 'no'}</div>
           <div>Stage updates : {setup.stageUpdates ? 'yes' : 'no'}</div>
+          <div class="mt-2 text-slate-400">Backup:</div>
+          <div class="pl-4">Image target : {setup.imageTargetPath || '(not set)'}</div>
+          <div class="pl-4">Quarantine   : {setup.quarantineLabel || '(not set)'}</div>
+          <div class="pl-4">Castle target: {setup.castleTarget || '(not set)'}</div>
+          <div class="pl-4">Verified-image gate: {setup.requireVerifiedImage ? 'on' : 'off'}</div>
           <div class="mt-2 text-slate-400">ISOs to stage (Ventoy):</div>
           {#each setup.modules as m}<div class="pl-4">✓ {m}</div>{/each}
           <div class="mt-2 text-slate-400">Apps ({setup.apps.length}):</div>
