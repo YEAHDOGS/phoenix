@@ -69,7 +69,7 @@ def validate(computer, user, std_user, product_key):
 def generate(computer="TEST-PC", user="testadmin", pw="S3cret!Test",
              std_user="testuser", std_pw="G2pass!Test",
              tz="Central Standard Time", edition="Windows 11 Pro",
-             key="VK7JG-NPHTM-C97JM-9MPGT-3V66T", out=None):
+             key="VK7JG-NPHTM-C97JM-9MPGT-3V66T", dev_mode=False, out=None):
     validate(computer, user, std_user, key)
     content = TEMPLATE.read_text(encoding="utf-8")
 
@@ -110,6 +110,12 @@ def generate(computer="TEST-PC", user="testadmin", pw="S3cret!Test",
         content = content.replace("{{STANDARD_ACCOUNT_XML}}", block)
     else:
         content = re.sub(r"(?m)^\t*{{STANDARD_ACCOUNT_XML}}\r?\n", "", content)
+    if dev_mode:
+        content = content.replace("{{DEV_MODE_XML}}", "<RunSynchronousCommand wcm:action=\"add\">\n"
+                                  "\t\t\t\t\t<Order>6</Order>\n"
+                                  "\t\t\t\t</RunSynchronousCommand>")
+    else:
+        content = re.sub(r"(?m)^\t*{{DEV_MODE_XML}}\r?\n", "", content)
     content = content.replace("{{COMPUTER_NAME}}", xmlesc(computer))
     content = content.replace("{{PRODUCT_KEY}}", key)
     content = content.replace("{{TIME_ZONE}}", xmlesc(tz))

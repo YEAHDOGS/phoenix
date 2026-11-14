@@ -17,26 +17,34 @@ $RepoRoot = (Get-Item (Join-Path $PSScriptRoot "..\..")).FullName
 $ToolsDir = Join-Path $RepoRoot "scripts\tools"
 $GitDir   = Join-Path $RepoRoot "scripts\git"
 
+# Join-Path throws on a null base; return $null so a missing env var just skips the alias
+function Join-EnvPath([string]$Base, [string]$Child) {
+    if ($Base) { Join-Path $Base $Child }
+}
+
 # Define your aliases. Repo paths resolve relative to this checkout;
 # machine paths fall back to env vars so it works for any username.
 $Aliases = [ordered]@{
     "gpr"         = "Get-Process"
-    "strings"     = (Join-Path $env:SYSINTERNALS_DIR "strings64.exe")
-    "bash"        = (Join-Path $env:GIT_INSTALL_ROOT "bin\bash.exe")
-    "sh"          = (Join-Path $env:GIT_INSTALL_ROOT "bin\sh.exe")
-    "file"        = (Join-Path $env:GIT_INSTALL_ROOT "bin\file.exe")
-    "head"        = (Join-Path $env:GIT_INSTALL_ROOT "bin\head.exe")
-    "sha512sum"   = (Join-Path $env:GIT_INSTALL_ROOT "bin\sha512sum.exe")
-    "sha256sum"   = (Join-Path $env:GIT_INSTALL_ROOT "bin\sha256sum.exe")
-    "gpg"         = (Join-Path $env:GIT_INSTALL_ROOT "bin\gpg.exe")
-    "yes"         = (Join-Path $env:GIT_INSTALL_ROOT "bin\yes.exe")
-    "ldd"         = (Join-Path $env:GIT_INSTALL_ROOT "bin\ldd.exe")
+    "strings"     = (Join-EnvPath $env:SYSINTERNALS_DIR "strings64.exe")
+    "bash"        = (Join-EnvPath $env:GIT_INSTALL_ROOT "bin\bash.exe")
+    "sh"          = (Join-EnvPath $env:GIT_INSTALL_ROOT "bin\sh.exe")
+    "file"        = (Join-EnvPath $env:GIT_INSTALL_ROOT "bin\file.exe")
+    "head"        = (Join-EnvPath $env:GIT_INSTALL_ROOT "bin\head.exe")
+    "sha512sum"   = (Join-EnvPath $env:GIT_INSTALL_ROOT "bin\sha512sum.exe")
+    "sha256sum"   = (Join-EnvPath $env:GIT_INSTALL_ROOT "bin\sha256sum.exe")
+    "gpg"         = (Join-EnvPath $env:GIT_INSTALL_ROOT "bin\gpg.exe")
+    "yes"         = (Join-EnvPath $env:GIT_INSTALL_ROOT "bin\yes.exe")
+    "ldd"         = (Join-EnvPath $env:GIT_INSTALL_ROOT "bin\ldd.exe")
     "git-fucked"  = (Join-Path $GitDir "git-fucked.ps1")
     "delete-node" = (Join-Path $ToolsDir "delete-node.ps1")
     "create-app"  = (Join-Path $ToolsDir "create-app.ps1")
     "shred"       = (Join-Path $ToolsDir "shred.ps1")
     "file-shift"  = (Join-Path $ToolsDir "file-shift.ps1")
     "claude"      = "$env:USERPROFILE\.local\bin\claude.exe"
+    "python"      = "$env:USERPROFILE\AppData\Local\Python\bin\python.exe"
+    "py"          = "$env:USERPROFILE\AppData\Local\Python\bin\python.exe"
+    "python3"     = "$env:USERPROFILE\AppData\Local\Python\bin\python3.exe"
 }
 
 $NavFunctions = [ordered]@{
@@ -46,17 +54,21 @@ $NavFunctions = [ordered]@{
 
 # Drop aliases whose target doesn't exist so profiles don't fill with
 # dead aliases on machines missing optional tools (sysinternals, git unix utils)
-$Aliases = [ordered]@{}
+$ValidAliases = [ordered]@{}
 foreach ($entry in $Aliases.GetEnumerator()) {
     $value = $entry.Value
     $isCmdlet = $value -notmatch '\.(exe|ps1)$'
-    if ($isCmdlet -or (Test-Path $value)) {
-        $Aliases[$entry.Key] = $value
+    if (-not $value) {
+        Write-Host "  Skipping alias '$($entry.Key)' - base env var not set" -ForegroundColor DarkYellow
+    }
+    elseif ($isCmdlet -or (Test-Path $value)) {
+        $ValidAliases[$entry.Key] = $value
     }
     else {
         Write-Host "  Skipping alias '$($entry.Key)' - target not found: $value" -ForegroundColor DarkYellow
     }
 }
+$Aliases = $ValidAliases
 
 # Explicitly target all the profiles you want to sync
 # $TargetPaths = @(
@@ -121,8 +133,17 @@ foreach ($ProfilePath in $TargetPaths) {
     $CurrentContent = if (Test-Path -Path $ProfilePath) { @(Get-Content -Path $ProfilePath) } else { @() }
     foreach ($Alias in $Aliases.GetEnumerator()) {
         $AliasLine = "Set-Alias -Name `"$($Alias.Key)`" -Value `"$($Alias.Value)`""
+        $AliasPrefix = "Set-Alias -Name `"$($Alias.Key)`" "
 
-        if ($CurrentContent -notcontains $AliasLine) {
+        # Retarget a stale alias line in place rather than appending a duplicate
+        $Stale = @($CurrentContent | Where-Object { $_.StartsWith($AliasPrefix) -and $_ -ne $AliasLine })
+        if ($Stale.Count -gt 0) {
+            $CurrentContent = @($CurrentContent | Where-Object { $Stale -notcontains $_ })
+            if ($CurrentContent -notcontains $AliasLine) { $CurrentContent += $AliasLine }
+            Set-Content -Path $ProfilePath -Value $CurrentContent
+            Write-Host "    Updated: $($Alias.Key) -> $($Alias.Value)" -ForegroundColor Green
+        }
+        elseif ($CurrentContent -notcontains $AliasLine) {
             Add-Content -Path $ProfilePath -Value $AliasLine
             Write-Host "    Added: $($Alias.Key) -> $($Alias.Value)" -ForegroundColor Green
             $CurrentContent += $AliasLine

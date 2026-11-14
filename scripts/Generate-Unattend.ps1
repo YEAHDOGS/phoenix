@@ -353,6 +353,8 @@ else {
     # Remove the token's whole line so no blank indented line is left behind.
     $content = [regex]::Replace($content, '(?m)^\t*{{STANDARD_ACCOUNT_XML}}\r?\n', '')
 }
+# Developer Mode is a tools/New-UnattendXml.{ps1,sh} option; drop its slot here.
+$content = [regex]::Replace($content, '(?m)^\t*{{DEV_MODE_XML}}\r?\n', '')
 
 $content = $content.Replace('{{COMPUTER_NAME}}', (Get-XmlEscaped $ComputerName))
 $content = $content.Replace('{{PRODUCT_KEY}}', $ProductKey)

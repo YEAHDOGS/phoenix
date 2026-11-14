@@ -22,3 +22,5 @@ win-install/staging/
 
 # Phoenix toolkit staging (build-time binaries, never commit)
 staging/
+__pycache__/
+phoenix-state/

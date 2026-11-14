@@ -77,7 +77,8 @@ $raw = Get-Content -LiteralPath $templatePath -Raw -Encoding utf8
 $requiredTokens = '{{COMPUTER_NAME}}', '{{PRODUCT_KEY}}', '{{TIME_ZONE}}',
     '{{EDITION_NAME}}', '{{ACCOUNT_NAME}}', '{{ACCOUNT_PASSWORD_B64}}',
     '{{STANDARD_ACCOUNT_XML}}', '{{ACCOUNT_PASSWORD}}',
-    '{{STANDARD_ACCOUNT_NAME}}', '{{STANDARD_ACCOUNT_PASSWORD}}'
+    '{{STANDARD_ACCOUNT_NAME}}', '{{STANDARD_ACCOUNT_PASSWORD}}',
+    '{{DEV_MODE_XML}}'
 foreach ($t in $requiredTokens) {
     Assert-True ($raw.Contains($t)) "token $t present"
 }

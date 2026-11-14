@@ -52,12 +52,37 @@ continues setup unattended).
 | `-TimeZone` | `Central Standard Time` | Windows timezone ID |
 | `-Edition` | `Windows 11 Pro` | Must match `/Name:"..."` of an image in install.wim/esd |
 | `-ProductKey` | `VK7JG-NPHTM-C97JM-9MPGT-3V66T` | MS public generic Pro key (not a license). Swap in a real key if you have one |
+| `-EnableDeveloperMode` | *(off)* | Adds a specialize `RunSynchronous` command (order 6) enabling Windows Developer Mode — sideloading, symlinks without elevation |
 | `-OutputPath` | `win-install/staging/autounattend.xml` | Override only if you know why |
 | `-Force` | | Overwrite an existing output file |
 
 Fails cleanly (no partial write) on: missing template, existing output
 without `-Force`, empty passwords, identical admin/standard usernames,
 leftover unfilled tokens, or malformed XML.
+
+## Linux twin: `tools/New-UnattendXml.sh`
+
+The same generator as a bash script for the Linux side (every PowerShell
+tool gets a bash twin). Same contract, same fail-closed validation, same
+byte-level output (verified byte-identical to the `.ps1`'s proven output
+modulo the origin stamp):
+
+```bash
+# Prompts for the password securely (read -s -- never touches shell history)
+tools/New-UnattendXml.sh --computer-name NIGHTMARE --username user
+
+# Two accounts, overwrite allowed
+tools/New-UnattendXml.sh --computer-name NIGHTMARE --username user \
+    --password 's3cr3t!' --standard-username guest --force
+```
+
+Flag mapping: `-ComputerName` -> `--computer-name`, `-Username` ->
+`--username`, `-Password` -> `--password`, `-StandardUsername` ->
+`--standard-username`, `-StandardPassword` -> `--standard-password`,
+`-TimeZone` -> `--timezone`, `-Edition` -> `--edition`, `-ProductKey` ->
+`--product-key`, `-EnableDeveloperMode` -> `--enable-developer-mode`,
+`-OutputPath` -> `--output`, `-Force` -> `--force`.
+Regression suite: `bash tests/tools/test-unattend-twin.sh` (23 checks).
 
 ## Schneegans round-trip
 
