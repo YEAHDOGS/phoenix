@@ -46,12 +46,19 @@ function Read-PhxArgs {
 # PowerShell 5.1 has no ConvertFrom-Json -AsHashtable.
 function ConvertTo-PhxHashtable($InputObject) {
     if ($null -eq $InputObject) { return $null }
-    if ($InputObject -is [System.Collections.IDictionary]) {
+    # PS 5.1 wraps JSON strings/numbers in PSObject, which also matches [pscustomobject].
+    if ($InputObject -is [string] -or $InputObject -is [ValueType]) { return $InputObject }
+    # It also wraps a top-level JSON array; unwrap so arrays aren't mistaken for objects.
+    $base = $InputObject.PSObject.BaseObject
+    if ($base -is [System.Collections.IDictionary]) {
         $h = @{}
-        foreach ($k in $InputObject.Keys) { $h[$k] = ConvertTo-PhxHashtable $InputObject[$k] }
+        foreach ($k in $base.Keys) { $h[$k] = ConvertTo-PhxHashtable $base[$k] }
         return $h
     }
-    if ($InputObject -is [pscustomobject]) {
+    if ($base -is [System.Collections.IEnumerable] -and $base -isnot [string]) {
+        return , @($base | ForEach-Object { ConvertTo-PhxHashtable $_ })
+    }
+    if ($base -is [System.Management.Automation.PSCustomObject]) {
         $h = @{}
         foreach ($p in $InputObject.PSObject.Properties) { $h[$p.Name] = ConvertTo-PhxHashtable $p.Value }
         return $h
@@ -83,6 +90,8 @@ $PhxCommands = [ordered]@{
     'runbook'      = 'Invoke-PhxRunbook'
     'drives'       = 'Invoke-PhxDrives'
     'unattend'     = 'Invoke-PhxUnattend'
+    'unattend-schema'   = 'Invoke-PhxUnattendSchema'
+    'unattend-defaults' = 'Invoke-PhxUnattendDefaults'
     'loadout'      = 'Invoke-PhxLoadout'
     'fetch'        = 'Invoke-PhxFetch'
     'usb-build'    = 'Invoke-PhxUsbBuild'

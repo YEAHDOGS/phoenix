@@ -2,7 +2,8 @@
 
 # C:\ProgramData\Phoenix - state, logs, snapshots, installed kit (machine scope).
 function Get-PhxDataRoot {
-    $root = Join-Path $env:ProgramData 'Phoenix'
+    # PHOENIX_DATA_ROOT redirects state/logs/snapshots (tests use a temp dir).
+    $root = if ($env:PHOENIX_DATA_ROOT) { $env:PHOENIX_DATA_ROOT } else { Join-Path $env:ProgramData 'Phoenix' }
     if (-not (Test-Path $root)) { New-Item -ItemType Directory -Force -Path $root | Out-Null }
     $root
 }

@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "machine": { "computerName": "PHX-TEST" },
+  "accounts": { "admin": { "name": "TestAdmin" }, "lead": { "name": "TestLead" }, "users": [] },
+  "packs": ["t-base", "t-override", "t-missing"],
+  "overrides": {
+    "steps": { "t.tasks": { "title": "Tasks (overridden)" } },
+    "items": { "t.services": [ { "key": "DiagTrack", "stop": true } ] }
+  },
+  "apps": ["git", "7zip"]
+}
