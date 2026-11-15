@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { app } from '$lib/app.svelte';
+  import { app } from '#lib/app.svelte.ts';
   import Icon from './Icon.svelte';
 
   let level = $state<'all' | 'info' | 'warn' | 'error'>('all');

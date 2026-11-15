@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { app, fmt } from '$lib/app.svelte';
-  import { run, type ChangeEvent, type EngineError, type Run, type StepEvent } from '$lib/engine';
-  import PageHeader from '$lib/components/PageHeader.svelte';
-  import Notice from '$lib/components/Notice.svelte';
-  import Icon from '$lib/components/Icon.svelte';
+  import { app, fmt } from '#lib/app.svelte.ts';
+  import { run, type ChangeEvent, type EngineError, type Run, type StepEvent } from '#lib/engine.ts';
+  import PageHeader from '#lib/components/PageHeader.svelte';
+  import Notice from '#lib/components/Notice.svelte';
+  import Icon from '#lib/components/Icon.svelte';
 
   // ------------------------------------------------ scan
   let scan = $state<Record<string, unknown> | null>(null);

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { renderMarkdown } from '$lib/md';
-  import { backend } from '$lib/engine';
+  import { renderMarkdown } from '#lib/md.ts';
+  import { backend } from '#lib/engine.ts';
   let { source = '' }: { source?: string | null } = $props();
   const html = $derived(renderMarkdown(source));
 

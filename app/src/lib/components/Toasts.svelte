@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { app } from '$lib/app.svelte';
+  import { app } from '#lib/app.svelte.ts';
   const cls: Record<string, string> = {
     ok: 'border-safe/40', warn: 'border-caution/50', error: 'border-danger/50', info: 'border-ink-600',
   };

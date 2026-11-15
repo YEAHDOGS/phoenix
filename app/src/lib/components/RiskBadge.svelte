@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Risk } from '$lib/engine';
+  import type { Risk } from '#lib/engine.ts';
   let { risk = 'safe', small = false }: { risk?: Risk | string; small?: boolean } = $props();
   const cls: Record<string, string> = {
     safe: 'text-safe border-safe/40 bg-safe/10',

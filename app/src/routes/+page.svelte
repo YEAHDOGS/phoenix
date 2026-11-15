@@ -1,17 +1,17 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { app } from '$lib/app.svelte';
-  import Nav from '$lib/components/Nav.svelte';
-  import LogDrawer from '$lib/components/LogDrawer.svelte';
-  import Toasts from '$lib/components/Toasts.svelte';
-  import Notice from '$lib/components/Notice.svelte';
-  import Runbook from '$lib/screens/Runbook.svelte';
-  import Profile from '$lib/screens/Profile.svelte';
-  import AnswerFile from '$lib/screens/AnswerFile.svelte';
-  import Packs from '$lib/screens/Packs.svelte';
-  import ScanPlan from '$lib/screens/ScanPlan.svelte';
-  import Apps from '$lib/screens/Apps.svelte';
-  import Usb from '$lib/screens/Usb.svelte';
+  import { app } from '#lib/app.svelte.ts';
+  import Nav from '#lib/components/Nav.svelte';
+  import LogDrawer from '#lib/components/LogDrawer.svelte';
+  import Toasts from '#lib/components/Toasts.svelte';
+  import Notice from '#lib/components/Notice.svelte';
+  import Runbook from '#lib/screens/Runbook.svelte';
+  import Profile from '#lib/screens/Profile.svelte';
+  import AnswerFile from '#lib/screens/AnswerFile.svelte';
+  import Packs from '#lib/screens/Packs.svelte';
+  import ScanPlan from '#lib/screens/ScanPlan.svelte';
+  import Apps from '#lib/screens/Apps.svelte';
+  import Usb from '#lib/screens/Usb.svelte';
 
   onMount(() => {
     app.boot();

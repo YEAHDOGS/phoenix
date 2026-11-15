@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { app, type Screen } from '$lib/app.svelte';
+  import { app, type Screen } from '#lib/app.svelte.ts';
   import Icon from './Icon.svelte';
   import Logo from './Logo.svelte';
 

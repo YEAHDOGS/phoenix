@@ -4,8 +4,8 @@
    * Reads/writes `holder[key]` (holder is a deep $state object or array).
    */
   import { open as openDialog } from '@tauri-apps/plugin-dialog';
-  import { backend, describeError, formatBytes } from '$lib/engine';
-  import { humanize, implLabel, initialValue, isLongText, newImpl, type Obj, type Param, type Schema } from '$lib/unattend';
+  import { backend, describeError, formatBytes } from '#lib/engine.ts';
+  import { humanize, implLabel, initialValue, isLongText, newImpl, type Obj, type Param, type Schema } from '#lib/unattend.ts';
   import Toggle from './Toggle.svelte';
   import SearchSelect from './SearchSelect.svelte';
   import MultiPick from './MultiPick.svelte';

@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { ask, open as openDialog, save as saveDialog } from '@tauri-apps/plugin-dialog';
-  import { app } from '$lib/app.svelte';
-  import { backend, describeError, get, itemKey, itemLabel, type Pack, type Step, type StepItem } from '$lib/engine';
-  import PageHeader from '$lib/components/PageHeader.svelte';
-  import Notice from '$lib/components/Notice.svelte';
-  import RiskBadge from '$lib/components/RiskBadge.svelte';
-  import Toggle from '$lib/components/Toggle.svelte';
-  import Icon from '$lib/components/Icon.svelte';
+  import { app } from '#lib/app.svelte.ts';
+  import { backend, describeError, get, itemKey, itemLabel, type Pack, type Step, type StepItem } from '#lib/engine.ts';
+  import PageHeader from '#lib/components/PageHeader.svelte';
+  import Notice from '#lib/components/Notice.svelte';
+  import RiskBadge from '#lib/components/RiskBadge.svelte';
+  import Toggle from '#lib/components/Toggle.svelte';
+  import Icon from '#lib/components/Icon.svelte';
 
   type Source = '__resolved' | string;
   let source = $state<Source>('__resolved');
