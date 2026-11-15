@@ -1,0 +1,175 @@
+{
+  "id": "hw-hp-omnibook",
+  "name": "Hardware: HP OmniBook (Intel Arc + NVIDIA)",
+  "version": 1,
+  "description": "HP OmniBook 7 class laptops: HP analytics and support services and apps, Intel and NVIDIA telemetry. Thermal, audio and hotkey services are deliberately kept.",
+  "steps": [
+    {
+      "id": "admin.services",
+      "items": [
+        {
+          "name": "HpTouchpointAnalyticsService",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "HP Insights Analytics: HP telemetry.",
+          "risk": "safe"
+        },
+        {
+          "name": "HPAppHelperCap",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "HP App Helper. Some HP function-key features use it.",
+          "risk": "caution"
+        },
+        {
+          "name": "HPDiagsCap",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "HP Diagnostics HSA service.",
+          "risk": "safe"
+        },
+        {
+          "name": "HPNetworkCap",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "HP Network HSA service.",
+          "risk": "safe"
+        },
+        {
+          "name": "HPSysInfoCap",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "HP System Info HSA service.",
+          "risk": "safe"
+        },
+        {
+          "name": "HPPrintScanDoctorService",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "HP Print and Scan Doctor.",
+          "risk": "safe"
+        },
+        {
+          "name": "SystemUsageReportSvc_QUEENCREEK",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Intel System Usage Report: Intel telemetry.",
+          "risk": "safe"
+        },
+        {
+          "name": "igfxCUIService*",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Intel graphics command-center helper.",
+          "risk": "caution"
+        },
+        {
+          "name": "NvTelemetryContainer",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "NVIDIA telemetry (older drivers).",
+          "risk": "safe"
+        },
+        {
+          "name": "esifsvc",
+          "startup": "Automatic",
+          "stop": false,
+          "why": "Intel DPTF thermal framework. KEEP: disabling it can overheat or throttle the laptop.",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "admin.appx",
+      "items": [
+        {
+          "pattern": "AD2F1837.HPSupportAssistant",
+          "action": "remove",
+          "provisioned": true,
+          "why": "HP Support Assistant.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "AD2F1837.myHP",
+          "action": "remove",
+          "provisioned": true,
+          "why": "myHP.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "AD2F1837.HPPCHardwareDiagnosticsWindows",
+          "action": "remove",
+          "provisioned": true,
+          "why": "HP hardware diagnostics app.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "AD2F1837.HPPrivacySettings",
+          "action": "remove",
+          "provisioned": true,
+          "why": "HP privacy settings app (opts you into HP data collection).",
+          "risk": "safe"
+        },
+        {
+          "pattern": "AD2F1837.HPQuickDrop",
+          "action": "remove",
+          "provisioned": true,
+          "why": "HP QuickDrop phone transfer.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "AD2F1837.HPSystemInformation",
+          "action": "remove",
+          "provisioned": true,
+          "why": "HP System Information.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "AD2F1837.HPAIExperienceCenter",
+          "action": "remove",
+          "provisioned": true,
+          "why": "HP AI Companion.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "AD2F1837.HPAudioControl",
+          "action": "keep",
+          "provisioned": true,
+          "why": "HP audio tuning. Keep.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "AppUp.IntelGraphicsExperience",
+          "action": "keep",
+          "provisioned": true,
+          "why": "Intel Graphics Software. Keep.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "NVIDIACorp.NVIDIAControlPanel",
+          "action": "keep",
+          "provisioned": true,
+          "why": "NVIDIA Control Panel. Keep.",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "admin.tasks",
+      "items": [
+        {
+          "path": "\\NvTmRep*",
+          "action": "disable",
+          "why": "NVIDIA telemetry/crash-report tasks.",
+          "risk": "caution"
+        },
+        {
+          "path": "\\Hewlett-Packard\\HP Support Assistant\\*",
+          "action": "disable",
+          "why": "HP Support Assistant schedules.",
+          "risk": "safe"
+        }
+      ]
+    }
+  ]
+}

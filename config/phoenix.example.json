@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "machine": {
+    "computerName": "THE-MACHINE",
+    "timeZone": "Central Standard Time",
+    "edition": "Windows 11 Pro",
+    "productKey": "",
+    "uiLanguage": "en-US",
+    "systemLocale": "en-001",
+    "userLocale": "en-001",
+    "inputLocale": "0409:00000409",
+    "diskNumber": 0
+  },
+  "accounts": {
+    "admin": {
+      "name": "BigMan"
+    },
+    "lead": {
+      "name": "Main"
+    },
+    "users": []
+  },
+  "packs": [
+    "base",
+    "tier-balanced",
+    "hw-hp-omnibook"
+  ],
+  "overrides": {
+    "steps": {},
+    "items": {}
+  },
+  "apps": [
+    "7zip",
+    "qemu",
+    "powershell-core",
+    "notepadplusplus",
+    "sumatrapdf",
+    "vscode",
+    "git",
+    "github-desktop",
+    "docker-desktop",
+    "wsl2",
+    "nodejs",
+    "python",
+    "spotify",
+    "audacity",
+    "gimp",
+    "inkscape",
+    "vlc",
+    "wireshark",
+    "sysinternals",
+    "wireguard",
+    "tailscale",
+    "googlechrome",
+    "firefox"
+  ],
+  "loadout": [
+    "sysinternals",
+    "platform-tools",
+    "rufus",
+    "ame-wizard",
+    "dogs-playbook",
+    "chocolatey",
+    "defender-defs",
+    "portmaster"
+  ],
+  "usb": {
+    "label": "PHOENIX"
+  }
+}
