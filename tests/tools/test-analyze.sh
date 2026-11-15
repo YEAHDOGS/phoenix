@@ -9,10 +9,10 @@
 set -u
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-LIB="$REPO_ROOT/tools/lib/analyze-gates.sh"
-FLOW="$REPO_ROOT/tools/Analyze-DiskTriage.sh"
-PS1_TWIN="$REPO_ROOT/tools/Analyze-DiskTriage.ps1"
-ENUM="$REPO_ROOT/tools/Get-DiskInventory.sh"
+LIB="$REPO_ROOT/scripts/tools/lib/analyze-gates.sh"
+FLOW="$REPO_ROOT/scripts/tools/Analyze-DiskTriage.sh"
+PS1_TWIN="$REPO_ROOT/scripts/tools/Analyze-DiskTriage.ps1"
+ENUM="$REPO_ROOT/scripts/tools/Get-DiskInventory.sh"
 FIX="$REPO_ROOT/tests/tools/fixtures"
 
 pass=0; fail=0

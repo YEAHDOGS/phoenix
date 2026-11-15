@@ -1,4 +1,4 @@
-/** Runbook stage model (engine/runbook.json, merged with state by the engine). */
+/** Runbook stage model (scripts/engine/runbook.json, merged with state by the engine). */
 import type { PhaseId } from './engine';
 
 export interface Stage {

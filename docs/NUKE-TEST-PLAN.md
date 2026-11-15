@@ -1,4 +1,4 @@
-# NUKE Test Plan — VM-only verification for `tools/Invoke-Nuke.sh`
+# NUKE Test Plan — VM-only verification for `scripts/tools/Invoke-Nuke.sh`
 
 > **IRON RULE: destructive nuke paths are tested ONLY in QEMU, on throwaway
 > images. NEVER run `--nuke` on bare metal, even "just to check enumeration"
@@ -8,8 +8,8 @@
 Static checks (this Linux VM, no hardware needed):
 
 ```bash
-bash -n tools/Invoke-Nuke.sh          # syntax -- must pass
-# shellcheck tools/Invoke-Nuke.sh     # if available in the boot-image build env
+bash -n scripts/tools/Invoke-Nuke.sh          # syntax -- must pass
+# shellcheck scripts/tools/Invoke-Nuke.sh     # if available in the boot-image build env
 bash tests/tools/test-nuke-interlocks.sh   # interlock regression harness -- must be all green (count grows with coverage)
 ```
 
@@ -48,7 +48,7 @@ $ISO = "$T\test-live.iso"   # <-- place your live ISO here
 
 # Get the script into the VM: FAT dir exposed as a USB stick
 $SHARE = "$T\share"; New-Item $SHARE -ItemType Directory -Force | Out-Null
-Copy-Item ..\tools\Invoke-Nuke.sh $SHARE\
+Copy-Item ..\scripts\tools\Invoke-Nuke.sh $SHARE\
 ```
 
 Boot command (adjust `-m`/`-smp` to taste):

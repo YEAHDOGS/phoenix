@@ -25,7 +25,7 @@ restore-selective.sh --manifest-dir /mnt/castle/user-laptop \
 2. **Map to target** — each `<app>/<path>` entry is resolved against the
    target root. Entries that can't be mapped safely are SKIPPED, never guessed.
 3. **Profile rule check** — every entry is classified through its app's
-   `profiles/*.json`: `data`/`config` restore, `cache`/`executable` (and
+   `config/profiles/*.json`: `data`/`config` restore, `cache`/`executable` (and
    anything not in the profile) are **never** restored, even if smuggled into
    the manifest. `config` files ending in `.json` are revalidated before being
    written; invalid ones are quarantined.
@@ -42,7 +42,7 @@ The restore engine predates the config-schema world; two opt-in flags wire
 it into the unified line without changing default behavior:
 
 - `--config phoenix-config.json` — the config is fully validated by
-  `tools/Read-UsbConfig.py` (JSON Schema + `docs/CONFIG-SCHEMA.md` §6) and
+  `scripts/tools/Read-UsbConfig.py` (JSON Schema + `docs/CONFIG-SCHEMA.md` §6) and
   the stick's Backup lane must be enabled (`boot_entries.backup`). A restore
   from data that did not come through a Phoenix backup is refused.
 - `--chain <state-dir>` — the state dir from the same USB must hold a
@@ -76,7 +76,7 @@ Restoring onto the wrong disk must be structurally hard:
 ## Per-app restore rules
 
 The restore engine doesn't invent policy — it enforces the profile. For each
-manifest entry it finds the app's profile (`profiles/<app>.json`,
+manifest entry it finds the app's profile (`config/profiles/<app>.json`,
 `phoenix-profile/v1`) and classifies the *target* path against the profile's
 `windows`/`linux` locations:
 
@@ -88,7 +88,7 @@ manifest entry it finds the app's profile (`profiles/<app>.json`,
 
 So `--app ableton` restores only entries tagged `ableton` in the manifest,
 and only the ones Ableton's profile classifies as data or valid config.
-Adding a new app = adding `profiles/<app>.json`; the restore engine picks it
+Adding a new app = adding `config/profiles/<app>.json`; the restore engine picks it
 up with zero code changes.
 
 ## Manifest formats

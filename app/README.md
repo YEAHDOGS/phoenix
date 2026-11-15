@@ -7,7 +7,7 @@ Contract: [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md).
 ## How it talks to the system
 
 The app never builds PowerShell. The Rust backend (`src-tauri/src/lib.rs`)
-spawns `engine/phoenix.ps1 <command> -ArgsPath <tmp.json>` for commands on a
+spawns `scripts/engine/phoenix.ps1 <command> -ArgsPath <tmp.json>` for commands on a
 fixed allowlist and forwards each NDJSON line as an `engine-event`
 (`{ runId, event }`); every run ends with `engine-exit` (`{ runId, code }`).
 
@@ -25,7 +25,7 @@ There is no shell plugin and no frontend access to arbitrary processes.
 ## Finding the engine (kit root)
 
 1. `%PHOENIX_KIT_ROOT%`
-2. Walk up from the exe until a folder contains `engine\phoenix.ps1`
+2. Walk up from the exe until a folder contains `scripts\engine\phoenix.ps1`
    (repo root in dev; `<USB>\phoenix\` when `Phoenix.exe` runs from the stick)
 3. `C:\ProgramData\Phoenix\kit` (installed by the FirstLogon handoff)
 
@@ -43,5 +43,5 @@ npm run tauri dev      # dev window against the repo's engine
 npm run tauri build    # src-tauri\target\release\phoenix.exe (+ NSIS installer)
 ```
 
-The release `phoenix.exe` is portable: copy it next to `engine\` (the USB
+The release `phoenix.exe` is portable: copy it next to `scripts\engine\` (the USB
 builder does this as `\phoenix\Phoenix.exe`).

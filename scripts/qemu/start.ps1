@@ -6,8 +6,7 @@ $VM_DIR = "C:\your\vm\folder"
 $ISO_PATH = "C:\path\to\Win11.iso"
 
 # This folder will act as a USB injected into qemu at launch. It should hold an autounattend.xml file
-$ANSWERFILE_RELATIVE = "../../win-install"
-$ANSWERFILE_DIR = (Get-Item $ANSWERFILE_RELATIVE).FullName
+$ANSWERFILE_DIR = (Get-Item (Join-Path $PSScriptRoot "..\..\docs\win-install")).FullName
 
 # Ensure the VARS file exists in the VM dir (copy from source if missing)
 if (!(Test-Path "$VM_DIR\OVMF_VARS.fd")) {

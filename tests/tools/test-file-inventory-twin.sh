@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #===============================================================================
-# test-file-inventory-twin.sh -- regression suite for tools/New-FileInventory.sh
-# (+ structural parity checks for the Windows twin tools/New-FileInventory.ps1)
+# test-file-inventory-twin.sh -- regression suite for scripts/tools/New-FileInventory.sh
+# (+ structural parity checks for the Windows twin scripts/tools/New-FileInventory.ps1)
 #
 # The inventory JSON is a pinned contract: key order, ISO-8601 UTC stamps,
 # path sorting, and the created_utc=null-on-Linux rule. A drift in any of
@@ -16,8 +16,8 @@
 #===============================================================================
 set -uo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
-TOOL="$REPO/tools/New-FileInventory.sh"
-TWIN="$REPO/tools/New-FileInventory.ps1"
+TOOL="$REPO/scripts/tools/New-FileInventory.sh"
+TWIN="$REPO/scripts/tools/New-FileInventory.ps1"
 PASS=0; FAIL=0
 pass() { PASS=$((PASS+1)); echo "  PASS: $1"; }
 fail() { FAIL=$((FAIL+1)); echo "  FAIL: $1${2:+ -- $2}"; }

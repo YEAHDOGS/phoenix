@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #===============================================================================
-# test-phoenix-data-backup.sh -- regression suite for tools/phoenix-data-backup.sh
-# (+ structural parity checks for the WinPE twin tools/New-PhoenixDataBackup.ps1)
+# test-phoenix-data-backup.sh -- regression suite for scripts/tools/phoenix-data-backup.sh
+# (+ structural parity checks for the WinPE twin scripts/tools/New-PhoenixDataBackup.ps1)
 #
 # Builds a fake Windows volume tree in /tmp -- no block devices, no root,
 # nothing leaves /tmp. Exit 0 = all green.
@@ -10,8 +10,8 @@
 #===============================================================================
 set -uo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
-TOOL="$REPO/tools/phoenix-data-backup.sh"
-TWIN="$REPO/tools/New-PhoenixDataBackup.ps1"
+TOOL="$REPO/scripts/tools/phoenix-data-backup.sh"
+TWIN="$REPO/scripts/tools/New-PhoenixDataBackup.ps1"
 PASS=0; FAIL=0
 pass() { PASS=$((PASS+1)); echo "  PASS: $1"; }
 fail() { FAIL=$((FAIL+1)); echo "  FAIL: $1${2:+ -- $2}"; }

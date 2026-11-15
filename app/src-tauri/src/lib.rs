@@ -1,7 +1,7 @@
 //! Phoenix desktop backend.
 //!
 //! The frontend never builds PowerShell. Everything system-facing goes through
-//! `engine/phoenix.ps1` (see docs/ARCHITECTURE.md), spawned here with a fixed
+//! `scripts/engine/phoenix.ps1` (see docs/ARCHITECTURE.md), spawned here with a fixed
 //! argument shape and a command allowlist. Engine output is NDJSON; each line is
 //! forwarded to the UI as an `engine-event`, and every run ends with `engine-exit`.
 
@@ -25,7 +25,7 @@ use std::os::windows::process::CommandExt;
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
-/// Must match the command table in engine/phoenix.ps1.
+/// Must match the command table in scripts/engine/phoenix.ps1.
 const ALLOWED_COMMANDS: &[&str] = &[
     "version", "profile", "packs", "plan", "apply", "undo", "snapshots", "scan", "state", "mark",
     "runbook", "drives", "unattend", "loadout", "fetch", "usb-build", "usb-verify", "choco-search",
@@ -57,11 +57,17 @@ fn env_dir(var: &str) -> Result<PathBuf, String> {
         .ok_or_else(|| format!("%{var}% is not set"))
 }
 
-fn has_engine(dir: &Path) -> bool {
-    dir.join("engine").join("phoenix.ps1").is_file()
+/// The engine script under a kit root.
+fn engine_in(kit: &Path) -> PathBuf {
+    kit.join("scripts").join("engine").join("phoenix.ps1")
 }
 
-/// Kit root = the folder holding engine\, packs\, loadout\.
+fn has_engine(dir: &Path) -> bool {
+    engine_in(dir).is_file()
+}
+
+/// Kit root = the folder holding scripts\engine\, config\ and app\ (same layout
+/// in the repo, on the USB and installed).
 /// 1. %PHOENIX_KIT_ROOT%  2. walk up from the exe (repo in dev, <USB>\phoenix on the stick)
 /// 3. C:\ProgramData\Phoenix\kit (installed by FirstLogon).
 fn kit_root() -> Result<PathBuf, String> {
@@ -95,7 +101,7 @@ fn kit_root() -> Result<PathBuf, String> {
 }
 
 fn engine_script() -> Result<PathBuf, String> {
-    Ok(kit_root()?.join("engine").join("phoenix.ps1"))
+    Ok(engine_in(&kit_root()?))
 }
 
 fn tmp_dir() -> Result<PathBuf, String> {
@@ -508,7 +514,7 @@ fn pack_path(id: &str) -> Result<PathBuf, String> {
     if !valid_pack_id(id) {
         return Err(format!("Invalid pack id '{id}' (use a-z, 0-9 and '-')"));
     }
-    Ok(kit_root()?.join("packs").join(format!("{id}.json")))
+    Ok(kit_root()?.join("config").join("packs").join(format!("{id}.json")))
 }
 
 #[tauri::command]
@@ -552,7 +558,7 @@ fn pack_export(id: String, path: String) -> Result<(), String> {
 #[tauri::command]
 fn catalog_load() -> Result<Value, String> {
     let kit = kit_root()?;
-    for rel in ["catalog/apps.json", "data/choco-install/apps.json", "config/apps.json"] {
+    for rel in ["config/catalog/apps.json"] {
         let p = kit.join(rel);
         if p.is_file() {
             let v = read_json_file(&p)?;

@@ -32,7 +32,7 @@
 .PARAMETER App
     One app id (e.g. "ableton") or "all". Default: all.
 .PARAMETER ProfileDir
-    Defaults to ..\..\profiles relative to this script.
+    Defaults to ..\..\config\profiles relative to this script.
 .PARAMETER Apply
     Actually restore. Without it, plan mode only.
 .PARAMETER Plan
@@ -49,7 +49,7 @@ param(
     [Parameter(Mandatory = $true)][string]$ManifestDir,
     [Parameter(Mandatory = $true)][string]$TargetRoot,
     [string]$App = "all",
-    [string]$ProfileDir = (Join-Path $PSScriptRoot ".." ".." "profiles"),
+    [string]$ProfileDir = (Join-Path $PSScriptRoot ".." ".." "config" "profiles"),
     [switch]$Apply,
     [switch]$Plan,
     [switch]$AllowSameDisk,

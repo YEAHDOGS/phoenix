@@ -13,7 +13,7 @@ set -uo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 BACKUP="$REPO/scripts/backup/backup-selective.sh"
 RESTORE="$REPO/scripts/backup/restore-selective.sh"
-PROFILES="$REPO/profiles"
+PROFILES="$REPO/config/profiles"
 PASS=0; FAIL=0
 
 pass() { PASS=$((PASS+1)); echo "  ok: $1"; }

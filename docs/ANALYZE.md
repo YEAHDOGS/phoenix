@@ -15,9 +15,9 @@ the manual-mode steps of the emergency runbook Phase 1 (runbook branch
 
 | File | Role |
 |---|---|
-| `tools/lib/analyze-gates.sh` | Bash gate library, sourced by the flow. Disk enumeration (`analyze_enumerate_disks`), partition inventory (`analyze_partition_inventory`), the **read-only self-check** (`analyze_assert_readonly`), the read-only mounter (`analyze_ro_mount`), the report-dir gate (`analyze_require_report_dir`), heuristic scans (`analyze_scan_mount`), report assembly (`analyze_write_report`). |
-| `tools/Analyze-DiskTriage.sh` | Linux / boot-environment triage flow: self-check → enumerate → partition inventory → scans → report. |
-| `tools/Analyze-DiskTriage.ps1` | WinPE / staging-side twin: same report shape, same heuristics, same read-only contract (its own `Assert-ReadOnly` self-check). |
+| `scripts/tools/lib/analyze-gates.sh` | Bash gate library, sourced by the flow. Disk enumeration (`analyze_enumerate_disks`), partition inventory (`analyze_partition_inventory`), the **read-only self-check** (`analyze_assert_readonly`), the read-only mounter (`analyze_ro_mount`), the report-dir gate (`analyze_require_report_dir`), heuristic scans (`analyze_scan_mount`), report assembly (`analyze_write_report`). |
+| `scripts/tools/Analyze-DiskTriage.sh` | Linux / boot-environment triage flow: self-check → enumerate → partition inventory → scans → report. |
+| `scripts/tools/Analyze-DiskTriage.ps1` | WinPE / staging-side twin: same report shape, same heuristics, same read-only contract (its own `Assert-ReadOnly` self-check). |
 | `tests/tools/test-analyze.sh` | Regression suite (22 cases, fully mocked — no real disks). |
 
 ## 2. The read-only guarantee (enforced, not documented)
@@ -67,9 +67,9 @@ interlocks (docs/NUKE-SAFETY.md).
 
 ```bash
 # boot environment (air-gapped; report goes to the Phoenix USB, never the target)
-tools/Analyze-DiskTriage.sh --save-state /mnt/usb/phoenix-state
+scripts/tools/Analyze-DiskTriage.sh --save-state /mnt/usb/phoenix-state
 # also scan unmounted partitions via read-only mounts:
-tools/Analyze-DiskTriage.sh --save-state /mnt/usb/phoenix-state --mount-ro
+scripts/tools/Analyze-DiskTriage.sh --save-state /mnt/usb/phoenix-state --mount-ro
 ```
 
 Without `--mount-ro`, only partitions the boot environment already has

@@ -85,7 +85,7 @@ written by either side verifies with the other side's comparer:
    before it touches a real stick):
 
    ```powershell
-   .\tools\Build-PhoenixUsb.ps1 -UsbDrive "E:" -IsoDir ".\iso-staging" `
+   .\scripts\tools\Build-PhoenixUsb.ps1 -UsbDrive "E:" -IsoDir ".\iso-staging" `
      -ComputerName "USER-PC" -Username "user"
    ```
 
@@ -93,7 +93,7 @@ written by either side verifies with the other side's comparer:
    same JSON hash sidecar):
 
    ```bash
-   ./tools/Build-PhoenixUsb.sh --usb-mount /media/phoenix --iso-dir ./iso-staging \
+   ./scripts/tools/Build-PhoenixUsb.sh --usb-mount /media/phoenix --iso-dir ./iso-staging \
      --iso-hashes ./iso-staging/phoenix-iso-hashes.json \
      --computer-name USER-PC --username user
    ```
@@ -108,7 +108,7 @@ written by either side verifies with the other side's comparer:
    > in BOOT-ARCHITECTURE.md §4). Until it lands, the TOOLKIT menu entry is
    > absent — Reinstall/Analyze/Backup/Nuke all work without it. The `$OEM$`
    > folder (Specialize.ps1 / DefaultUser.ps1) **does not exist in this repo
-   > yet** either (see `VISION.md` Phase 3); until it lands, place post-install
+   > yet** either (see `docs/VISION.md` Phase 3); until it lands, place post-install
    > scripts manually or run them after first logon.
 3. Add your drivers to `phoenix\$WinPEDriver$` on the USB if the laptop needs
    them (network/storage drivers especially — test on the QEMU path if unsure).
@@ -226,7 +226,7 @@ destination = the external USB drive → enable compression and the post-backup
 integrity check. Name it clearly, e.g. `laptop-fulldisk-2026-09-09`. Let it run
 to completion; a failing disk can take hours.
 
-> **Scripted alternative:** `tools/Invoke-Backup.sh` (Linux rescue side) performs
+> **Scripted alternative:** `scripts/tools/Invoke-Backup.sh` (Linux rescue side) performs
 > the same full-disk image headlessly — air-gap gate, serial-resolved source
 > and USB target, verification ladder, and automatic image-proof emission —
 > see `docs/BACKUP-MODULE.md`. The manual Rescuezilla path remains fully
@@ -293,7 +293,7 @@ image (runbook invariant 1, enforced in code). From the Backup environment
 (or any Linux shell with the USB mounted), record it:
 
 ```bash
-./tools/New-ImageProof.sh \
+./scripts/tools/New-ImageProof.sh \
   --image-name laptop-fulldisk-2026-09-09 \
   --image-path /media/usb-target/laptop-fulldisk-2026-09-09 \
   --source-serial <serial-of-the-imaged-disk> \
@@ -317,7 +317,7 @@ mounts the infected volume **read-only** (never read-write), skips executables
 by default, and hashes every file:
 
 ```bash
-./tools/phoenix-data-backup.sh \
+./scripts/tools/phoenix-data-backup.sh \
   --source-dev /dev/nvme0n1p3 \
   --out /media/usb-target2/laptop-data-2026-09-09 \
   --extra "Users/user/Ableton Projects:license-keys.txt" \
@@ -343,7 +343,7 @@ by default, and hashes every file:
 - Fail-closed: the target must be a local direct-attached drive (network
   filesystems and UNC paths refused), and `--out` may never sit inside the
   source volume.
-- WinPE twin: `.\tools\New-PhoenixDataBackup.ps1 -Source "C:" -Out
+- WinPE twin: `.\scripts\tools\New-PhoenixDataBackup.ps1 -Source "C:" -Out
   "E:\laptop-data-2026-09-09" -Operator user` — robocopy-based copy of the
   same profile set, same manifest/schema/dirty contract (see the tool header).
 
@@ -406,7 +406,7 @@ reach wear-levelled, overprovisioned, or remapped blocks. The rule:
   all available from a Linux shell), then nwipe as a supplement if desired.
 - **Unknown media:** treat as SSD.
 
-> The interlocked nuke UX has landed as `tools/Invoke-Nuke.sh` (bash, runs in
+> The interlocked nuke UX has landed as `scripts/tools/Invoke-Nuke.sh` (bash, runs in
 > the Linux boot env — typed confirmation, disk enumeration by model/serial/
 > size, never auto-selects a target, method-per-media per BOOT-ARCHITECTURE.md
 > §8). Arming **requires** `--image-proof <file>` — the manifest written in
@@ -419,7 +419,7 @@ reach wear-levelled, overprovisioned, or remapped blocks. The rule:
 > manual flow is the only wipe path — match the target disk's serial to the
 > physical drive with your own eyes, twice.
 >
-> `tools/Invoke-Nuke.sh` is **dry-run by default**: no flags (or `--whatif`)
+> `scripts/tools/Invoke-Nuke.sh` is **dry-run by default**: no flags (or `--whatif`)
 > only enumerates disks and exits. Always run this first and match the target
 > serial to the physical drive with your own eyes (see Appendix D for what the
 > enumeration output looks like and which columns you are reading).
@@ -449,7 +449,7 @@ machine (you'll thank Phase-0 the user).
 **Step 4.3 — Install apps via Chocolatey.**
 Run phase `user-online` from the Phoenix app (Runbook → stage 10). Its `choco`
 step bootstraps Chocolatey from the USB kit, installs the apps picked in the
-app's Apps screen (`catalog/apps.json`), and closes the firewall install window
+app's Apps screen (`config/catalog/apps.json`), and closes the firewall install window
 when done.
 > Network access is fine now: the machine is clean.
 
@@ -461,11 +461,11 @@ makes the *next* emergency a restore instead of a crisis.
 
 **Step 4.5 — Restore data selectively.**
 From the **data-only** backup (Step 2.6), copy back what you need — with
-`tools\New-PhoenixDataRestore.ps1` on the fresh install:
+`scripts\tools\New-PhoenixDataRestore.ps1` on the fresh install:
 
 ```powershell
-.\tools\New-PhoenixDataRestore.ps1 -BackupDir "E:\laptop-data-2026-09-09" -WhatIf
-.\tools\New-PhoenixDataRestore.ps1 -BackupDir "E:\laptop-data-2026-09-09" `
+.\scripts\tools\New-PhoenixDataRestore.ps1 -BackupDir "E:\laptop-data-2026-09-09" -WhatIf
+.\scripts\tools\New-PhoenixDataRestore.ps1 -BackupDir "E:\laptop-data-2026-09-09" `
     -Profiles user -TargetRoot "C:"
 ```
 
@@ -531,7 +531,7 @@ your real disks. The columns that matter for the interlock are **serial** and
 **model**: the typed confirmation in Phase 3 must match them exactly as shown.
 
 **Linux — the raw inventory source** (`lsblk -dno NAME,MODEL,SERIAL,SIZE,TRAN,RM -P`,
-what `tools/Get-DiskInventory.sh` parses):
+what `scripts/tools/Get-DiskInventory.sh` parses):
 
 ```
 NAME="sda" MODEL="Samsung SSD 870 EVO 1TB" SERIAL="S5YBNJ0R123456A" SIZE="931.5G" TRAN="sata" RM="0"
@@ -539,7 +539,7 @@ NAME="sdb" MODEL="SanDisk Ultra USB 3.0"   SERIAL="4C530001234567890123"        
 NAME="nvme0n1" MODEL="WD Black SN850X 1TB" SERIAL="234567890123"                SIZE="931.5G" TRAN="nvme" RM="0"
 ```
 
-**Linux — the structured contract** (`./tools/Get-DiskInventory.sh`, same shape
+**Linux — the structured contract** (`./scripts/tools/Get-DiskInventory.sh`, same shape
 as the `.ps1` twin; this is what the confirmation gate reads — never your memory):
 
 ```json

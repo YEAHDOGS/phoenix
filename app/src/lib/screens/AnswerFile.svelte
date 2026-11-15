@@ -192,7 +192,7 @@
 {:else if notBuilt}
   <Notice kind="warn" title="Answer-file engine not built yet">
     The answer-file generator (<code class="kbd">phoenix-unattend.exe</code>) isn't available, so there are no options to show.
-    Build it with <code class="kbd">unattend/build.ps1</code> (needs the .NET SDK), then reload this screen.
+    Build it with <code class="kbd">app/unattend/build.ps1</code> (needs the .NET SDK), then reload this screen.
     <div class="mt-2 font-mono text-xs text-ink-400">{notBuilt}</div>
     <button class="btn-outline mt-3" onclick={load}><Icon name="refresh" size={15} /> Reload</button>
   </Notice>

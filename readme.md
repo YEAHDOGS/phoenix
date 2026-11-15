@@ -81,7 +81,7 @@ Android does not feature any answerfile automation system for re-installs, so I 
 
 ### The Phoenix app (recommended)
 
-`app/` is the Phoenix desktop app (Tauri + Svelte). It drives everything through one PowerShell engine (`engine/phoenix.ps1`) and data-driven, shareable packs (`packs/`). See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+`app/` is the Phoenix desktop app (Tauri + Svelte). It drives everything through one PowerShell engine (`scripts/engine/phoenix.ps1`) and data-driven, shareable packs (`config/packs/`). See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 - **Runbook** - every stage of a full wipe and restore, manual and automated, with live status
 - **Profile** - machine, accounts (one admin, one lead user, any number of users) and the pack stack

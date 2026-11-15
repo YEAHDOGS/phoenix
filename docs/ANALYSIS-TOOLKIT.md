@@ -165,12 +165,12 @@ Analyze
 Rules the wiring enforces: items 1–2 never mount the suspect disk writable;
 item 3 never runs on the infected hardware. The actual bootloader entries are
 built by the USB-assembly worker from this contract; the staging script
-(`tools/Stage-AnalysisTools.ps1`) populates the USB data partition and the
-staging media from the manifest (`tools/analysis-toolkit.manifest.json`).
+(`scripts/tools/Stage-AnalysisTools.ps1`) populates the USB data partition and the
+staging media from the manifest (`scripts/tools/analysis-toolkit.manifest.json`).
 
 ## Staging pipeline
 
-`tools/Stage-AnalysisTools.ps1` runs on a **clean** build machine (never the
+`scripts/tools/Stage-AnalysisTools.ps1` runs on a **clean** build machine (never the
 infected laptop). For each manifest entry it downloads (or picks up a
 manual drop from `staging/inbox/`), then verifies:
 

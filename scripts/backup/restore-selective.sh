@@ -8,7 +8,7 @@
 #                        [--config phoenix-config.json] [--chain STATE-DIR]
 #
 #   --config FILE  USB stick policy: fully validates phoenix-config.json via
-#                  tools/Read-UsbConfig.py and refuses unless the stick's
+#                  scripts/tools/Read-UsbConfig.py and refuses unless the stick's
 #                  Backup lane is enabled. Opt-in; without it nothing changes.
 #   --chain DIR    chain-of-custody ordering: refuses unless DIR holds a
 #                  verified backup-image-proof.json AND nuke-completed.json.
@@ -39,9 +39,9 @@ CONFIRM_WORD=""
 ALLOW_SAME_DISK=0
 CONFIG=""
 CHAIN_DIR=""
-PROFILE_DIR="$(cd "$(dirname "$0")/../../profiles" && pwd)"
+PROFILE_DIR="$(cd "$(dirname "$0")/../../config/profiles" && pwd)"
 HOME_ROOT="${PHOENIX_HOME:-$HOME}"
-TOOLS_DIR="$(cd "$(dirname "$0")/../../tools" && pwd)"
+TOOLS_DIR="$(cd "$(dirname "$0")/../tools" && pwd)"
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -66,7 +66,7 @@ command -v jq >/dev/null || { echo "error: jq is required" >&2; exit 1; }
 [ -d "$TARGET_ROOT" ] || { echo "error: --target-root '$TARGET_ROOT' does not exist or is not a directory" >&2; exit 1; }
 
 # --config: USB stick policy. The config is FULLY validated (JSON Schema +
-# CONFIG-SCHEMA.md section 6) by tools/Read-UsbConfig.py; restoring data
+# CONFIG-SCHEMA.md section 6) by scripts/tools/Read-UsbConfig.py; restoring data
 # makes sense only when the stick's Backup lane was enabled (the data came
 # from a Phoenix backup). Fail closed on every problem. Opt-in: without
 # --config the script behaves exactly as before.

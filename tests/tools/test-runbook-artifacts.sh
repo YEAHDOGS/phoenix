@@ -4,7 +4,7 @@
 #
 # Validates the emergency runbook end-to-end WITHOUT touching any hardware:
 # every repo artifact a phase depends on must exist in this worktree, and the
-# runbook must reference the REAL nuke module (tools/Invoke-Nuke.sh, bash for
+# runbook must reference the REAL nuke module (scripts/tools/Invoke-Nuke.sh, bash for
 # the Linux boot environment -- there is no .ps1 by design) with its actual
 # interlocks documented (dry-run default, enumeration, structural refusals,
 # two-factor typed confirmation on a real TTY). Exit 0 = the runbook is
@@ -24,17 +24,17 @@ pass "runbook exists"
 
 #--- Phase 0/4 repo artifacts every step depends on ------------------------------
 REQUIRED=(
-    "scripts/checksum/check.ps1"                    # Step 0.2: ISO hash verify
-    "scripts/checksum/check.sh"                     # Step 0.2: Linux twin
-    "scripts/checksum/compare.sh"                   # Step 2.4/2.6: manifest verify
-    "scripts/emergency/Send-ImageToCastle.ps1"      # Step 2.6: Castle copy (Win)
-    "scripts/emergency/Send-ImageToCastle.sh"       # Step 2.6: Castle copy (Linux)
-    "win-install/autounattend.xml"                  # Steps 0.3, 4.1: unattended install
-    "win-install/README.md"                         # Step 0.3: install sequence
+    "scripts/checksum/check.ps1"                        # Step 0.2: ISO hash verify
+    "scripts/checksum/check.sh"                         # Step 0.2: Linux twin
+    "scripts/checksum/compare.sh"                       # Step 2.4/2.6: manifest verify
+    "scripts/emergency/Send-ImageToCastle.ps1"          # Step 2.6: Castle copy (Win)
+    "scripts/emergency/Send-ImageToCastle.sh"           # Step 2.6: Castle copy (Linux)
+    "scripts/engine/phoenix.ps1"                        # Steps 0.3, 4.1: answer file (engine 'unattend')
+    "app/unattend/phoenix-defaults.json"                # Steps 0.3, 4.1: answer-file defaults
+    "docs/win-install/README.md"                        # Step 0.3: install sequence
     "scripts/chocolatey/install-chocolatey-online.ps1"  # Step 4.3
-    "scripts/chocolatey/apps.ps1"                   # Step 4.3
-    "catalog/apps.json"                              # Step 4.3: app picker list
-    "VISION.md"                                     # referenced re: $OEM$ phase 3
+    "config/catalog/apps.json"                          # Step 4.3: app picker list
+    "docs/VISION.md"                                    # referenced re: $OEM$ phase 3
 )
 for p in "${REQUIRED[@]}"; do
     if [[ -f "$REPO/$p" ]]; then
@@ -47,14 +47,14 @@ done
 #--- the nuke module reference must be the real one ------------------------------
 if grep -q 'Invoke-Nuke\.ps1' "$RUNBOOK"; then
     fail "runbook references Invoke-Nuke.ps1" \
-        "stale: the module is tools/Invoke-Nuke.sh (bash, boot env) -- no .ps1 exists by design"
+        "stale: the module is scripts/tools/Invoke-Nuke.sh (bash, boot env) -- no .ps1 exists by design"
 else
     pass "runbook has no stale Invoke-Nuke.ps1 reference"
 fi
-if grep -q 'tools/Invoke-Nuke\.sh' "$RUNBOOK"; then
-    pass "runbook references tools/Invoke-Nuke.sh"
+if grep -q 'scripts/tools/Invoke-Nuke\.sh' "$RUNBOOK"; then
+    pass "runbook references scripts/tools/Invoke-Nuke.sh"
 else
-    fail "runbook references tools/Invoke-Nuke.sh" "Phase 3 names the wrong module path"
+    fail "runbook references scripts/tools/Invoke-Nuke.sh" "Phase 3 names the wrong module path"
 fi
 
 #--- the documented interlocks must match the real module ------------------------

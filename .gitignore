@@ -2,7 +2,7 @@
 Applications/*
 
 # Add drivers here
-win-install/drivers
+docs/win-install/drivers
 
 # Local information
 *.csv
@@ -15,10 +15,11 @@ scripts/sys-info/data/*
 
 # Isos
 *.iso
-qemu/data/*
+scripts/qemu/data/*
+!scripts/qemu/data/.gitkeep
 # Phoenix answer-file generator staging: filled autounattend.xml files carry
 # REAL local-account passwords. They must never be committed.
-win-install/staging/
+docs/win-install/staging/
 
 # Phoenix toolkit staging (build-time binaries, never commit)
 staging/
@@ -32,6 +33,6 @@ app/.svelte-kit/
 app/src-tauri/target/
 app/src-tauri/gen/
 
-# phoenix-unattend build output (unattend/build.ps1)
-unattend/bin/
-unattend/obj/
+# phoenix-unattend build output (app/unattend/build.ps1)
+app/unattend/bin/
+app/unattend/obj/

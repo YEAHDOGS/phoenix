@@ -12,9 +12,9 @@
 set -u
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-ENUM="$REPO_ROOT/tools/Get-DiskInventory.sh"
-LIB="$REPO_ROOT/tools/lib/reinstall-gates.sh"
-FLOW="$REPO_ROOT/tools/Reinstall-Windows.sh"
+ENUM="$REPO_ROOT/scripts/tools/Get-DiskInventory.sh"
+LIB="$REPO_ROOT/scripts/tools/lib/reinstall-gates.sh"
+FLOW="$REPO_ROOT/scripts/tools/Reinstall-Windows.sh"
 FIX="$REPO_ROOT/tests/tools/fixtures"
 
 pass=0; fail=0
@@ -23,6 +23,8 @@ bad()  { fail=$((fail+1)); echo "FAIL: $1"; }
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
+# Calls without --state default to ./phoenix-state; keep that out of the repo.
+cd "$TMP" || exit 1
 
 # All-zeros first-1MiB hash: what the Nuke flow produces. Same constant as
 # REINSTALL_BLANK_HASH in the gate library.

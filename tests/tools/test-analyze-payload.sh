@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #===============================================================================
-# test-analyze-payload.sh -- regression harness for tools/Invoke-Analyze.sh
-# (+ static contract checks for tools/Invoke-Analyze.ps1)
+# test-analyze-payload.sh -- regression harness for scripts/tools/Invoke-Analyze.sh
+# (+ static contract checks for scripts/tools/Invoke-Analyze.ps1)
 #
 # The Analyze module is READ-ONLY by construction, so the harness focuses on
 # the identity contract it shares with Invoke-Nuke.sh / Invoke-Backup.sh:
@@ -28,8 +28,8 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
-ANALYZE="$REPO/tools/Invoke-Analyze.sh"
-ANALYZE_PS1="$REPO/tools/Invoke-Analyze.ps1"
+ANALYZE="$REPO/scripts/tools/Invoke-Analyze.sh"
+ANALYZE_PS1="$REPO/scripts/tools/Invoke-Analyze.ps1"
 FIX="$REPO/tests/config/fixtures"
 T="$(mktemp -d /tmp/phoenix-analyze-test.XXXXXX)"
 MOCKBIN="$T/mockbin"
@@ -77,7 +77,7 @@ echo unknown > "$T/sys/class/net/lo/operstate"
 touch "$T/dev/tpm0"
 
 export PHOENIX_SYSFS_ROOT="$T/sys" PHOENIX_PROC_ROOT="$T/proc" PHOENIX_DEV_ROOT="$T/dev"
-export PHOENIX_TOOLS_DIR="$REPO/tools"
+export PHOENIX_TOOLS_DIR="$REPO/scripts/tools"
 
 # lsblk that always fails -> forces the /sys fallback path
 printf '#!/bin/bash\nexit 1\n' > "$MOCKBIN/lsblk"
@@ -244,7 +244,7 @@ echo "$OUT" | grep -q "missing or invalid" && pass "H2 missing proof noted" || f
 # Real proof via the real writer:
 printf 'x%.0s' $(seq 1 64) > "$T/fake.img"
 SHA="$(sha256sum "$T/fake.img" | cut -d' ' -f1)"
-bash "$REPO/tools/New-ImageProof.sh" --image-name test --image-path "$T/fake.img" \
+bash "$REPO/scripts/tools/New-ImageProof.sh" --image-name test --image-path "$T/fake.img" \
     --source-serial S6P7NX0T123456A --sha256 "$SHA" --verified --out "$T" >/dev/null 2>&1
 PROOF="$(ls "$T"/*.proof 2>/dev/null | head -1)"
 if [[ -n "$PROOF" ]]; then

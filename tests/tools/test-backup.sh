@@ -11,9 +11,9 @@
 set -u
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-ENUM="$REPO_ROOT/tools/Get-DiskInventory.sh"
-LIB="$REPO_ROOT/tools/lib/backup-gates.sh"
-FLOW="$REPO_ROOT/tools/Backup-DiskImage.sh"
+ENUM="$REPO_ROOT/scripts/tools/Get-DiskInventory.sh"
+LIB="$REPO_ROOT/scripts/tools/lib/backup-gates.sh"
+FLOW="$REPO_ROOT/scripts/tools/Backup-DiskImage.sh"
 FIX="$REPO_ROOT/tests/tools/fixtures"
 
 pass=0; fail=0

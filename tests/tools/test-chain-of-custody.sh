@@ -4,10 +4,10 @@
 # chain of custody: BACKUP emits proof -> NUKE writes completion -> REINSTALL
 # consumes both.
 #
-# Every record is produced by the REAL writer (tools/New-ImageProof.sh for the
-# backup side, write_nuke_completion sourced from tools/Invoke-Nuke.sh for the
+# Every record is produced by the REAL writer (scripts/tools/New-ImageProof.sh for the
+# backup side, write_nuke_completion sourced from scripts/tools/Invoke-Nuke.sh for the
 # nuke side) and consumed by the REAL reinstall gate
-# (tools/lib/reinstall-gates.sh). Nothing here touches a real disk; no wipe
+# (scripts/tools/lib/reinstall-gates.sh). Nothing here touches a real disk; no wipe
 # ever executes. Exit 0 = all pass; exit 1 = any failure.
 #
 # What this proves that the per-phase suites cannot: the records one phase
@@ -19,9 +19,9 @@
 set -u
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-PROOF_WRITER="$REPO_ROOT/tools/New-ImageProof.sh"
-NUKE="$REPO_ROOT/tools/Invoke-Nuke.sh"
-LIB="$REPO_ROOT/tools/lib/reinstall-gates.sh"
+PROOF_WRITER="$REPO_ROOT/scripts/tools/New-ImageProof.sh"
+NUKE="$REPO_ROOT/scripts/tools/Invoke-Nuke.sh"
+LIB="$REPO_ROOT/scripts/tools/lib/reinstall-gates.sh"
 
 pass=0; fail=0
 ok()  { pass=$((pass+1)); echo "PASS: $1"; }
@@ -60,7 +60,7 @@ EOF
 # write a real nuke completion record via the real function from Invoke-Nuke.sh
 SRC_STRIPPED="$TMP/invoke-nuke-src.sh"
 grep -v '^main "\$@"$' "$NUKE" > "$SRC_STRIPPED"
-export PHOENIX_TOOLS_DIR="$REPO_ROOT/tools"
+export PHOENIX_TOOLS_DIR="$REPO_ROOT/scripts/tools"
 # shellcheck disable=SC1090
 source "$SRC_STRIPPED" >/dev/null 2>&1
 set +e   # the sourced script carries `set -e`; our negative tests need nonzero exits
