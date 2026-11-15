@@ -33,7 +33,7 @@ REQUIRED=(
     "win-install/README.md"                         # Step 0.3: install sequence
     "scripts/chocolatey/install-chocolatey-online.ps1"  # Step 4.3
     "scripts/chocolatey/apps.ps1"                   # Step 4.3
-    "data/choco-install/apps.json"                  # Step 4.3: app picker list
+    "catalog/apps.json"                              # Step 4.3: app picker list
     "VISION.md"                                     # referenced re: $OEM$ phase 3
 )
 for p in "${REQUIRED[@]}"; do

@@ -174,17 +174,16 @@ machine identity, no credentials, and no app list — it is the *boot-side
 policy file*, not the install manifest. Those inputs are GUI-session data
 that flow into the *generated artifacts on the stick*, never into the config:
 
-- **Machine identity, local accounts, passwords** → parameters of
-  `tools/New-UnattendXml.ps1`, which fills the credential-free
-  `win-install/autounattend.template.xml` and writes the gitignored
-  `/autounattend.xml` at the USB root. The filled answer file carries the
+- **Machine identity, local accounts, passwords** → the engine's `unattend`
+  command (the Schneegans generator, wrapped; see `docs/ARCHITECTURE.md`),
+  which writes `/autounattend.xml` at the USB root. The filled answer file carries the
   real passwords (the unattend format requires them — even the "obscured"
   form is reversible), so it is never committed and never lives in
   `phoenix-config.json`.
-- **App selection** → the config GUI's app picker, feeding
-  `tools/New-AppInstallScript.ps1` (which generates the setup-time Chocolatey
-  installer from `data/choco-install/apps.json`) and the answer file's
-  FirstLogonCommands. The OS-agnostic config does not name apps.
+- **App selection** → the app's Chocolatey picker (`catalog/apps.json` +
+  live search), stored as `apps` in `phoenix.config.json` and installed by the
+  engine's `choco` step in phase `user-online`. The OS-agnostic config does not
+  name apps.
 - **Disk allowlist serials** → the GUI copies them verbatim from a disk
   enumeration (never hand-typed from memory) into `target_disks`; the boot
   side's `tools/Invoke-Nuke.sh --config` enforces them (NUKE-SAFETY

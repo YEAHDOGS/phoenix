@@ -14,7 +14,7 @@ Did you know that pagefiles and swapfiles are now turned on by default on Window
 
 I've created this project to help automate the setup of freshly flashed PCs. This repo contains many scripts to remove bloatware, harden security, disable tasks, remove services, lock down settings, and install selected apps. The core idea is that I can wipe the SSD via bios, plug in my Win 11 install USB, plug in another USB with this project on it, and get my system just the way I like it in one swoop.
 
-This project goes hand in hand with Playbooks and [Ameliorated AME]. My current playbook of choice is [ReviOS]. If you wish to use these tools on air-gapped machines offline, a modified ReviOS Playbook allows compilation and offline installation.
+This project goes hand in hand with Playbooks and [Ameliorated AME]. My playbook is [Dogs Playbook], my offline fork of [ReviOS]. It compiles and installs with zero network, so it works on air-gapped machines.
 
 Some people say it is impossible to use Windows 11 privately, as it is very shoddy by design. But I'll be damned if I'm switching to Linux. I'll be damned!
 
@@ -68,6 +68,7 @@ Android does not feature any answerfile automation system for re-installs, so I 
 - [Schneegans Answer File AutoUnattend Generator](https://schneegans.de/windows/unattend-generator) - Create a file that tells the Windows installation media to behave differently. Extremely powerful
 - [Ameliorated AME] - Install Playbooks to tune Windows in any way
 - [ReviOS] - A Playbook by Revision focused on minimalism and privacy
+- [Dogs Playbook] - My offline fork of ReviOS, the debloat layer Phoenix runs after the answer file
 - [SysInternals] - A very important toolset for disabling startup services, monitoring processes, and so much more
 - [Ventoy](https://www.ventoy.net) - Create runnable USBs with your choice of operating systems or install isos
 - [Yubico Yubikey] - A $50 USB FIDO smart card. Currently smart card login appears only accessible to Windows Enterprise users set up with Group Policies in Microsoft Intune. This is a shame, as a beautiful security setup would be to have 2 accounts, a user and an admin one that's added to the Administrators group, then only allow the admin account to be logged in via smart card. Then leave the yubikey at home, and do what you want to do in peace. This repo will contain documentation and scripts to enable this setup
@@ -78,7 +79,24 @@ Android does not feature any answerfile automation system for re-installs, so I 
 
 ## Installation
 
-### Using the GUI Launcher (Recommended)
+### The Phoenix app (recommended)
+
+`app/` is the Phoenix desktop app (Tauri + Svelte). It drives everything through one PowerShell engine (`engine/phoenix.ps1`) and data-driven, shareable packs (`packs/`). See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+- **Runbook** - every stage of a full wipe and restore, manual and automated, with live status
+- **Profile** - machine, accounts (one admin, one lead user, any number of users) and the pack stack
+- **Packs** - every device, service, task, feature, app, autorun, firewall and registry change, with risk levels, toggleable per item
+- **Scan and Plan** - inventory this machine and preview exactly what each phase would change (read-only)
+- **Apps** - searchable Chocolatey picker
+- **USB** - download and verify the loadout, write the answer file and the Phoenix kit to a USB drive
+
+```powershell
+cd app
+npm install
+npm run tauri dev      # or: npm run tauri build
+```
+
+### Using the legacy GUI launcher
 
 A unified GUI launcher is available to browse, search, and execute all scripts in this project:
 
@@ -169,6 +187,7 @@ MIT
 
    [Chocolatey]: <https://chocolatey.org>
    [ReviOS]: <https://www.revi.cc>
+   [Dogs Playbook]: <https://github.com/cptnbrando/dogs-playbook>
    [Schneegans]: <https://schneegans.de/windows/unattend-generator>
    [Ameliorated AME]: <https://amelabs.net>
    [SysInternals]: <https://learn.microsoft.com/en-us/sysinternals>
