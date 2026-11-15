@@ -1,0 +1,100 @@
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Xml;
+
+namespace Schneegans.Unattend;
+
+public interface IComputerNameSettings;
+
+public class RandomComputerNameSettings : IComputerNameSettings;
+
+public class CustomComputerNameSettings : IComputerNameSettings
+{
+  public CustomComputerNameSettings(string? name)
+  {
+    [DoesNotReturn]
+    void Throw()
+    {
+      throw new ConfigurationException($"Computer name '{name}' is invalid.");
+    }
+
+    if (string.IsNullOrWhiteSpace(name))
+    {
+      Throw();
+    }
+
+    if (name.Length > 15)
+    {
+      Throw();
+    }
+
+    if (name.Any(char.IsWhiteSpace))
+    {
+      Throw();
+    }
+
+    if (name.All(char.IsAsciiDigit))
+    {
+      Throw();
+    }
+
+    if (name.IndexOfAny(['{', '|', '}', '~', '[', '\\', ']', '^', '\'', ':', ';', '<', '=', '>', '?', '@', '!', '"', '#', '$', '%', '`', '(', ')', '+', '/', '.', ',', '*', '&']) > -1)
+    {
+      Throw();
+    }
+
+    ComputerName = name;
+  }
+
+  public string ComputerName { get; }
+}
+
+public record class ScriptComputerNameSettings(
+  string Script
+) : IComputerNameSettings;
+
+public record class PromptComputerNameSettings : ScriptComputerNameSettings
+{
+  public PromptComputerNameSettings() : base(Util.StringFromResource("ComputerNamePrompt.ps1"))
+  {
+  }
+}
+
+class ComputerNameModifier(ModifierContext context) : Modifier(context)
+{
+  public override void Process()
+  {
+    void SetComputerName(string value)
+    {
+      XmlElement component = Util.GetOrCreateElement(Pass.specialize, "Microsoft-Windows-Shell-Setup", Document, NamespaceManager);
+      NewSimpleElement("ComputerName", component, value);
+    }
+
+    switch (Configuration.ComputerNameSettings)
+    {
+      case CustomComputerNameSettings settings:
+        SetComputerName(settings.ComputerName);
+        break;
+
+      case ScriptComputerNameSettings settings:
+        SetComputerName("TEMPNAME");
+        string getterFile = EmbedTextFile("GetComputerName.ps1", settings.Script);
+        string setterFile = EmbedTextFileFromResource("SetComputerName.ps1");
+        SpecializeScript.Append($$"""
+            [string] $newName = & '{{getterFile}}';
+            $newName > 'C:\Windows\Setup\Scripts\ComputerName.txt';
+            "Will set the computer name to '${newName}'.";
+            Start-Process -FilePath ( Get-Process -Id $PID ).Path -ArgumentList '-ExecutionPolicy "Unrestricted" -NoProfile -File "{{setterFile}}"' -WindowStyle 'Hidden';
+            Start-Sleep -Seconds 10;
+            """);
+        break;
+
+      case RandomComputerNameSettings:
+        break;
+
+      default:
+        throw new NotSupportedException();
+    }
+  }
+}
