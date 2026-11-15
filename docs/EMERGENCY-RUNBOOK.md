@@ -447,11 +447,10 @@ enable BitLocker — this time, store the recovery key somewhere safe **off** th
 machine (you'll thank Phase-0 the user).
 
 **Step 4.3 — Install apps via Chocolatey.**
-Run the repo's Chocolatey flow (`scripts/chocolatey/install-chocolatey-online.ps1`,
-then `scripts/chocolatey/apps.ps1` driven by `data/choco-install/apps.json` —
-Chrome, Steam, Ableton, and the rest of your app picker list).
-> [VERIFY] The unattended `$OEM$` hook (Specialize.ps1/DefaultUser.ps1) doesn't
-> exist in the repo yet — until it does, this step runs manually at first logon.
+Run phase `user-online` from the Phoenix app (Runbook → stage 10). Its `choco`
+step bootstraps Chocolatey from the USB kit, installs the apps picked in the
+app's Apps screen (`catalog/apps.json`), and closes the firewall install window
+when done.
 > Network access is fine now: the machine is clean.
 
 **Step 4.4 — Install Veeam Agent and set up scheduled backups.**

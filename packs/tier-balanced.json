@@ -1,0 +1,783 @@
+{
+  "id": "tier-balanced",
+  "name": "Tier: Balanced (gameplan)",
+  "description": "The gameplan: no paging file, remote/telemetry/update services off, virtual adapters removed, all optional features gone except a keep list, firewall blocks inbound and outbound before the Wi-Fi card returns.",
+  "version": 1,
+  "steps": [
+    {
+      "id": "admin.services",
+      "items": [
+        {
+          "name": "XblAuthManager",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Xbox Live auth.",
+          "risk": "safe"
+        },
+        {
+          "name": "XblGameSave",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Xbox cloud saves.",
+          "risk": "safe"
+        },
+        {
+          "name": "XboxNetApiSvc",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Xbox networking.",
+          "risk": "safe"
+        },
+        {
+          "name": "SSDPSRV",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "SSDP Discovery: UPnP device discovery on the LAN.",
+          "risk": "safe"
+        },
+        {
+          "name": "upnphost",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "UPnP Device Host.",
+          "risk": "safe"
+        },
+        {
+          "name": "CDPSvc",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Connected Devices Platform: phone pairing, nearby share, timeline sync.",
+          "risk": "caution"
+        },
+        {
+          "name": "CDPUserSvc*",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Per-user Connected Devices Platform.",
+          "risk": "caution"
+        },
+        {
+          "name": "DevQueryBroker",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "DevQuery Background Discovery Broker: network device discovery.",
+          "risk": "caution"
+        },
+        {
+          "name": "TrkWks",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Distributed Link Tracking Client: tracks files across network shares.",
+          "risk": "safe"
+        },
+        {
+          "name": "SharedAccess",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Internet Connection Sharing. Breaks Mobile Hotspot.",
+          "risk": "caution"
+        },
+        {
+          "name": "lmhosts",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "TCP/IP NetBIOS Helper.",
+          "risk": "safe"
+        },
+        {
+          "name": "PcaSvc",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Program Compatibility Assistant: watches every program you run.",
+          "risk": "safe"
+        },
+        {
+          "name": "RasAuto",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Remote Access Auto Connection Manager.",
+          "risk": "safe"
+        },
+        {
+          "name": "RasMan",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Remote Access Connection Manager. Breaks built-in VPN/dial-up (WireGuard/Tailscale are unaffected).",
+          "risk": "caution"
+        },
+        {
+          "name": "SstpSvc",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Secure Socket Tunneling Protocol. Gameplan culprit: it re-creates the WAN Miniport (SSTP).",
+          "risk": "caution"
+        },
+        {
+          "name": "SessionEnv",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Remote Desktop Configuration.",
+          "risk": "safe"
+        },
+        {
+          "name": "TermService",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Remote Desktop Services.",
+          "risk": "safe"
+        },
+        {
+          "name": "UmRdpService",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Remote Desktop UserMode Port Redirector.",
+          "risk": "safe"
+        },
+        {
+          "name": "SgrmBroker",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "System Guard Runtime Monitor Broker (gameplan). Protected on most builds; skipped if Windows refuses.",
+          "risk": "caution"
+        },
+        {
+          "name": "SysMain",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "SysMain (Superfetch): preloads apps into RAM and writes usage history.",
+          "risk": "safe"
+        },
+        {
+          "name": "TapiSrv",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Telephony. Breaks fax and some softphones.",
+          "risk": "caution"
+        },
+        {
+          "name": "wmiApSrv",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "WMI Performance Adapter.",
+          "risk": "safe"
+        },
+        {
+          "name": "stisvc",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Windows Image Acquisition. Breaks scanners and some webcams.",
+          "risk": "caution"
+        },
+        {
+          "name": "UsoSvc",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Update Orchestrator. Updates come from you, not from Microsoft on a schedule. Defender signatures come from the USB.",
+          "risk": "caution"
+        },
+        {
+          "name": "wuauserv",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Windows Update. Same reasoning; you update deliberately.",
+          "risk": "caution"
+        },
+        {
+          "name": "XboxGipSvc",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Xbox accessory management. Breaks Xbox controller firmware updates.",
+          "risk": "caution"
+        },
+        {
+          "name": "vmickvpexchange",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Hyper-V Data Exchange (guest service, useless on bare metal).",
+          "risk": "safe"
+        },
+        {
+          "name": "vmicguestinterface",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Hyper-V Guest Service Interface.",
+          "risk": "safe"
+        },
+        {
+          "name": "vmicshutdown",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Hyper-V Guest Shutdown.",
+          "risk": "safe"
+        },
+        {
+          "name": "vmicheartbeat",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Hyper-V Heartbeat.",
+          "risk": "safe"
+        },
+        {
+          "name": "vmicvmsession",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Hyper-V PowerShell Direct.",
+          "risk": "safe"
+        },
+        {
+          "name": "vmicrdv",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Hyper-V Remote Desktop Virtualization.",
+          "risk": "safe"
+        },
+        {
+          "name": "vmictimesync",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Hyper-V Time Synchronization.",
+          "risk": "safe"
+        },
+        {
+          "name": "vmicvss",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Hyper-V Volume Shadow Copy Requestor.",
+          "risk": "safe"
+        },
+        {
+          "name": "HvHost",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "HV Host Service. Breaks WSL2 / Hyper-V if you use them.",
+          "risk": "caution"
+        }
+      ]
+    },
+    {
+      "id": "admin.appx",
+      "items": [
+        {
+          "pattern": "MicrosoftWindows.Client.WebExperience",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Widgets board and its news feed.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.XboxApp",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Xbox app.",
+          "risk": "caution"
+        },
+        {
+          "pattern": "Microsoft.GamingApp",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Xbox (new) app.",
+          "risk": "caution"
+        },
+        {
+          "pattern": "Microsoft.Xbox.TCUI",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Xbox UI components.",
+          "risk": "caution"
+        },
+        {
+          "pattern": "Microsoft.XboxGamingOverlay",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Game Bar.",
+          "risk": "caution"
+        },
+        {
+          "pattern": "Microsoft.XboxGameOverlay",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Game overlay.",
+          "risk": "caution"
+        },
+        {
+          "pattern": "Microsoft.XboxIdentityProvider",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Xbox sign-in.",
+          "risk": "caution"
+        },
+        {
+          "pattern": "Microsoft.XboxSpeechToTextOverlay",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Xbox speech overlay.",
+          "risk": "caution"
+        },
+        {
+          "pattern": "Microsoft.ZuneMusic",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Media Player (install VLC instead).",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.ZuneVideo",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Movies & TV.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.MicrosoftStickyNotes",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Cloud-synced notes.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.WindowsSoundRecorder",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Sound Recorder.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.WindowsAlarms",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Clock (cloud focus sessions).",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.WindowsCamera",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Camera app.",
+          "risk": "caution"
+        },
+        {
+          "pattern": "Microsoft.Windows.Ai.Copilot.Provider",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Copilot provider.",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "admin.settings",
+      "items": [
+        {
+          "setting": "pagefile",
+          "value": "off",
+          "why": "Gameplan gospel: no paging file, so RAM never touches the disk (forensics). Needs enough RAM: 16 GB+ recommended.",
+          "risk": "caution"
+        },
+        {
+          "setting": "crash-dump",
+          "value": "off",
+          "why": "Crash dumps write RAM to disk too; off for the same reason.",
+          "risk": "caution"
+        },
+        {
+          "setting": "device-install-from-wu",
+          "value": "off",
+          "why": "System Properties > Hardware > Device Installation Settings: No. Windows Update must not push drivers.",
+          "risk": "caution"
+        },
+        {
+          "setting": "netbios",
+          "value": "off",
+          "why": "NetBIOS over TCP/IP off on every adapter (NBT-NS poisoning).",
+          "risk": "safe"
+        },
+        {
+          "setting": "network-throttling",
+          "value": "off",
+          "why": "Gameplan: NetworkThrottlingIndex = ffffffff.",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "admin.tasks",
+      "items": [
+        {
+          "path": "\\Microsoft\\Windows\\Defrag\\ScheduledDefrag",
+          "action": "disable",
+          "why": "Gameplan: off. Note this task also runs SSD TRIM; run \"Optimize-Volume C -ReTrim\" by hand now and then.",
+          "risk": "caution"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\Registry\\RegIdleBackup",
+          "action": "disable",
+          "why": "Registry idle backup.",
+          "risk": "safe"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\MemoryDiagnostic\\ProcessMemoryDiagnosticEvents",
+          "action": "disable",
+          "why": "Memory diagnostic telemetry.",
+          "risk": "safe"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\MemoryDiagnostic\\RunFullMemoryDiagnostic",
+          "action": "disable",
+          "why": "Memory diagnostic telemetry.",
+          "risk": "safe"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\ExploitGuard\\ExploitGuard MDM policy Refresh",
+          "action": "disable",
+          "why": "MDM policy refresh (marked unsure in the gameplan).",
+          "risk": "caution"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\WindowsUpdate\\Scheduled Start",
+          "action": "disable",
+          "why": "Wakes Windows Update.",
+          "risk": "caution"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\UpdateOrchestrator\\Schedule Scan",
+          "action": "disable",
+          "why": "Update scan wake timer. Some UpdateOrchestrator tasks are protected; those are skipped.",
+          "risk": "caution"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\UpdateOrchestrator\\Schedule Scan Static Task",
+          "action": "disable",
+          "why": "Update scan wake timer.",
+          "risk": "caution"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\UpdateOrchestrator\\Reboot_AC",
+          "action": "disable",
+          "why": "Update reboot wake timer.",
+          "risk": "caution"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\UpdateOrchestrator\\Reboot_Battery",
+          "action": "disable",
+          "why": "Update reboot wake timer.",
+          "risk": "caution"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\Flighting\\FeatureConfig\\*",
+          "action": "disable",
+          "why": "Feature flighting (A/B experiments).",
+          "risk": "safe"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\CloudExperienceHost\\CreateObjectTask",
+          "action": "disable",
+          "why": "Cloud experience host.",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "admin.features",
+      "items": [
+        {
+          "name": "Microsoft-Hyper-V-All",
+          "action": "remove",
+          "why": "Hyper-V. Not needed on a personal laptop; re-add for WSL2/VMs.",
+          "risk": "caution"
+        },
+        {
+          "name": "VirtualMachinePlatform",
+          "action": "remove",
+          "why": "Virtual Machine Platform (WSL2).",
+          "risk": "caution"
+        },
+        {
+          "name": "HypervisorPlatform",
+          "action": "remove",
+          "why": "Hypervisor Platform.",
+          "risk": "caution"
+        },
+        {
+          "name": "Containers-DisposableClientVM",
+          "action": "remove",
+          "why": "Windows Sandbox.",
+          "risk": "safe"
+        },
+        {
+          "name": "Printing-Foundation-InternetPrinting-Client",
+          "action": "remove",
+          "why": "Internet printing client.",
+          "risk": "safe"
+        },
+        {
+          "name": "Printing-Foundation-LPDPrintService",
+          "action": "remove",
+          "why": "LPD print service.",
+          "risk": "safe"
+        },
+        {
+          "name": "Printing-Foundation-LPRPortMonitor",
+          "action": "remove",
+          "why": "LPR port monitor.",
+          "risk": "safe"
+        },
+        {
+          "name": "SmbDirect",
+          "action": "remove",
+          "why": "SMB Direct (RDMA).",
+          "risk": "safe"
+        },
+        {
+          "name": "MSRDC-Infrastructure",
+          "action": "remove",
+          "why": "Remote differential compression.",
+          "risk": "safe"
+        },
+        {
+          "name": "Windows-Defender-ApplicationGuard",
+          "action": "remove",
+          "why": "Application Guard (deprecated).",
+          "risk": "safe"
+        }
+      ],
+      "removeAll": true,
+      "keep": [
+        "NetFx4-AdvSrvs",
+        "NetFx4Extended-ASPNET45",
+        "NetFx3",
+        "WCF-Services45",
+        "WCF-TCP-PortSharing45",
+        "SearchEngine-Client-Package",
+        "Printing-PrintToPDFServices-Features",
+        "Printing-Foundation-Features",
+        "MediaPlayback",
+        "WindowsMediaPlayer",
+        "Windows-Defender-Default-Definitions",
+        "Microsoft-RemoteDesktopConnection",
+        "MicrosoftWindowsPowerShell",
+        "MicrosoftWindowsPowerShellRoot"
+      ],
+      "title": "Remove all optional features (keep list)",
+      "why": "Gameplan: System > Optional features > disable all of them. The keep list holds what Windows itself or common apps need."
+    },
+    {
+      "id": "admin.capabilities",
+      "items": [
+        {
+          "name": "OpenSSH.Client*",
+          "action": "remove",
+          "why": "OpenSSH client (choco can install a current one if you want it).",
+          "risk": "safe"
+        },
+        {
+          "name": "Print.Fax.Scan*",
+          "action": "remove",
+          "why": "Fax and Scan.",
+          "risk": "safe"
+        },
+        {
+          "name": "Microsoft.Windows.Notepad.System*",
+          "action": "remove",
+          "why": "Legacy Notepad capability (the app version stays).",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "admin.registry",
+      "items": []
+    },
+    {
+      "id": "admin.devices",
+      "items": [
+        {
+          "key": "wan-miniport",
+          "match": {
+            "friendlyName": "WAN Miniport*"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "Gameplan: kill WAN Miniports (dial-up/VPN plumbing). SstpSvc/RasMan disabled above stop them coming back.",
+          "risk": "caution"
+        },
+        {
+          "key": "ndis-virtual-enum",
+          "match": {
+            "friendlyName": "NDIS Virtual Network Adapter Enumerator"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "Gameplan: System > NDIS Virtual Network Adapter Enumerator.",
+          "risk": "caution"
+        },
+        {
+          "key": "rdp-redirector-bus",
+          "match": {
+            "friendlyName": "Remote Desktop Device Redirector Bus"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "Gameplan: \"Remote Management Redirector Bus\". RDP device redirection.",
+          "risk": "safe"
+        },
+        {
+          "key": "wifi-direct",
+          "match": {
+            "friendlyName": "Microsoft Wi-Fi Direct Virtual Adapter*"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "Wi-Fi Direct virtual adapter. Breaks Mobile Hotspot and Miracast.",
+          "risk": "caution"
+        },
+        {
+          "key": "bt-pan",
+          "match": {
+            "friendlyName": "Bluetooth Device (Personal Area Network)*"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "Gameplan: delete Bluetooth LAN.",
+          "risk": "safe"
+        },
+        {
+          "key": "bt-rfcomm-tdi",
+          "match": {
+            "friendlyName": "Bluetooth Device (RFCOMM Protocol TDI)*"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "Bluetooth RFCOMM network transport.",
+          "risk": "safe"
+        },
+        {
+          "key": "teredo",
+          "match": {
+            "friendlyName": "Microsoft Teredo Tunneling Adapter"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "IPv6-over-UDP tunnel through NAT.",
+          "risk": "safe"
+        },
+        {
+          "key": "6to4",
+          "match": {
+            "friendlyName": "Microsoft 6to4 Adapter*"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "IPv6 transition tunnel.",
+          "risk": "safe"
+        },
+        {
+          "key": "isatap",
+          "match": {
+            "friendlyName": "Microsoft ISATAP Adapter*"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "IPv6 transition tunnel.",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "admin.firewall",
+      "defaultOutbound": "Block",
+      "disableOtherRules": true,
+      "title": "Firewall lockdown (before the Wi-Fi card returns)",
+      "why": "Gameplan: block all inbound and outbound except Core Networking, mDNS and Network Discovery; log every profile. Done now so the machine is locked before it ever sees a network.",
+      "risk": "caution"
+    },
+    {
+      "id": "admin.network",
+      "enabled": true
+    },
+    {
+      "id": "user-online.devices",
+      "items": [
+        {
+          "key": "wan-miniport",
+          "match": {
+            "friendlyName": "WAN Miniport*"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "Gameplan: kill WAN Miniports (dial-up/VPN plumbing). SstpSvc/RasMan disabled above stop them coming back.",
+          "risk": "caution"
+        },
+        {
+          "key": "ndis-virtual-enum",
+          "match": {
+            "friendlyName": "NDIS Virtual Network Adapter Enumerator"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "Gameplan: System > NDIS Virtual Network Adapter Enumerator.",
+          "risk": "caution"
+        },
+        {
+          "key": "wifi-direct",
+          "match": {
+            "friendlyName": "Microsoft Wi-Fi Direct Virtual Adapter*"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "Wi-Fi Direct virtual adapter. Breaks Mobile Hotspot and Miracast.",
+          "risk": "caution"
+        },
+        {
+          "key": "bt-pan",
+          "match": {
+            "friendlyName": "Bluetooth Device (Personal Area Network)*"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "Gameplan: delete Bluetooth LAN.",
+          "risk": "safe"
+        },
+        {
+          "key": "bt-rfcomm-tdi",
+          "match": {
+            "friendlyName": "Bluetooth Device (RFCOMM Protocol TDI)*"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "Bluetooth RFCOMM network transport.",
+          "risk": "safe"
+        },
+        {
+          "key": "teredo",
+          "match": {
+            "friendlyName": "Microsoft Teredo Tunneling Adapter"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "IPv6-over-UDP tunnel through NAT.",
+          "risk": "safe"
+        },
+        {
+          "key": "6to4",
+          "match": {
+            "friendlyName": "Microsoft 6to4 Adapter*"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "IPv6 transition tunnel.",
+          "risk": "safe"
+        },
+        {
+          "key": "isatap",
+          "match": {
+            "friendlyName": "Microsoft ISATAP Adapter*"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "IPv6 transition tunnel.",
+          "risk": "safe"
+        }
+      ]
+    }
+  ]
+}

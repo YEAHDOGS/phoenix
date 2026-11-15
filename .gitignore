@@ -24,3 +24,14 @@ win-install/staging/
 staging/
 __pycache__/
 phoenix-state/
+
+# Phoenix app build output
+app/node_modules/
+app/build/
+app/.svelte-kit/
+app/src-tauri/target/
+app/src-tauri/gen/
+
+# phoenix-unattend build output (unattend/build.ps1)
+unattend/bin/
+unattend/obj/

@@ -1,0 +1,11 @@
+{
+  "id": "t-override",
+  "name": "Test override",
+  "description": "Fixture: merges into t-base.",
+  "version": 1,
+  "steps": [
+    { "id": "t.services", "title": "Services (merged)", "items": [ { "name": "SSDPSRV", "enabled": false }, { "name": "WSearch", "startup": "Manual" } ] },
+    { "id": "t.extra", "phase": "user-offline", "kind": "registry", "title": "Extra", "items": [
+      { "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "name": "HideFileExt", "type": "DWord", "value": 0, "risk": "danger" } ] }
+  ]
+}

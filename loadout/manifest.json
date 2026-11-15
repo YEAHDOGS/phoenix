@@ -1,0 +1,180 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "sysinternals",
+      "name": "Sysinternals Suite",
+      "category": "Tools",
+      "description": "Autoruns, Process Explorer, Process Monitor, TCPView, Sigcheck and the rest. Big (~370 MB).",
+      "url": "https://download.sysinternals.com/files/SysinternalsSuite.zip",
+      "filename": "SysinternalsSuite.zip",
+      "kind": "zip",
+      "extractTo": "sysinternals",
+      "launch": "Autoruns64.exe",
+      "signer": "Microsoft Corporation",
+      "license": "Sysinternals Software License (freeware)",
+      "homepage": "https://learn.microsoft.com/sysinternals/"
+    },
+    {
+      "id": "autoruns",
+      "name": "Autoruns",
+      "category": "Tools",
+      "description": "Just Autoruns, if you skip the full suite.",
+      "url": "https://download.sysinternals.com/files/Autoruns.zip",
+      "filename": "Autoruns.zip",
+      "kind": "zip",
+      "extractTo": "autoruns",
+      "launch": "Autoruns64.exe",
+      "signer": "Microsoft Corporation",
+      "license": "Sysinternals Software License (freeware)",
+      "homepage": "https://learn.microsoft.com/sysinternals/downloads/autoruns"
+    },
+    {
+      "id": "platform-tools",
+      "name": "Android platform-tools",
+      "category": "Tools",
+      "description": "adb and fastboot.",
+      "url": "https://dl.google.com/android/repository/platform-tools-latest-windows.zip",
+      "filename": "platform-tools-latest-windows.zip",
+      "kind": "zip",
+      "extractTo": "platform-tools",
+      "launch": "platform-tools\\adb.exe",
+      "license": "Android SDK License",
+      "homepage": "https://developer.android.com/tools/releases/platform-tools"
+    },
+    {
+      "id": "rufus",
+      "name": "Rufus (portable)",
+      "category": "USB",
+      "description": "Burns the Windows 11 ISO to a USB.",
+      "githubRelease": {
+        "repo": "pbatard/rufus",
+        "asset": "^rufus-[0-9.]+p\\.exe$"
+      },
+      "filename": "rufus.exe",
+      "kind": "file",
+      "launch": "rufus.exe",
+      "signer": "Akeo Consulting",
+      "license": "GPL-3.0",
+      "homepage": "https://rufus.ie"
+    },
+    {
+      "id": "ventoy",
+      "name": "Ventoy",
+      "category": "USB",
+      "description": "Multi-ISO bootable USB maker.",
+      "githubRelease": {
+        "repo": "ventoy/Ventoy",
+        "asset": "^ventoy-[0-9.]+-windows\\.zip$"
+      },
+      "filename": "ventoy-windows.zip",
+      "kind": "zip",
+      "extractTo": "ventoy",
+      "license": "GPL-3.0",
+      "homepage": "https://www.ventoy.net"
+    },
+    {
+      "id": "ame-wizard",
+      "name": "AME Wizard",
+      "category": "Playbook",
+      "description": "Runs .apbx playbooks (Dogs Playbook).",
+      "url": "https://download.amelabs.net/AME%20Wizard%20Beta.zip",
+      "filename": "AME-Wizard-Beta.zip",
+      "kind": "zip",
+      "extractTo": "ame-wizard",
+      "launch": "AME Wizard Beta.exe",
+      "license": "Proprietary (freeware)",
+      "homepage": "https://amelabs.net"
+    },
+    {
+      "id": "dogs-playbook",
+      "name": "Dogs Playbook (.apbx)",
+      "category": "Playbook",
+      "description": "The offline debloat playbook. No GitHub release yet: build it with build.ps1 in the dogs-playbook repo and pick the .apbx.",
+      "githubRelease": {
+        "repo": "cptnbrando/dogs-playbook",
+        "asset": "\\.apbx$"
+      },
+      "source": "user-file",
+      "filename": "dogs-playbook.apbx",
+      "kind": "file",
+      "license": "CC BY-SA 4.0",
+      "homepage": "https://github.com/cptnbrando/dogs-playbook"
+    },
+    {
+      "id": "chocolatey",
+      "name": "Chocolatey (offline bootstrap)",
+      "category": "Packages",
+      "description": "chocolatey.nupkg so Chocolatey installs without the internet.",
+      "url": "https://community.chocolatey.org/api/v2/package/chocolatey",
+      "filename": "chocolatey.nupkg",
+      "kind": "nupkg",
+      "license": "Apache-2.0",
+      "homepage": "https://chocolatey.org"
+    },
+    {
+      "id": "defender-defs",
+      "name": "Defender offline signatures",
+      "category": "Security",
+      "description": "mpam-fe.exe (x64). Windows Update is off, so Defender gets its signatures from here. Re-fetch before every build: it changes daily.",
+      "url": "https://go.microsoft.com/fwlink/?LinkID=121721&arch=x64",
+      "filename": "mpam-fe.exe",
+      "kind": "file",
+      "signer": "Microsoft Corporation",
+      "license": "Microsoft",
+      "homepage": "https://www.microsoft.com/wdsi/defenderupdates"
+    },
+    {
+      "id": "portmaster",
+      "name": "Portmaster installer",
+      "category": "Security",
+      "description": "Per-app firewall (Safing). Installed optionally in user-online.",
+      "url": "https://updates.safing.io/latest/windows_amd64/packages/portmaster-installer.exe",
+      "filename": "portmaster-installer.exe",
+      "kind": "file",
+      "launch": "portmaster-installer.exe",
+      "signer": "Safing",
+      "license": "GPL-3.0",
+      "homepage": "https://safing.io"
+    },
+    {
+      "id": "simplewall",
+      "name": "simplewall",
+      "category": "Security",
+      "description": "Lightweight WFP firewall, Windows only.",
+      "githubRelease": {
+        "repo": "henrypp/simplewall",
+        "asset": "^simplewall-[0-9.]+-setup\\.exe$"
+      },
+      "filename": "simplewall-setup.exe",
+      "kind": "file",
+      "launch": "simplewall-setup.exe",
+      "license": "GPL-3.0",
+      "homepage": "https://github.com/henrypp/simplewall"
+    },
+    {
+      "id": "win11-iso",
+      "name": "Windows 11 ISO",
+      "category": "Windows",
+      "description": "Your Windows 11 ISO (Microsoft only offers it through a browser session). Pick the file; Phoenix hashes it. Optional: only needed if you want it on the Phoenix USB too.",
+      "source": "user-file",
+      "filename": "Win11.iso",
+      "kind": "file",
+      "optional": true,
+      "license": "Microsoft",
+      "homepage": "https://www.microsoft.com/software-download/windows11"
+    },
+    {
+      "id": "hp-drivers",
+      "name": "HP drivers (SoftPaqs)",
+      "category": "Drivers",
+      "description": "Driver pack or SoftPaq folder from HP for your model, including the Wi-Fi driver. Pick a .zip or .exe.",
+      "source": "user-file",
+      "filename": "hp-drivers.zip",
+      "kind": "file",
+      "optional": true,
+      "license": "HP",
+      "homepage": "https://support.hp.com/drivers"
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "id": "t-base",
+  "name": "Test base",
+  "description": "Fixture: one step of every kind. Plan-only.",
+  "version": 1,
+  "steps": [
+    { "id": "t.settings", "phase": "admin", "kind": "setting", "title": "Settings",
+      "items": [
+        { "setting": "pagefile", "value": "off" },
+        { "setting": "hibernate", "value": "off" },
+        { "setting": "fast-startup", "value": "off" },
+        { "setting": "uac", "value": "always-notify" },
+        { "setting": "time-server", "value": "time.cloudflare.com" },
+        { "setting": "llmnr", "value": "off" },
+        { "setting": "netbios", "value": "off" },
+        { "setting": "task-history", "value": "on" },
+        { "setting": "network-throttling", "value": "off" },
+        { "setting": "search-web", "value": "off" }
+      ] },
+    { "id": "t.services", "phase": "admin", "kind": "services", "title": "Services",
+      "items": [
+        { "name": "DiagTrack", "startup": "Disabled" },
+        { "name": "SSDPSRV", "startup": "Disabled" },
+        { "name": "CDPUserSvc*", "startup": "Disabled" },
+        { "name": "RpcSs", "startup": "Disabled" },
+        { "name": "NoSuchServicePhx", "startup": "Disabled" }
+      ] },
+    { "id": "t.devices", "phase": "admin", "kind": "devices", "title": "Devices",
+      "items": [
+        { "match": { "friendlyName": "WAN Miniport*" }, "action": "remove" },
+        { "match": { "friendlyName": "Programmable interrupt controller" }, "action": "disable" },
+        { "match": { "class": "System" }, "action": "disable" }
+      ] },
+    { "id": "t.tasks", "phase": "admin", "kind": "tasks", "title": "Tasks",
+      "items": [ { "path": "\\Microsoft\\Windows\\Application Experience\\*" }, { "path": "\\Microsoft\\Windows\\Maps\\*" } ] },
+    { "id": "t.features", "phase": "admin", "kind": "features", "title": "Features", "removeAll": true, "keep": ["Printing-PrintToPDFServices-Features"], "capabilities": true,
+      "items": [ { "name": "MicrosoftWindowsPowerShellV2Root", "action": "remove" }, { "name": "Browser.InternetExplorer*", "type": "capability", "action": "remove" } ] },
+    { "id": "t.appx", "phase": "admin", "kind": "appx", "title": "Apps",
+      "items": [ { "pattern": "*CrossDevice*" }, { "pattern": "Microsoft.SecHealthUI" }, { "pattern": "*_8wekyb3d8bbwe", "action": "remove" }, { "pattern": "Microsoft.WindowsStore", "action": "keep" } ] },
+    { "id": "t.registry", "phase": "admin", "kind": "registry", "title": "Registry",
+      "items": [
+        { "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "name": "SilentInstalledAppsEnabled", "type": "DWord", "value": 0, "scope": "current-user" },
+        { "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Search", "name": "BingSearchEnabled", "type": "DWord", "value": 0, "scope": "default-user" }
+      ] },
+    { "id": "t.autoruns", "phase": "admin", "kind": "autoruns", "title": "Autoruns", "categories": ["logon"], "keep": ["OneDrive*"] },
+    { "id": "t.firewall", "phase": "admin", "kind": "firewall", "title": "Firewall",
+      "defaultInbound": "Block", "defaultOutbound": "Block", "logging": true,
+      "keepGroups": ["Core Networking", "mDNS", "Network Discovery"], "disableOtherRules": true,
+      "items": [ { "name": "Phoenix test rule", "direction": "Outbound", "program": "%ProgramData%\\chocolatey\\bin\\choco.exe", "action": "Allow" } ] },
+    { "id": "t.network", "phase": "user-online", "kind": "network", "title": "Bindings", "onlyBindings": ["ms_tcpip", "ms_tcpip6"] },
+    { "id": "t.defender", "phase": "admin-post", "kind": "defender", "title": "Defender", "realtime": true, "asr": "Block",
+      "asrExclude": ["01443614-cd74-433a-b99e-2ecdc07bfc25"], "asrAudit": ["b2b3f03d-6a65-4f7b-a9c7-1c7ef74a9ba4"], "signaturesFrom": "usb" },
+    { "id": "t.bitlocker", "phase": "admin-post", "kind": "bitlocker", "title": "BitLocker", "enable": true, "recoveryKeyTo": "usb", "risk": "caution" },
+    { "id": "t.choco", "phase": "user-online", "kind": "choco", "title": "Apps", "bootstrapFrom": "usb", "window": { "minutes": 30 } },
+    { "id": "t.tools", "phase": "user-offline", "kind": "tools", "title": "Tools",
+      "items": [ { "env": "PATH+", "value": "C:\\Tools\\Sysinternals", "scope": "user" }, { "profileSnippet": "Set-Alias ll Get-ChildItem" }, { "loadout": "sysinternals" } ] },
+    { "id": "t.manual", "phase": "admin", "kind": "manual", "title": "Run Dogs Playbook", "instructions": "Drag the apbx into AME Wizard." },
+    { "id": "t.danger", "phase": "admin", "kind": "services", "title": "Danger step", "risk": "danger", "items": [ { "name": "Spooler", "startup": "Disabled" } ] },
+    { "id": "t.bogus", "phase": "admin", "kind": "nonsense", "title": "Unknown kind" }
+  ]
+}

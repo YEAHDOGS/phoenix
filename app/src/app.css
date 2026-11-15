@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+/* Phoenix: dark workspace, ember accent. Risk colors are semantic and used
+   everywhere a change could hurt: safe (green), caution (amber), danger (red). */
+
+@theme {
+  --color-ink-950: #0b0c0f;
+  --color-ink-900: #111318;
+  --color-ink-850: #161920;
+  --color-ink-800: #1b1f27;
+  --color-ink-700: #262b36;
+  --color-ink-600: #343a47;
+  --color-ink-500: #4a5263;
+  --color-ink-400: #6b7487;
+  --color-ink-300: #98a1b3;
+  --color-ink-200: #c4cad6;
+  --color-ink-100: #e6e9ef;
+
+  --color-ember-300: #ffb27a;
+  --color-ember-400: #ff8d45;
+  --color-ember-500: #ff6a1a;
+  --color-ember-600: #e4520a;
+  --color-ember-700: #b33f08;
+
+  --color-safe: #3ecf8e;
+  --color-caution: #f5b83d;
+  --color-danger: #f0525e;
+  --color-info: #5aa9ff;
+
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--color-ink-950);
+  color: var(--color-ink-100);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-ember-500) 45%, transparent);
+}
+
+/* Slim dark scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink-600) transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-ember-400);
+  outline-offset: 2px;
+}
+
+@utility btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors select-none disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+@utility btn-primary {
+    @apply btn bg-ember-500 text-ink-950 hover:bg-ember-400;
+  }
+
+@utility btn-ghost {
+    @apply btn text-ink-200 hover:bg-ink-700 hover:text-ink-100;
+  }
+
+@utility btn-outline {
+    @apply btn border border-ink-600 text-ink-100 hover:border-ink-500 hover:bg-ink-800;
+  }
+
+@utility btn-danger {
+    @apply btn bg-danger/90 text-ink-950 hover:bg-danger;
+  }
+
+@utility card {
+    @apply rounded-xl border border-ink-700 bg-ink-900;
+  }
+
+@utility input {
+    @apply w-full rounded-md border border-ink-600 bg-ink-850 px-2.5 py-1.5 text-sm text-ink-100 placeholder:text-ink-500 focus:border-ember-500 focus:outline-none disabled:opacity-50;
+  }
+
+@utility label {
+    @apply mb-1 block text-xs font-medium tracking-wide text-ink-300 uppercase;
+  }
+
+@utility h1 {
+    @apply font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight text-ink-100;
+  }
+
+@utility h2 {
+    @apply font-[family-name:var(--font-display)] text-base font-semibold text-ink-100;
+  }
+
+@utility muted {
+    @apply text-ink-300;
+  }
+
+@utility kbd {
+    @apply rounded border border-ink-600 bg-ink-800 px-1.5 py-0.5 font-mono text-xs text-ink-200;
+  }
+
+/* Rendered markdown (from md.ts, already escaped) */
+.md {
+  line-height: 1.55;
+  color: var(--color-ink-200);
+}
+.md p { margin: 0.35rem 0; }
+.md h3, .md h4, .md h5 { margin: 0.7rem 0 0.25rem; color: var(--color-ink-100); font-weight: 600; }
+.md ul, .md ol { margin: 0.35rem 0; padding-left: 1.25rem; }
+.md ul { list-style: disc; }
+.md ol { list-style: decimal; }
+.md li { margin: 0.15rem 0; }
+.md code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--color-ink-800);
+  border: 1px solid var(--color-ink-700);
+  border-radius: 4px;
+  padding: 0.05rem 0.3rem;
+  color: var(--color-ember-300);
+}
+.md pre {
+  background: var(--color-ink-950);
+  border: 1px solid var(--color-ink-700);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+}
+.md pre code { background: none; border: 0; padding: 0; color: var(--color-ink-200); }
+.md blockquote {
+  margin: 0.5rem 0;
+  padding: 0.4rem 0.75rem;
+  border-left: 3px solid var(--color-caution);
+  background: color-mix(in oklab, var(--color-caution) 8%, transparent);
+  border-radius: 0 6px 6px 0;
+}
+.md a { color: var(--color-ember-300); text-decoration: underline; cursor: pointer; }
+.md strong { color: var(--color-ink-100); }

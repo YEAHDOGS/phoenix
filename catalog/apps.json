@@ -1,0 +1,565 @@
+[
+  {
+    "id": "nvidia-app",
+    "name": "NVIDIA App",
+    "category": "Drivers",
+    "description": "Start gaming at 60fps in 4k in no time",
+    "default": true
+  },
+  {
+    "id": "nvidia-display-driver",
+    "name": "NVIDIA Display Driver",
+    "category": "Drivers",
+    "description": "Like putting glasses on your monitor",
+    "default": true
+  },
+  {
+    "id": "7zip",
+    "name": "7zip",
+    "category": "Utilities",
+    "description": "zip, unzip, wow!",
+    "default": true
+  },
+  {
+    "id": "bleachbit",
+    "name": "Bleachbit",
+    "category": "Utilities",
+    "description": "When you need to erase all traces, or free up drive space"
+  },
+  {
+    "id": "handbrake",
+    "name": "Handbrake",
+    "category": "Utilities",
+    "description": "mp4 to everything else"
+  },
+  {
+    "id": "qbittorrent",
+    "name": "QBittorrent",
+    "category": "Utilities",
+    "description": "[insert pirate logo here]"
+  },
+  {
+    "id": "f.lux",
+    "name": "f.lux",
+    "category": "Utilities",
+    "description": "Makes your sexy computer easier on the eyes"
+  },
+  {
+    "id": "meld",
+    "name": "Meld",
+    "category": "Utilities",
+    "description": "Useful if you're playing Where's Waldo with folders"
+  },
+  {
+    "id": "virtualbox",
+    "name": "VirtualBox",
+    "category": "Utilities",
+    "description": "When you want a machine, inside your machine!"
+  },
+  {
+    "id": "qemu",
+    "name": "QEMU",
+    "category": "Utilities",
+    "description": "Like VirtualBox but sexier",
+    "default": true
+  },
+  {
+    "id": "powershell-core",
+    "name": "PowerShell 7",
+    "category": "Utilities",
+    "description": "We live in a world where even the damn terminal gets updates now. And what are they even adding? It's a bit faster tho",
+    "default": true
+  },
+  {
+    "id": "powertoys",
+    "name": "powertoys",
+    "category": "Utilities",
+    "description": "The Windows power tools Microsoft forgot to include — FancyZones, PowerRename, always-on-top"
+  },
+  {
+    "id": "filezilla",
+    "name": "Filezilla",
+    "category": "File Management",
+    "description": "Drag and drop files to wherever you want"
+  },
+  {
+    "id": "putty",
+    "name": "PuTTY",
+    "category": "File Management",
+    "description": "Connect to other machines",
+    "default": true
+  },
+  {
+    "id": "curl",
+    "name": "cURL",
+    "category": "File Management",
+    "description": "Get stuff"
+  },
+  {
+    "id": "winscp",
+    "name": "WinSCP",
+    "category": "File Management",
+    "description": "Networking"
+  },
+  {
+    "id": "notepadplusplus",
+    "name": "Notepad++",
+    "category": "Documents",
+    "description": "The sequal to Notepad, created and adored by nerds everywhere!",
+    "default": true
+  },
+  {
+    "id": "sumatrapdf",
+    "name": "SumatraPDF",
+    "category": "Documents",
+    "description": "Can you believe Adobe charges monthly now? Ew",
+    "default": true
+  },
+  {
+    "id": "libreoffice-fresh",
+    "name": "LibreOffice",
+    "category": "Documents",
+    "description": "Can you believe Microsoft charges monthly for Office now? Ew"
+  },
+  {
+    "id": "vscode",
+    "name": "Visual Studio Code",
+    "category": "Dev Tools",
+    "description": "The Gen-Z Vim",
+    "default": true
+  },
+  {
+    "id": "git",
+    "name": "Git",
+    "category": "Dev Tools",
+    "description": "Git er done y'all",
+    "default": true
+  },
+  {
+    "id": "github-desktop",
+    "name": "GitHub Desktop",
+    "category": "Dev Tools",
+    "description": "Git er done with a GUI and Microsoft cloud trackers y'all",
+    "default": true
+  },
+  {
+    "id": "intellijidea-community",
+    "name": "IntelliJ IDEA Community",
+    "category": "Dev Tools",
+    "description": "It's like a Java sumo wrestler, heavy but powerful"
+  },
+  {
+    "id": "androidstudio",
+    "name": "AndroidStudio",
+    "category": "Dev Tools",
+    "description": "Now you can make your own TikTok"
+  },
+  {
+    "id": "postman",
+    "name": "Postman",
+    "category": "Dev Tools",
+    "description": "GET, POST, PUT, DELETE, wowee!"
+  },
+  {
+    "id": "docker-desktop",
+    "name": "Docker Desktop",
+    "category": "Dev Tools",
+    "description": "Containerize the world, or die trying",
+    "default": true
+  },
+  {
+    "id": "wsl2",
+    "name": "WSL 2",
+    "category": "Dev Tools",
+    "description": "Windows Subsystem for Linux. Snazzy af",
+    "default": true
+  },
+  {
+    "id": "nodejs",
+    "name": "Node.js",
+    "category": "SDKs",
+    "description": "A web developer's favorite Dollar Tree",
+    "default": true
+  },
+  {
+    "id": "python",
+    "name": "Python",
+    "category": "SDKs",
+    "description": "The most used language on planet earth",
+    "default": true
+  },
+  {
+    "id": "golang",
+    "name": "Go",
+    "category": "SDKs",
+    "description": "Go go go go go go go!"
+  },
+  {
+    "id": "openjdk",
+    "name": "OpenJDK",
+    "category": "SDKs",
+    "description": "It's Java, but Open!"
+  },
+  {
+    "id": "jdk-7",
+    "name": "jdk 7",
+    "category": "SDKs",
+    "description": "Java before Oracle shoved their dick in it"
+  },
+  {
+    "id": "jdk-8",
+    "name": "jdk 8",
+    "category": "SDKs",
+    "description": "Java Development Kit 8"
+  },
+  {
+    "id": "jdk-11",
+    "name": "jdk 11",
+    "category": "SDKs",
+    "description": "Java Development Kit 11"
+  },
+  {
+    "id": "jdk-12",
+    "name": "jdk 12",
+    "category": "SDKs",
+    "description": "Java Development Kit 12"
+  },
+  {
+    "id": "jdk-17",
+    "name": "jdk 17",
+    "category": "SDKs",
+    "description": "Java Development Kit 17"
+  },
+  {
+    "id": "jdk-21",
+    "name": "jdk 21",
+    "category": "SDKs",
+    "description": "Java Development Kit 21"
+  },
+  {
+    "id": "jdk-22",
+    "name": "jdk 22",
+    "category": "SDKs",
+    "description": "Java Development Kit 22"
+  },
+  {
+    "id": "spotify",
+    "name": "Spotify",
+    "category": "Media",
+    "description": "Gotta have the tunes bro",
+    "default": true
+  },
+  {
+    "id": "audacity",
+    "name": "Audacity",
+    "category": "Media",
+    "description": "Makes anything audio file related a breeze",
+    "default": true
+  },
+  {
+    "id": "musescore",
+    "name": "MuseScore",
+    "category": "Media",
+    "description": "Beethoven would have loved this"
+  },
+  {
+    "id": "davinci-resolve",
+    "name": "DaVinci Resolve",
+    "category": "Media",
+    "description": "Can you believe Adobe charges monthly for Premiere? No way jose"
+  },
+  {
+    "id": "gimp",
+    "name": "GIMP",
+    "category": "Media",
+    "description": "Can you believe Adobe charges monthly for Photshop? No way jose",
+    "default": true
+  },
+  {
+    "id": "inkscape",
+    "name": "Inkscape",
+    "category": "Media",
+    "description": "Vectors and stuff, good for logo design",
+    "default": true
+  },
+  {
+    "id": "obs-studio",
+    "name": "OBS Studio",
+    "category": "Media",
+    "description": "Record yourself, record the screen, record everything"
+  },
+  {
+    "id": "streamlabs-obs",
+    "name": "Streamlabs",
+    "category": "Media",
+    "description": "Record everything, and share it live!"
+  },
+  {
+    "id": "kodi",
+    "name": "Kodi",
+    "category": "Media",
+    "description": "If you've got Blu-Ray discs or video files, this will take care of you"
+  },
+  {
+    "id": "vlc",
+    "name": "VLC",
+    "category": "Media",
+    "description": "Because the Windows player is bloated and laggy",
+    "default": true
+  },
+  {
+    "id": "mpc-hc",
+    "name": "MPC-HC",
+    "category": "Media",
+    "description": "Because VLC is bloated and laggy"
+  },
+  {
+    "id": "blender",
+    "name": "Blender",
+    "category": "Media",
+    "description": "3D file editor"
+  },
+  {
+    "id": "discord",
+    "name": "Discord",
+    "category": "Comms",
+    "description": "The Gen-Z AOL Messenger",
+    "default": true
+  },
+  {
+    "id": "em-client",
+    "name": "eM Client",
+    "category": "Comms",
+    "description": "Because Windows Mail spies on you"
+  },
+  {
+    "id": "zoom",
+    "name": "Zoom",
+    "category": "Comms",
+    "description": "Still don't know how this overtook Skype so quickly"
+  },
+  {
+    "id": "slack",
+    "name": "Slack",
+    "category": "Comms",
+    "description": "Say hello to all your unknown co-workers"
+  },
+  {
+    "id": "webex-meetings",
+    "name": "Webex Meetings",
+    "category": "Comms",
+    "description": "Like Zoom, which is like Skype, but this one is uh... not those ones"
+  },
+  {
+    "id": "malwarebytes",
+    "name": "Malwarebytes",
+    "category": "Security",
+    "description": "This used to be the de facto anti-virus. Now, it's still decent enough"
+  },
+  {
+    "id": "wireshark",
+    "name": "Wireshark",
+    "category": "Security",
+    "description": "Listen to the ticks of your router, what's it doing? Why's it sending ten thousand data packets every second?",
+    "default": true
+  },
+  {
+    "id": "sysinternals",
+    "name": "Sysinternals",
+    "category": "Security",
+    "description": "Like a stethoscope for Windows",
+    "default": true
+  },
+  {
+    "id": "wireguard",
+    "name": "WireGuard",
+    "category": "VPNs",
+    "description": "When you need to connect to your own things",
+    "default": true
+  },
+  {
+    "id": "tailscale",
+    "name": "Tailscale",
+    "category": "VPNs",
+    "description": "Wireguard on steroids",
+    "default": true
+  },
+  {
+    "id": "protonvpn",
+    "name": "Proton VPN",
+    "category": "VPNs",
+    "description": "It's probably government spyware but you didn't hear that from me lol"
+  },
+  {
+    "id": "nordvpn",
+    "name": "NordVPN",
+    "category": "VPNs",
+    "description": "I think Pewdiepie advertised this once, so it must be good"
+  },
+  {
+    "id": "expressvpn",
+    "name": "ExpressVPN",
+    "category": "VPNs",
+    "description": "I think LinusTechTips advertised this once, so it must be good"
+  },
+  {
+    "id": "mullvadvpn",
+    "name": "Mullvad VPN",
+    "category": "VPNs",
+    "description": "My VPN of choice. 5 bucks and they don't id you. Nice"
+  },
+  {
+    "id": "windscribe",
+    "name": "Windscribe",
+    "category": "VPNs",
+    "description": "They got the coolest vpn website ngl"
+  },
+  {
+    "id": "steam",
+    "name": "Steam",
+    "category": "Gaming",
+    "description": "A gamer's Wal-Mart",
+    "default": true
+  },
+  {
+    "id": "ea-app",
+    "name": "EA App",
+    "category": "Gaming",
+    "description": "A gamer's Wendy's"
+  },
+  {
+    "id": "epicgameslauncher",
+    "name": "Epic Games Launcher",
+    "category": "Gaming",
+    "description": "A gamer's Ross"
+  },
+  {
+    "id": "pcsx2",
+    "name": "PCSX2",
+    "category": "Gaming",
+    "description": "PlayStation 2 emulator",
+    "default": true
+  },
+  {
+    "id": "retroarch",
+    "name": "RetroArch",
+    "category": "Gaming",
+    "description": "Multi-system emulator",
+    "default": true
+  },
+  {
+    "id": "ds4windows",
+    "name": "DS4Windows",
+    "category": "Gaming",
+    "description": "Makes pairing and using DualShock4 controllers with Windows a bit easier",
+    "default": true
+  },
+  {
+    "id": "dolphin",
+    "name": "Dolphin",
+    "category": "Gaming",
+    "description": "Wii and Gamecube emulator",
+    "default": true
+  },
+  {
+    "id": "ppsspp",
+    "name": "ppsspp",
+    "category": "Gaming",
+    "description": "PlayStation Portable emulator"
+  },
+  {
+    "id": "snes9x",
+    "name": "SNES9x",
+    "category": "Gaming",
+    "description": "Super Nintendo Entertainment System emulator",
+    "default": true
+  },
+  {
+    "id": "mupen64plus",
+    "name": "Mupen64plus",
+    "category": "Gaming",
+    "description": "Nintendo 64 emulator"
+  },
+  {
+    "id": "leagueoflegends",
+    "name": "League of Legends",
+    "category": "Gaming",
+    "description": "Bop it twist it pull it, you know the drill"
+  },
+  {
+    "id": "valorant",
+    "name": "Valorant",
+    "category": "Gaming",
+    "description": "Pew pew pew PHOENIX STOP FLASHING ME"
+  },
+  {
+    "id": "googlechrome",
+    "name": "Google Chrome",
+    "category": "Browsers",
+    "description": "Probably the most popular browser to ever browser",
+    "default": true
+  },
+  {
+    "id": "firefox",
+    "name": "Firefox",
+    "category": "Browsers",
+    "description": "For those fearful of big tech, yet unafraid of big corporation",
+    "default": true
+  },
+  {
+    "id": "brave",
+    "name": "Brave",
+    "category": "Browsers",
+    "description": "When all else fails and the flies begin to come, it's all the same anyway"
+  },
+  {
+    "id": "tor-browser",
+    "name": "Tor Browser",
+    "category": "Browsers",
+    "description": "The true incognito mode, at the speed of snails"
+  },
+  {
+    "id": "ublockorigin-chrome",
+    "name": "uBlock Origin (Chrome)",
+    "category": "Browser Extensions",
+    "description": "Get those trackers outta here",
+    "default": true
+  },
+  {
+    "id": "ableton",
+    "name": "Ableton",
+    "category": "Manual Install",
+    "description": "Deadmau5, Skrillex, Flume, Charli XCX, Frank Ocean, they use this so it's gotta be good",
+    "manual": true
+  },
+  {
+    "id": "portmaster",
+    "name": "Portmaster",
+    "category": "Security",
+    "description": "Per-app firewall + DNS filtering (Safing). Windows and Linux."
+  },
+  {
+    "id": "simplewall",
+    "name": "simplewall",
+    "category": "Security",
+    "description": "Tiny Windows Filtering Platform firewall front-end."
+  },
+  {
+    "id": "rufus",
+    "name": "Rufus",
+    "category": "Utilities",
+    "description": "Burns ISOs to USB."
+  },
+  {
+    "id": "ventoy",
+    "name": "Ventoy",
+    "category": "Utilities",
+    "description": "Multi-ISO bootable USB."
+  },
+  {
+    "id": "adb",
+    "name": "Android platform-tools",
+    "category": "Dev Tools",
+    "description": "adb and fastboot."
+  }
+]

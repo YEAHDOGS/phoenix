@@ -1,0 +1,1311 @@
+{
+  "id": "base",
+  "name": "Base",
+  "version": 1,
+  "description": "What every Phoenix machine gets: safe settings, obvious bloat, telemetry services and tasks, policy keys, firewall logging. Declares every step in run order; tiers add to it.",
+  "steps": [
+    {
+      "id": "admin.settings",
+      "phase": "admin",
+      "kind": "setting",
+      "title": "System settings",
+      "why": "Machine-wide settings from the gameplan: no hibernation file, no fast startup, no remote assistance, strict UAC, a trusted time server, and privacy toggles.",
+      "risk": "safe",
+      "enabled": true,
+      "items": [
+        {
+          "setting": "hibernate",
+          "value": "off",
+          "why": "hiberfil.sys is a full RAM image on disk: a forensic gift. Also frees disk space.",
+          "risk": "safe"
+        },
+        {
+          "setting": "fast-startup",
+          "value": "off",
+          "why": "Fast startup is hibernation of the kernel session; it also keeps BitLocker keys and driver state across \"shutdowns\".",
+          "risk": "safe"
+        },
+        {
+          "setting": "remote-assistance",
+          "value": "off",
+          "why": "Nobody should be able to offer help into this machine.",
+          "risk": "safe"
+        },
+        {
+          "setting": "remote-desktop",
+          "value": "off",
+          "why": "No inbound RDP on a personal laptop.",
+          "risk": "safe"
+        },
+        {
+          "setting": "uac",
+          "value": "always-notify",
+          "why": "Every elevation prompts, including Windows settings changes. Least privilege.",
+          "risk": "safe"
+        },
+        {
+          "setting": "time-server",
+          "value": "time.cloudflare.com",
+          "why": "Use a time source you chose instead of time.windows.com.",
+          "risk": "safe"
+        },
+        {
+          "setting": "llmnr",
+          "value": "off",
+          "why": "LLMNR answers name queries from anyone on the LAN; classic credential-relay vector.",
+          "risk": "safe"
+        },
+        {
+          "setting": "activity-history",
+          "value": "off",
+          "why": "Stops the Timeline/activity feed from recording what you open.",
+          "risk": "safe"
+        },
+        {
+          "setting": "search-web",
+          "value": "off",
+          "why": "Start menu search stays local: no Bing, no web suggestions.",
+          "risk": "safe"
+        },
+        {
+          "setting": "cross-device-share",
+          "value": "off",
+          "why": "\"Share across devices\" off: no Connected Devices Platform pairing.",
+          "risk": "safe"
+        },
+        {
+          "setting": "game-dvr",
+          "value": "off",
+          "why": "Game DVR records in the background and hooks every fullscreen app.",
+          "risk": "safe"
+        },
+        {
+          "setting": "task-history",
+          "value": "on",
+          "why": "Turns on Task Scheduler history so you can see what runs and when.",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "admin.appx",
+      "phase": "admin",
+      "kind": "appx",
+      "title": "Remove preinstalled apps",
+      "why": "Removes apps that slipped past the answer file, for all users and from the provisioning image so new profiles never get them.",
+      "risk": "safe",
+      "enabled": true,
+      "items": [
+        {
+          "pattern": "*CrossDevice*",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Cross Device Experience Host: pairs this PC with phones; the gameplan calls it a culprit (it also disables SmartScreen on ReviOS).",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.BingNews",
+          "action": "remove",
+          "provisioned": true,
+          "why": "News feed.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.BingWeather",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Weather feed.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.BingSearch",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Bing in Start.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.GetHelp",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Online help app.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.Getstarted",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Tips app.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.MicrosoftOfficeHub",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Office upsell.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.MicrosoftSolitaireCollection",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Ad-supported games.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.People",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Contacts sync.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.PowerAutomateDesktop",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Cloud automation.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.Todos",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Cloud to-do list.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.WindowsFeedbackHub",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Telemetry feedback app.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.WindowsMaps",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Maps; pairs with MapsBroker.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.Windows.DevHome",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Dev Home.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.Copilot",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Copilot app.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.549981C3F5F10",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Cortana.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.OutlookForWindows",
+          "action": "remove",
+          "provisioned": true,
+          "why": "New Outlook (cloud mail client).",
+          "risk": "safe"
+        },
+        {
+          "pattern": "microsoft.windowscommunicationsapps",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Old Mail and Calendar.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "MicrosoftTeams",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Teams (consumer).",
+          "risk": "safe"
+        },
+        {
+          "pattern": "MSTeams",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Teams (new).",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Clipchamp.Clipchamp",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Cloud video editor.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "MicrosoftCorporationII.QuickAssist",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Remote-help tool: lets someone else drive your PC.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "MicrosoftCorporationII.MicrosoftFamily",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Family safety cloud.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.YourPhone",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Phone Link: phone pairing.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "MicrosoftWindows.CrossDevice",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Cross-device host (explicit name).",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.SecHealthUI",
+          "action": "keep",
+          "provisioned": true,
+          "why": "Windows Security UI. Keep.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.WindowsStore",
+          "action": "keep",
+          "provisioned": true,
+          "why": "Store. Kept by default; lockdown may remove it.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.DesktopAppInstaller",
+          "action": "keep",
+          "provisioned": true,
+          "why": "App Installer / winget. Keep.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.WindowsTerminal",
+          "action": "keep",
+          "provisioned": true,
+          "why": "Terminal. Keep.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.WindowsCalculator",
+          "action": "keep",
+          "provisioned": true,
+          "why": "Calculator. Keep.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.WindowsNotepad",
+          "action": "keep",
+          "provisioned": true,
+          "why": "Notepad. Keep.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.VCLibs*",
+          "action": "keep",
+          "provisioned": true,
+          "why": "Framework package other apps need.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.UI.Xaml*",
+          "action": "keep",
+          "provisioned": true,
+          "why": "Framework package other apps need.",
+          "risk": "safe"
+        },
+        {
+          "pattern": "Microsoft.NET.Native*",
+          "action": "keep",
+          "provisioned": true,
+          "why": "Framework package other apps need.",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "admin.features",
+      "phase": "admin",
+      "kind": "features",
+      "title": "Remove optional features",
+      "why": "Removes legacy and attack-surface optional features. Higher tiers remove all of them except a keep list.",
+      "risk": "safe",
+      "enabled": true,
+      "removeAll": false,
+      "keep": [],
+      "items": [
+        {
+          "name": "SMB1Protocol",
+          "action": "remove",
+          "why": "SMBv1: WannaCry-era protocol.",
+          "risk": "safe"
+        },
+        {
+          "name": "SMB1Protocol-Client",
+          "action": "remove",
+          "why": "SMBv1 client.",
+          "risk": "safe"
+        },
+        {
+          "name": "SMB1Protocol-Server",
+          "action": "remove",
+          "why": "SMBv1 server.",
+          "risk": "safe"
+        },
+        {
+          "name": "MicrosoftWindowsPowerShellV2",
+          "action": "remove",
+          "why": "PowerShell 2.0 bypasses modern logging and AMSI.",
+          "risk": "safe"
+        },
+        {
+          "name": "MicrosoftWindowsPowerShellV2Root",
+          "action": "remove",
+          "why": "PowerShell 2.0 engine.",
+          "risk": "safe"
+        },
+        {
+          "name": "Internet-Explorer-Optional-amd64",
+          "action": "remove",
+          "why": "IE11 engine.",
+          "risk": "safe"
+        },
+        {
+          "name": "TelnetClient",
+          "action": "remove",
+          "why": "Cleartext remote shell.",
+          "risk": "safe"
+        },
+        {
+          "name": "TFTP",
+          "action": "remove",
+          "why": "Unauthenticated file transfer.",
+          "risk": "safe"
+        },
+        {
+          "name": "WorkFolders-Client",
+          "action": "remove",
+          "why": "Corporate file sync.",
+          "risk": "safe"
+        },
+        {
+          "name": "Recall",
+          "action": "remove",
+          "why": "Windows Recall: screenshots everything you do.",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "admin.capabilities",
+      "phase": "admin",
+      "kind": "features",
+      "title": "Remove Windows capabilities",
+      "why": "Removes on-demand capabilities that duplicate apps you will install or that exist to let others in.",
+      "risk": "safe",
+      "enabled": true,
+      "capabilities": true,
+      "removeAll": false,
+      "keep": [],
+      "items": [
+        {
+          "name": "App.StepsRecorder*",
+          "action": "remove",
+          "why": "Steps Recorder (deprecated screen recorder).",
+          "risk": "safe"
+        },
+        {
+          "name": "App.Support.QuickAssist*",
+          "action": "remove",
+          "why": "Quick Assist remote help.",
+          "risk": "safe"
+        },
+        {
+          "name": "Browser.InternetExplorer*",
+          "action": "remove",
+          "why": "IE mode.",
+          "risk": "safe"
+        },
+        {
+          "name": "MathRecognizer*",
+          "action": "remove",
+          "why": "Math input panel.",
+          "risk": "safe"
+        },
+        {
+          "name": "Microsoft.Windows.PowerShell.ISE*",
+          "action": "remove",
+          "why": "PowerShell ISE (deprecated).",
+          "risk": "safe"
+        },
+        {
+          "name": "Microsoft.Windows.WordPad*",
+          "action": "remove",
+          "why": "WordPad (deprecated).",
+          "risk": "safe"
+        },
+        {
+          "name": "XPS.Viewer*",
+          "action": "remove",
+          "why": "XPS viewer.",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "admin.services",
+      "phase": "admin",
+      "kind": "services",
+      "title": "Disable services",
+      "why": "Disables telemetry, remote-access and sync services. A missing service is skipped, so one list works across builds and manufacturers.",
+      "risk": "safe",
+      "enabled": true,
+      "items": [
+        {
+          "name": "DiagTrack",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Connected User Experiences and Telemetry: the main telemetry pipe.",
+          "risk": "safe"
+        },
+        {
+          "name": "dmwappushservice",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "WAP push routing for telemetry/MDM.",
+          "risk": "safe"
+        },
+        {
+          "name": "MapsBroker",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Downloaded Maps Manager. A laptop without maps needs none.",
+          "risk": "safe"
+        },
+        {
+          "name": "RetailDemo",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Store demo mode.",
+          "risk": "safe"
+        },
+        {
+          "name": "wisvc",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Windows Insider service.",
+          "risk": "safe"
+        },
+        {
+          "name": "RemoteRegistry",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Lets the network edit your registry.",
+          "risk": "safe"
+        },
+        {
+          "name": "WerSvc",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Windows Error Reporting uploads crash data.",
+          "risk": "safe"
+        },
+        {
+          "name": "WMPNetworkSvc",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Windows Media Player network sharing.",
+          "risk": "safe"
+        },
+        {
+          "name": "DialogBlockingService",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Undocumented dialog blocker; listed in the gameplan.",
+          "risk": "safe"
+        },
+        {
+          "name": "RpcLocator",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Remote Procedure Call (RPC) Locator: legacy name service.",
+          "risk": "safe"
+        },
+        {
+          "name": "WinRM",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Windows Remote Management (WS-Management): remote shell endpoint.",
+          "risk": "safe"
+        },
+        {
+          "name": "shpamsvc",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Shared PC Account Manager.",
+          "risk": "safe"
+        },
+        {
+          "name": "AppVClient",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Microsoft App-V Client (enterprise app virtualization).",
+          "risk": "safe"
+        },
+        {
+          "name": "UevAgentService",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "User Experience Virtualization (enterprise roaming).",
+          "risk": "safe"
+        },
+        {
+          "name": "perceptionsimulation",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Windows Perception Simulation (mixed reality).",
+          "risk": "safe"
+        },
+        {
+          "name": "wcncsvc",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Windows Connect Now registrar (WPS push-button pairing).",
+          "risk": "safe"
+        },
+        {
+          "name": "Wecsvc",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Windows Event Collector: forwards logs to/from other machines.",
+          "risk": "safe"
+        },
+        {
+          "name": "WSAIFabricSvc",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Windows AI fabric service (Recall/Copilot plumbing).",
+          "risk": "safe"
+        },
+        {
+          "name": "VacSvc",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Volumetric Audio Compositor (mixed reality).",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "admin.tasks",
+      "phase": "admin",
+      "kind": "tasks",
+      "title": "Disable scheduled tasks",
+      "why": "Disables telemetry and diagnostics tasks from the gameplan.",
+      "risk": "safe",
+      "enabled": true,
+      "items": [
+        {
+          "path": "\\Microsoft\\Windows\\Application Experience\\*",
+          "action": "disable",
+          "why": "Compatibility appraiser and inventory telemetry.",
+          "risk": "safe"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\Customer Experience Improvement Program\\Consolidator",
+          "action": "disable",
+          "why": "CEIP upload.",
+          "risk": "safe"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\Customer Experience Improvement Program\\UsbCeip",
+          "action": "disable",
+          "why": "USB CEIP telemetry.",
+          "risk": "safe"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\DiskFootprint\\Diagnostics",
+          "action": "disable",
+          "why": "Disk usage telemetry.",
+          "risk": "safe"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\Power Efficiency Diagnostics\\AnalyzeSystem",
+          "action": "disable",
+          "why": "Power telemetry.",
+          "risk": "safe"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\Autochk\\Proxy",
+          "action": "disable",
+          "why": "Autochk SQM data collection.",
+          "risk": "safe"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\Maps\\MapsToastTask",
+          "action": "disable",
+          "why": "Maps notifications.",
+          "risk": "safe"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\Maps\\MapsUpdateTask",
+          "action": "disable",
+          "why": "Maps downloads.",
+          "risk": "safe"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\Windows Error Reporting\\QueueReporting",
+          "action": "disable",
+          "why": "Uploads queued crash reports.",
+          "risk": "safe"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\Feedback\\Siuf\\*",
+          "action": "disable",
+          "why": "Feedback prompts.",
+          "risk": "safe"
+        },
+        {
+          "path": "\\Microsoft\\Windows\\DiskDiagnostic\\Microsoft-Windows-DiskDiagnosticDataCollector",
+          "action": "disable",
+          "why": "Disk diagnostic upload.",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "admin.registry",
+      "phase": "admin",
+      "kind": "registry",
+      "title": "Registry hardening",
+      "why": "Policy and default-user keys. default-user scope seeds every profile created later (the lead user is created after this phase, so it inherits them).",
+      "risk": "safe",
+      "enabled": true,
+      "items": [
+        {
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection",
+          "name": "AllowTelemetry",
+          "type": "DWord",
+          "value": 0,
+          "scope": "machine",
+          "why": "Telemetry policy: Security level (0).",
+          "risk": "safe"
+        },
+        {
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableWindowsConsumerFeatures",
+          "type": "DWord",
+          "value": 1,
+          "scope": "machine",
+          "why": "No sponsored app installs.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo",
+          "name": "DisabledByGroupPolicy",
+          "type": "DWord",
+          "value": 1,
+          "scope": "machine",
+          "why": "No advertising ID.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI",
+          "name": "DisableAIDataAnalysis",
+          "type": "DWord",
+          "value": 1,
+          "scope": "machine",
+          "why": "Recall snapshots off by policy.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot",
+          "name": "TurnOffWindowsCopilot",
+          "type": "DWord",
+          "value": 1,
+          "scope": "machine",
+          "why": "Copilot off by policy.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer",
+          "name": "DisableSearchBoxSuggestions",
+          "type": "DWord",
+          "value": 1,
+          "scope": "machine",
+          "why": "Gameplan: no web suggestions in the search box (machine policy).",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Policies\\Microsoft\\Windows\\Explorer",
+          "name": "DisableSearchBoxSuggestions",
+          "type": "DWord",
+          "value": 1,
+          "scope": "default-user",
+          "why": "Gameplan: same, per-user policy.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Search",
+          "name": "BingSearchEnabled",
+          "type": "DWord",
+          "value": 0,
+          "scope": "default-user",
+          "why": "Gameplan: no Bing in Start.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SilentInstalledAppsEnabled",
+          "type": "DWord",
+          "value": 0,
+          "scope": "default-user",
+          "why": "Gameplan: stop silent app installs.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "OemPreInstalledAppsEnabled",
+          "type": "DWord",
+          "value": 0,
+          "scope": "default-user",
+          "why": "No OEM app installs.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "PreInstalledAppsEnabled",
+          "type": "DWord",
+          "value": 0,
+          "scope": "default-user",
+          "why": "No preinstalled app re-installs.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SystemPaneSuggestionsEnabled",
+          "type": "DWord",
+          "value": 0,
+          "scope": "default-user",
+          "why": "No Start suggestions.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SoftLandingEnabled",
+          "type": "DWord",
+          "value": 0,
+          "scope": "default-user",
+          "why": "No tips.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo",
+          "name": "Enabled",
+          "type": "DWord",
+          "value": 0,
+          "scope": "default-user",
+          "why": "Advertising ID off.",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "admin.devices",
+      "phase": "admin",
+      "kind": "devices",
+      "title": "Device manager: disable and remove devices",
+      "why": "Removes virtual adapters and buses you never use, including hidden ones. Higher tiers go further.",
+      "risk": "safe",
+      "enabled": true,
+      "items": [
+        {
+          "key": "kernel-debug-nic",
+          "match": {
+            "friendlyName": "Microsoft Kernel Debug Network Adapter"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "Kernel debugging over the network: never wanted on a personal machine.",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "admin.autoruns",
+      "phase": "admin",
+      "kind": "autoruns",
+      "title": "Autoruns: disable logon entries",
+      "why": "Disables Run/RunOnce and Startup-folder entries the Autoruns way (moved to AutorunsDisabled, re-enable from Sysinternals Autoruns). Security software is kept.",
+      "risk": "caution",
+      "enabled": true,
+      "categories": [
+        "logon"
+      ],
+      "keep": [
+        "SecurityHealth*",
+        "Windows Defender*",
+        "WindowsDefender*"
+      ],
+      "items": []
+    },
+    {
+      "id": "admin.firewall",
+      "phase": "admin",
+      "kind": "firewall",
+      "title": "Firewall baseline",
+      "why": "Turns on logging for every profile and blocks unsolicited inbound traffic. Higher tiers block outbound too, before the Wi-Fi card goes back in.",
+      "risk": "safe",
+      "enabled": true,
+      "defaultInbound": "Block",
+      "defaultOutbound": "Allow",
+      "logging": true,
+      "keepGroups": [
+        "Core Networking",
+        "mDNS",
+        "Network Discovery"
+      ],
+      "disableOtherRules": false,
+      "items": []
+    },
+    {
+      "id": "admin.network",
+      "phase": "admin",
+      "kind": "network",
+      "title": "Adapter bindings",
+      "why": "Unbinds everything but IPv4 and IPv6 from adapters already present (wired). The Wi-Fi card gets the same treatment in user-online.",
+      "risk": "caution",
+      "enabled": false,
+      "onlyBindings": [
+        "ms_tcpip",
+        "ms_tcpip6"
+      ],
+      "items": []
+    },
+    {
+      "id": "admin-post.playbook",
+      "phase": "admin-post",
+      "kind": "manual",
+      "title": "Run Dogs Playbook in AME Wizard",
+      "why": "The playbook strips what the answer file cannot. AME Wizard needs Defender off, which is why Defender comes back on in the next step.",
+      "risk": "safe",
+      "enabled": true,
+      "instructions": "1. Unplug the Windows 11 USB. Keep the Phoenix USB in.\n2. Click **Launch** to open AME Wizard with the Dogs Playbook.\n3. In the playbook options choose **Enable Defender** if offered; leave *Check GPU tensor unlock support* off unless you want the report.\n4. Let it finish and reboot, then log on as the admin again and come back here.",
+      "launch": {
+        "loadout": "ame-wizard",
+        "args": [
+          "{loadout:dogs-playbook}"
+        ]
+      }
+    },
+    {
+      "id": "admin-post.defender",
+      "phase": "admin-post",
+      "kind": "defender",
+      "title": "Defender back on + ASR rules",
+      "why": "Turns real-time protection back on after the playbook, loads offline signatures from the USB, and applies every Attack Surface Reduction rule in Block mode.",
+      "risk": "safe",
+      "enabled": true,
+      "realtime": true,
+      "asr": "Block",
+      "asrExclude": [
+        "01443614-cd74-433a-b99e-2ecdc07bfc25"
+      ],
+      "signaturesFrom": "usb",
+      "notes": "Rule 01443614-cd74-433a-b99e-2ecdc07bfc25 (block executables unless they meet prevalence/age/trusted-list criteria) is excluded: it blocks fresh Chocolatey installers. Set it to Audit by hand after apps are installed if you want it."
+    },
+    {
+      "id": "admin-post.bitlocker",
+      "phase": "admin-post",
+      "kind": "bitlocker",
+      "title": "BitLocker (after the playbook)",
+      "why": "Encrypts the system drive with the TPM. The recovery key is written to the Phoenix USB: move it somewhere safe afterwards.",
+      "risk": "caution",
+      "enabled": false,
+      "enable": false,
+      "recoveryKeyTo": "usb"
+    },
+    {
+      "id": "user-offline.registry",
+      "phase": "user-offline",
+      "kind": "registry",
+      "title": "Your profile: privacy settings",
+      "why": "Per-user privacy settings for the lead user (Settings > Privacy > Search / Activity history / General). Runs as you, not elevated.",
+      "risk": "safe",
+      "enabled": true,
+      "items": [
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Search",
+          "name": "BingSearchEnabled",
+          "type": "DWord",
+          "value": 0,
+          "scope": "current-user",
+          "why": "No Bing in Start.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Search",
+          "name": "CortanaConsent",
+          "type": "DWord",
+          "value": 0,
+          "scope": "current-user",
+          "why": "No Cortana.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\SearchSettings",
+          "name": "IsDeviceSearchHistoryEnabled",
+          "type": "DWord",
+          "value": 0,
+          "scope": "current-user",
+          "why": "Gameplan: Privacy > Search, uncheck everything.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\SearchSettings",
+          "name": "IsMSACloudSearchEnabled",
+          "type": "DWord",
+          "value": 0,
+          "scope": "current-user",
+          "why": "No Microsoft account cloud search.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\SearchSettings",
+          "name": "IsAADCloudSearchEnabled",
+          "type": "DWord",
+          "value": 0,
+          "scope": "current-user",
+          "why": "No work-account cloud search.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\SearchSettings",
+          "name": "SafeSearchMode",
+          "type": "DWord",
+          "value": 0,
+          "scope": "current-user",
+          "why": "No web results to filter.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SilentInstalledAppsEnabled",
+          "type": "DWord",
+          "value": 0,
+          "scope": "current-user",
+          "why": "Gameplan: stop silent app installs.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo",
+          "name": "Enabled",
+          "type": "DWord",
+          "value": 0,
+          "scope": "current-user",
+          "why": "Advertising ID off.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Privacy",
+          "name": "TailoredExperiencesWithDiagnosticDataEnabled",
+          "type": "DWord",
+          "value": 0,
+          "scope": "current-user",
+          "why": "No tailored experiences.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "Start_TrackProgs",
+          "type": "DWord",
+          "value": 0,
+          "scope": "current-user",
+          "why": "Start does not track launched apps.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\InputPersonalization",
+          "name": "RestrictImplicitTextCollection",
+          "type": "DWord",
+          "value": 1,
+          "scope": "current-user",
+          "why": "No typing data collection.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\InputPersonalization",
+          "name": "RestrictImplicitInkCollection",
+          "type": "DWord",
+          "value": 1,
+          "scope": "current-user",
+          "why": "No inking data collection.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Siuf\\Rules",
+          "name": "NumberOfSIUFInPeriod",
+          "type": "DWord",
+          "value": 0,
+          "scope": "current-user",
+          "why": "No feedback prompts.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\CDP",
+          "name": "RomeSdkChannelUserAuthzPolicy",
+          "type": "DWord",
+          "value": 0,
+          "scope": "current-user",
+          "why": "Gameplan: share across devices off.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\CDP",
+          "name": "CdpSessionUserAuthzPolicy",
+          "type": "DWord",
+          "value": 0,
+          "scope": "current-user",
+          "why": "Share across devices off (sessions).",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\CDP",
+          "name": "NearShareChannelUserAuthzPolicy",
+          "type": "DWord",
+          "value": 0,
+          "scope": "current-user",
+          "why": "Nearby sharing off.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\System\\GameConfigStore",
+          "name": "GameDVR_Enabled",
+          "type": "DWord",
+          "value": 0,
+          "scope": "current-user",
+          "why": "Gameplan: Game DVR off.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR",
+          "name": "AppCaptureEnabled",
+          "type": "DWord",
+          "value": 0,
+          "scope": "current-user",
+          "why": "Background capture off.",
+          "risk": "safe"
+        },
+        {
+          "path": "HKCU:\\Software\\Sysinternals",
+          "name": "EulaAccepted",
+          "type": "DWord",
+          "value": 1,
+          "scope": "current-user",
+          "why": "Sysinternals tools run without the EULA popup.",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "user-offline.autoruns",
+      "phase": "user-offline",
+      "kind": "autoruns",
+      "title": "Autoruns: your logon entries",
+      "why": "Same Autoruns pass for your own profile (HKCU Run keys and your Startup folder).",
+      "risk": "caution",
+      "enabled": true,
+      "categories": [
+        "logon"
+      ],
+      "keep": [
+        "SecurityHealth*",
+        "Windows Defender*",
+        "WindowsDefender*"
+      ],
+      "items": []
+    },
+    {
+      "id": "user-offline.tools",
+      "phase": "user-offline",
+      "kind": "tools",
+      "title": "Tools, PATH and $PROFILE",
+      "why": "Copies Sysinternals and Android platform-tools from the USB to C:\\Tools, puts them on PATH, and adds a small PowerShell profile.",
+      "risk": "safe",
+      "enabled": true,
+      "items": [
+        {
+          "key": "sysinternals",
+          "loadout": "sysinternals",
+          "dest": "C:\\Tools\\Sysinternals",
+          "why": "Autoruns, Process Explorer, TCPView and friends."
+        },
+        {
+          "key": "platform-tools",
+          "loadout": "platform-tools",
+          "dest": "C:\\Tools\\platform-tools",
+          "why": "adb and fastboot for Android work."
+        },
+        {
+          "key": "path-sysinternals",
+          "env": "PATH+",
+          "value": "C:\\Tools\\Sysinternals",
+          "why": "Run Sysinternals tools from any shell."
+        },
+        {
+          "key": "path-platform-tools",
+          "env": "PATH+",
+          "value": "C:\\Tools\\platform-tools",
+          "why": "Run adb from any shell."
+        },
+        {
+          "key": "profile-phoenix",
+          "profileSnippet": "# --- Phoenix ---\nSet-Alias -Name which -Value Get-Command\nfunction phx { & \"$env:ProgramData\\Phoenix\\kit\\engine\\phoenix.ps1\" @args }\nfunction create-app { param([Parameter(Mandatory)][string]$Name) New-Item -ItemType Directory -Path (Join-Path $HOME \"Projects\\$Name\") -Force | Set-Location }\n# --- /Phoenix ---",
+          "why": "Small, readable profile: which, phx (engine), create-app."
+        }
+      ]
+    },
+    {
+      "id": "user-online.devices",
+      "phase": "user-online",
+      "kind": "devices",
+      "title": "Device manager pass for new hardware",
+      "why": "The Wi-Fi driver brings virtual adapters back. Remove them again.",
+      "risk": "safe",
+      "enabled": true,
+      "items": [
+        {
+          "key": "kernel-debug-nic",
+          "match": {
+            "friendlyName": "Microsoft Kernel Debug Network Adapter"
+          },
+          "action": "remove",
+          "includeHidden": true,
+          "why": "Kernel debugging over the network.",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "user-online.network",
+      "phase": "user-online",
+      "kind": "network",
+      "title": "Adapter bindings: IPv4 + IPv6 only",
+      "why": "Gameplan: ncpa.cpl > adapter > uncheck all but IPv4 and IPv6 (no file sharing, client for MS networks, LLDP, QoS...).",
+      "risk": "caution",
+      "enabled": true,
+      "onlyBindings": [
+        "ms_tcpip",
+        "ms_tcpip6"
+      ],
+      "items": []
+    },
+    {
+      "id": "user-online.settings",
+      "phase": "user-online",
+      "kind": "setting",
+      "title": "Re-apply per-adapter settings for the Wi-Fi card",
+      "why": "NetBIOS over TCP/IP is set per network interface. The Wi-Fi interface only exists once the card is back in, so the admin-phase setting never touched it.",
+      "risk": "safe",
+      "enabled": true,
+      "items": [
+        {
+          "setting": "netbios",
+          "value": "off",
+          "why": "Stops NetBIOS name broadcasts on the new adapter."
+        },
+        {
+          "setting": "llmnr",
+          "value": "off",
+          "why": "Machine-wide, re-asserted in case a driver installer reset it."
+        }
+      ]
+    },
+    {
+      "id": "user-online.choco",
+      "phase": "user-online",
+      "kind": "choco",
+      "title": "Chocolatey + your apps",
+      "why": "Opens a timed firewall install window, installs Chocolatey (from the USB if bundled), installs the apps you picked, then always closes the window.",
+      "risk": "safe",
+      "enabled": true,
+      "bootstrapFrom": "usb",
+      "window": {
+        "minutes": 30
+      }
+    },
+    {
+      "id": "user-online.firewall-allow",
+      "phase": "user-online",
+      "kind": "firewall",
+      "title": "Firewall: allow your apps out",
+      "why": "With outbound blocked by default, apps need an explicit allow rule. Rules for programs that are not installed are skipped.",
+      "risk": "safe",
+      "enabled": true,
+      "items": [
+        {
+          "name": "Phoenix: Firefox",
+          "direction": "Outbound",
+          "program": "%ProgramFiles%\\Mozilla Firefox\\firefox.exe",
+          "action": "Allow",
+          "why": "Browser."
+        },
+        {
+          "name": "Phoenix: Chrome",
+          "direction": "Outbound",
+          "program": "%ProgramFiles%\\Google\\Chrome\\Application\\chrome.exe",
+          "action": "Allow",
+          "why": "Browser."
+        },
+        {
+          "name": "Phoenix: Brave",
+          "direction": "Outbound",
+          "program": "%ProgramFiles%\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
+          "action": "Allow",
+          "why": "Browser."
+        },
+        {
+          "name": "Phoenix: Git",
+          "direction": "Outbound",
+          "program": "%ProgramFiles%\\Git\\mingw64\\bin\\git-remote-https.exe",
+          "action": "Allow",
+          "why": "git over HTTPS."
+        },
+        {
+          "name": "Phoenix: Chocolatey",
+          "direction": "Outbound",
+          "program": "%ProgramData%\\chocolatey\\choco.exe",
+          "action": "Allow",
+          "why": "choco upgrade later (installers still need the install window).",
+          "risk": "caution"
+        }
+      ]
+    },
+    {
+      "id": "user-online.portmaster",
+      "phase": "user-online",
+      "kind": "manual",
+      "title": "Optional: Portmaster",
+      "why": "Portmaster (Safing) is the cross-platform, per-app firewall you were thinking of: per-app rules, DNS filtering, connection history. Optional.",
+      "risk": "safe",
+      "enabled": true,
+      "instructions": "Portmaster replaces day-to-day rule editing with per-app prompts and history.\n\n1. Click **Launch** to run the bundled installer.\n2. On first start it downloads its filter lists, so do this after the install window closed and you allowed it out, or temporarily.\n3. Keep the Windows Firewall baseline on; Portmaster sits on top.",
+      "launch": {
+        "loadout": "portmaster"
+      }
+    }
+  ]
+}

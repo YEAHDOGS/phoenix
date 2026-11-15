@@ -102,9 +102,10 @@ boot-side `.sh` is the authority.
 
 ## 6. Relationship to the answer-file generator
 
-`tools/New-UnattendXml.ps1` (unattend-gen branch) produces the answer
-file the artifact gate checks. The gate reads the staged file, not the
+The engine's `unattend` command (the Schneegans generator, wrapped; see
+`docs/ARCHITECTURE.md`) produces the answer file the artifact gate checks. The gate reads the staged file, not the
 generator — a hand-edited or corrupted `autounattend.xml` that still
 parses is fine; a missing one is not. Content validation of the answer
-file (schema, specialize order) stays with `tools/Test-UnattendXml.ps1`;
+file (schema) is done by the generator itself, which validates against
+Microsoft's unattend XSD;
 this phase only requires presence + readability + config agreement.

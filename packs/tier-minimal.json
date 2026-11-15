@@ -1,0 +1,60 @@
+{
+  "id": "tier-minimal",
+  "name": "Tier: Minimal",
+  "description": "Light touch for maximum compatibility: base plus Xbox/UPnP services and Widgets. Keeps Windows Update, paging file, VPN plumbing and outbound network open.",
+  "version": 1,
+  "steps": [
+    {
+      "id": "admin.services",
+      "items": [
+        {
+          "name": "XblAuthManager",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Xbox Live auth.",
+          "risk": "safe"
+        },
+        {
+          "name": "XblGameSave",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Xbox cloud saves.",
+          "risk": "safe"
+        },
+        {
+          "name": "XboxNetApiSvc",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "Xbox networking.",
+          "risk": "safe"
+        },
+        {
+          "name": "SSDPSRV",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "SSDP Discovery: UPnP device discovery on the LAN.",
+          "risk": "safe"
+        },
+        {
+          "name": "upnphost",
+          "startup": "Disabled",
+          "stop": true,
+          "why": "UPnP Device Host.",
+          "risk": "safe"
+        }
+      ]
+    },
+    {
+      "id": "admin.appx",
+      "items": [
+        {
+          "pattern": "MicrosoftWindows.Client.WebExperience",
+          "action": "remove",
+          "provisioned": true,
+          "why": "Widgets board and its news feed.",
+          "risk": "safe"
+        }
+      ]
+    }
+  ]
+}

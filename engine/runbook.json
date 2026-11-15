@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "stages": [
+    {
+      "id": "prepare",
+      "title": "Build the Phoenix USB",
+      "kind": "build",
+      "who": "any",
+      "network": "online",
+      "next": "wifi-out",
+      "instructions": "On any working PC, in this app:\n\n1. **Profile**: computer name, admin (e.g. BigMan), lead user, extra users.\n2. **Packs**: pick a tier and hardware pack, review every step.\n3. **Apps**: pick your Chocolatey apps.\n4. **USB**: plug in the Phoenix USB, fetch and verify the loadout, type the passwords, build.\n\nYou also need a normal Windows 11 install USB (Media Creation Tool or Rufus). Phoenix does not modify it.",
+      "warnings": [
+        "Passwords are written into autounattend.xml on the Phoenix USB (the format requires it). Treat the USB as secret and change the passwords after install."
+      ]
+    },
+    {
+      "id": "wifi-out",
+      "title": "Remove the Wi-Fi card",
+      "kind": "manual",
+      "who": "any",
+      "network": "offline",
+      "next": "bios-wipe",
+      "instructions": "The gold standard is an air-gapped install.\n\n1. Shut down, unplug power, hold the power button 10 seconds.\n2. Open the bottom panel and disconnect the antenna leads, then remove the M.2 Wi-Fi card. Keep the screw.\n3. Close it up. Do not plug in Ethernet.",
+      "warnings": [
+        "Ground yourself first. Antenna connectors are fragile: lift straight up."
+      ]
+    },
+    {
+      "id": "bios-wipe",
+      "title": "BIOS: wipe the SSD",
+      "kind": "manual",
+      "who": "any",
+      "network": "offline",
+      "next": "install",
+      "instructions": "1. Enter firmware setup (HP: tap **F10** at power on; Esc shows the menu).\n2. Run the drive's secure erase. **HP: Security > Hard Drive Utilities > Secure Erase** (newer models: *HP Secure Erase*). Other vendors: look for Secure Erase / NVMe Sanitize under Security or Storage.\n3. Make sure Secure Boot and TPM are on.\n4. Set boot order so USB comes first for the next boot (or use the one-time boot menu, HP: **F9**).",
+      "warnings": [
+        "Secure erase destroys everything on the SSD. Make sure backups are done.",
+        "If BitLocker was on, the old data is already unreadable without the key, but erase anyway."
+      ]
+    },
+    {
+      "id": "install",
+      "title": "Install Windows (unattended)",
+      "kind": "manual",
+      "who": "any",
+      "network": "offline",
+      "next": "admin",
+      "instructions": "1. Plug in **both** USBs: the Windows 11 USB and the Phoenix USB.\n2. Boot from the Windows 11 USB.\n3. Windows Setup finds `autounattend.xml` on the Phoenix USB, partitions the disk and installs without questions.\n4. It reboots a few times and logs on as the admin by itself.",
+      "warnings": [
+        "The answer file wipes the disk number set in your profile (default 0). With the SSD freshly erased and only USBs besides it, that is the internal drive, but check the Profile screen if you have more than one internal disk."
+      ]
+    },
+    {
+      "id": "admin",
+      "title": "Admin phase (automatic)",
+      "kind": "phase",
+      "phase": "admin",
+      "who": "admin",
+      "network": "offline",
+      "next": "playbook",
+      "instructions": "Runs by itself at the admin's first logon: Phoenix copies its kit from the USB to `C:\\ProgramData\\Phoenix\\kit` and applies the admin phase (settings, page file, services, tasks, features, apps, devices, autoruns, firewall lockdown).\n\nWhen it finishes the machine **powers off**. If something failed it stays on and opens the log instead.",
+      "warnings": [
+        "Do not touch the machine while it runs. A cold power-off at the end is expected."
+      ]
+    },
+    {
+      "id": "playbook",
+      "title": "Dogs Playbook",
+      "kind": "manual",
+      "launch": {
+        "loadout": "ame-wizard",
+        "args": [
+          "{loadout:dogs-playbook}"
+        ]
+      },
+      "who": "admin",
+      "network": "offline",
+      "next": "admin-post",
+      "instructions": "1. Unplug the Windows 11 USB. Keep the Phoenix USB in.\n2. Power on and log on as the admin.\n3. Open Phoenix (`Phoenix.exe` on the USB) and launch AME Wizard with the Dogs Playbook from here.\n4. Let it finish and reboot.",
+      "warnings": [
+        "AME Wizard requires Defender to be off while it runs. The next stage turns it back on."
+      ]
+    },
+    {
+      "id": "admin-post",
+      "title": "Defender, ASR, BitLocker",
+      "kind": "phase",
+      "phase": "admin-post",
+      "who": "admin",
+      "network": "offline",
+      "next": "user-offline",
+      "instructions": "Log on as the admin, open Phoenix and run this phase: Defender real-time protection on, offline signatures from the USB, Attack Surface Reduction rules, and BitLocker if you enabled it.\n\nThen **shut down**.",
+      "warnings": [
+        "If BitLocker is enabled, its recovery key is written to the Phoenix USB. Move it somewhere safe and delete it from the USB."
+      ]
+    },
+    {
+      "id": "user-offline",
+      "title": "Lead user setup (offline)",
+      "kind": "phase",
+      "phase": "user-offline",
+      "who": "lead",
+      "network": "offline",
+      "next": "wifi-in",
+      "instructions": "Power on and log on as the **lead user** (not the admin). Open Phoenix and run this phase: your privacy settings, your autoruns, tools in C:\\Tools, PATH and PowerShell profile.\n\nMachine-wide parts ask for the admin password through UAC. Then **shut down**.",
+      "warnings": [
+        "From here on, use the admin account only through UAC prompts."
+      ]
+    },
+    {
+      "id": "wifi-in",
+      "title": "Put the Wi-Fi card back",
+      "kind": "manual",
+      "who": "any",
+      "network": "online",
+      "next": "user-online",
+      "instructions": "1. Power off, unplug, hold power 10 seconds.\n2. Reinstall the Wi-Fi card and antenna leads.\n3. Power on, log on as the lead user. The firewall is already blocking everything but core networking.",
+      "warnings": [
+        "Windows will install the Wi-Fi driver it has in box. If it has none, install the vendor driver from the Phoenix USB (HP drivers loadout item)."
+      ]
+    },
+    {
+      "id": "user-online",
+      "title": "Network, firewall, apps",
+      "kind": "phase",
+      "phase": "user-online",
+      "who": "lead",
+      "network": "online",
+      "next": "breathe",
+      "instructions": "Connect to your Wi-Fi, open Phoenix and run this phase: removes the virtual adapters the Wi-Fi driver added, binds only IPv4/IPv6, opens a timed firewall window, installs Chocolatey and your apps, closes the window, and adds allow rules for your browsers.\n\nOptional: install Portmaster for per-app firewall control.",
+      "warnings": [
+        "During the install window outbound traffic is allowed for everything. It closes automatically when the installs finish or the timer runs out."
+      ]
+    },
+    {
+      "id": "breathe",
+      "title": "Breathe",
+      "kind": "manual",
+      "who": "any",
+      "network": "online",
+      "next": null,
+      "instructions": "Change the passwords you typed into the answer file. Move the BitLocker recovery key off the USB. Run a Phoenix **Scan** to confirm the plan shows nothing left to change.\n\nYou are doing great.",
+      "warnings": []
+    }
+  ]
+}
