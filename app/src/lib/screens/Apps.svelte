@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { app } from '$lib/app.svelte';
-  import { backend, call, describeError, type CatalogEntry, type ChocoResult, type EngineError } from '$lib/engine';
-  import PageHeader from '$lib/components/PageHeader.svelte';
-  import Notice from '$lib/components/Notice.svelte';
-  import Icon from '$lib/components/Icon.svelte';
+  import { app } from '#lib/app.svelte.ts';
+  import { backend, call, describeError, type CatalogEntry, type ChocoResult, type EngineError } from '#lib/engine.ts';
+  import PageHeader from '#lib/components/PageHeader.svelte';
+  import Notice from '#lib/components/Notice.svelte';
+  import Icon from '#lib/components/Icon.svelte';
 
   interface Entry { id: string; name: string; category: string; description: string; isDefault: boolean }
 

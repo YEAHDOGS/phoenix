@@ -1,14 +1,14 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { app } from '$lib/app.svelte';
-  import { call, describeError, getMaybeElevated, unwrap, type EngineError } from '$lib/engine';
-  import { FALLBACK_STAGES, isFinished, type Stage, type StateDoc } from '$lib/runbook';
-  import PageHeader from '$lib/components/PageHeader.svelte';
-  import Markdown from '$lib/components/Markdown.svelte';
-  import StatusPill from '$lib/components/StatusPill.svelte';
-  import Notice from '$lib/components/Notice.svelte';
-  import Icon from '$lib/components/Icon.svelte';
-  import PhaseRunDialog from '$lib/components/PhaseRunDialog.svelte';
+  import { app } from '#lib/app.svelte.ts';
+  import { call, describeError, getMaybeElevated, unwrap, type EngineError } from '#lib/engine.ts';
+  import { FALLBACK_STAGES, isFinished, type Stage, type StateDoc } from '#lib/runbook.ts';
+  import PageHeader from '#lib/components/PageHeader.svelte';
+  import Markdown from '#lib/components/Markdown.svelte';
+  import StatusPill from '#lib/components/StatusPill.svelte';
+  import Notice from '#lib/components/Notice.svelte';
+  import Icon from '#lib/components/Icon.svelte';
+  import PhaseRunDialog from '#lib/components/PhaseRunDialog.svelte';
 
   let stages = $state<Stage[]>([]);
   let usingFallback = $state(false);

@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { open as openDialog } from '@tauri-apps/plugin-dialog';
-  import { app } from '$lib/app.svelte';
+  import { app } from '#lib/app.svelte.ts';
   import {
     backend, call, describeError, formatBytes, run, unwrap,
     type EngineError, type Run,
-  } from '$lib/engine';
-  import PageHeader from '$lib/components/PageHeader.svelte';
-  import Notice from '$lib/components/Notice.svelte';
-  import Icon from '$lib/components/Icon.svelte';
-  import Modal from '$lib/components/Modal.svelte';
+  } from '#lib/engine.ts';
+  import PageHeader from '#lib/components/PageHeader.svelte';
+  import Notice from '#lib/components/Notice.svelte';
+  import Icon from '#lib/components/Icon.svelte';
+  import Modal from '#lib/components/Modal.svelte';
 
   interface Volume { letter: string; label: string | null; fileSystem: string | null; sizeBytes: number; freeBytes: number; hasPhoenix?: boolean; hasVentoy?: boolean }
   interface Disk {

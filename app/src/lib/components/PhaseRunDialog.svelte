@@ -4,8 +4,8 @@
    * confirmation shows real counts, then applies elevated through UAC.
    */
   import { untrack } from 'svelte';
-  import { app } from '$lib/app.svelte';
-  import { run, type ChangeEvent, type EngineError, type PhaseId, type Run } from '$lib/engine';
+  import { app } from '#lib/app.svelte.ts';
+  import { run, type ChangeEvent, type EngineError, type PhaseId, type Run } from '#lib/engine.ts';
   import Modal from './Modal.svelte';
   import Notice from './Notice.svelte';
 

@@ -1,6 +1,6 @@
 <script lang="ts">
   /** Renders a record's params as a form. Mutates `obj` in place (it's deep $state). */
-  import { humanize, type Obj, type Param, type Schema } from '$lib/unattend';
+  import { humanize, type Obj, type Param, type Schema } from '#lib/unattend.ts';
   import SchemaValue from './SchemaValue.svelte';
 
   let {

@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { app } from '$lib/app.svelte';
-  import PageHeader from '$lib/components/PageHeader.svelte';
-  import Notice from '$lib/components/Notice.svelte';
-  import Icon from '$lib/components/Icon.svelte';
+  import { app } from '#lib/app.svelte.ts';
+  import PageHeader from '#lib/components/PageHeader.svelte';
+  import Notice from '#lib/components/Notice.svelte';
+  import Icon from '#lib/components/Icon.svelte';
 
   const TIMEZONES = [
     'Pacific Standard Time', 'Mountain Standard Time', 'US Mountain Standard Time', 'Central Standard Time',

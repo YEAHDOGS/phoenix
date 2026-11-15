@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { save as saveDialog } from '@tauri-apps/plugin-dialog';
-  import { app } from '$lib/app.svelte';
-  import { backend, call, describeError, unwrap, type EngineError } from '$lib/engine';
-  import type { Obj, Param, Schema } from '$lib/unattend';
-  import PageHeader from '$lib/components/PageHeader.svelte';
-  import Notice from '$lib/components/Notice.svelte';
-  import Icon from '$lib/components/Icon.svelte';
-  import Toggle from '$lib/components/Toggle.svelte';
-  import Modal from '$lib/components/Modal.svelte';
-  import SchemaParams from '$lib/components/SchemaParams.svelte';
+  import { app } from '#lib/app.svelte.ts';
+  import { backend, call, describeError, unwrap, type EngineError } from '#lib/engine.ts';
+  import type { Obj, Param, Schema } from '#lib/unattend.ts';
+  import PageHeader from '#lib/components/PageHeader.svelte';
+  import Notice from '#lib/components/Notice.svelte';
+  import Icon from '#lib/components/Icon.svelte';
+  import Toggle from '#lib/components/Toggle.svelte';
+  import Modal from '#lib/components/Modal.svelte';
+  import SchemaParams from '#lib/components/SchemaParams.svelte';
 
   let schema = $state<Schema | null>(null);
   let defaults = $state<Obj | null>(null);
