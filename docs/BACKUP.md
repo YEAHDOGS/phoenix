@@ -11,9 +11,9 @@ USB drive, verified image, quarantined copy.
 
 | File | Role |
 |---|---|
-| `tools/lib/backup-gates.sh` | Bash gate library, sourced by the flow. Sources `tools/lib/nuke-interlock.sh` and reuses its TTY + typed-confirmation gates. Adds: `backup_require_source`, `backup_require_destination`, `backup_image_disk`, `backup_require_image_proof`. |
-| `tools/Backup-DiskImage.sh` | Linux / boot-environment imaging flow: enumerate → select → gates → dd → hash → proof. |
-| `tools/Backup-DiskImage.ps1` | WinPE / staging-side twin: same gates, same proof artifacts, raw `\\.\PhysicalDriveN` read + incremental SHA-256. |
+| `scripts/tools/lib/backup-gates.sh` | Bash gate library, sourced by the flow. Sources `scripts/tools/lib/nuke-interlock.sh` and reuses its TTY + typed-confirmation gates. Adds: `backup_require_source`, `backup_require_destination`, `backup_image_disk`, `backup_require_image_proof`. |
+| `scripts/tools/Backup-DiskImage.sh` | Linux / boot-environment imaging flow: enumerate → select → gates → dd → hash → proof. |
+| `scripts/tools/Backup-DiskImage.ps1` | WinPE / staging-side twin: same gates, same proof artifacts, raw `\\.\PhysicalDriveN` read + incremental SHA-256. |
 | `tests/tools/test-backup.sh` | Regression suite (30 cases, fully mocked — no real disks). |
 
 ## 2. The four gates
@@ -49,7 +49,7 @@ start/finish/confirmation to the state dir (`backup-gates.log`).
 
 ```bash
 # boot environment (air-gapped, direct-attached USB as destination)
-tools/Backup-DiskImage.sh --dest /mnt/usb-images --state /mnt/usb-images/phoenix-state 2
+scripts/tools/Backup-DiskImage.sh --dest /mnt/usb-images --state /mnt/usb-images/phoenix-state 2
 ```
 
 The destination in the runbook's air-gapped mode is always a

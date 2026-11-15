@@ -9,7 +9,7 @@ underlying operation on any platform. They stay `.ps1`-only, permanently.
 
 **Converted instead (bash twins live alongside the originals):**
 `scripts/checksum/check.ps1`, `scripts/checksum/compare.ps1`,
-`qemu/get-iso.ps1`, `scripts/git/git-fucked.ps1`,
+`scripts/qemu/get-iso.ps1`, `scripts/git/git-fucked.ps1`,
 `scripts/tools/file-compare.ps1` (twin pre-existed), `scripts/tools/file-shift.ps1`,
 `scripts/tools/delete-node.ps1` — pure logic (hashing, HTTP, git, file ops),
 no Windows APIs.
@@ -75,8 +75,8 @@ Windows Update Agent COM session (`Microsoft.Update.Session`):
 `copy-git-utils.ps1` — rebuilds a `C:\toolbox\git` tree from `C:\git-sdk-64`
 (Windows Git-SDK paths).
 
-## qemu/ launchers (2 scripts)
-`qemu/start.ps1`, `scripts/qemu/start.ps1` — QEMU launchers that read host
+## scripts/qemu/ launchers (2 scripts)
+`scripts/qemu/start-castle.ps1`, `scripts/qemu/start.ps1` — QEMU launchers that read host
 CPU/RAM via WMI (`Win32_Processor`, `Win32_ComputerSystem`) and assume a
 Windows QEMU install (`C:\Program Files\qemu`).
 

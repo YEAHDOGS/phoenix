@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #===============================================================================
 # test-quarantine-copy-twin.sh -- regression suite for
-# tools/phoenix-quarantine-copy.sh (+ static contract parity for the Windows
-# twin tools/New-PhoenixQuarantineCopy.ps1). Runbook Step 2.7.
+# scripts/tools/phoenix-quarantine-copy.sh (+ static contract parity for the Windows
+# twin scripts/tools/New-PhoenixQuarantineCopy.ps1). Runbook Step 2.7.
 #
 # Builds a REAL verified image fixture from scratch (3 x 1 MiB gzip chunks,
 # genuine phoenix-backup/1 manifest + .phoenix-backup.state with real
@@ -18,8 +18,8 @@
 #===============================================================================
 set -uo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
-TOOL="$REPO/tools/phoenix-quarantine-copy.sh"
-TWIN="$REPO/tools/New-PhoenixQuarantineCopy.ps1"
+TOOL="$REPO/scripts/tools/phoenix-quarantine-copy.sh"
+TWIN="$REPO/scripts/tools/New-PhoenixQuarantineCopy.ps1"
 PASS=0; FAIL=0
 pass() { PASS=$((PASS+1)); echo "  PASS: $1"; }
 fail() { FAIL=$((FAIL+1)); echo "  FAIL: $1${2:+ -- $2}"; }

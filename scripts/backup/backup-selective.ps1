@@ -4,7 +4,7 @@
     config per app profiles. Cache and executables are NEVER touched.
 
 .DESCRIPTION
-    Reads phoenix-profile/v1 JSON profiles from the sibling ../profiles dir,
+    Reads phoenix-profile/v1 JSON profiles from config/profiles (../../config/profiles),
     expands %VAR% env paths, and either:
       - Plan (default): read-only listing of what WOULD be backed up,
         what would be JSON-validated, and what is explicitly SKIPPED.
@@ -20,14 +20,14 @@
 .PARAMETER Dest
     Backup destination root (e.g. the Castle 10TB target). Required for -Execute.
 .PARAMETER ProfileDir
-    Defaults to ..\profiles relative to this script.
+    Defaults to ..\..\config\profiles relative to this script.
 .PARAMETER Execute
     Actually copy. Without it, plan mode only.
 #>
 [CmdletBinding()]
 param(
     [string]$App = "all",
-    [string]$ProfileDir = (Join-Path $PSScriptRoot ".." ".." "profiles"),
+    [string]$ProfileDir = (Join-Path $PSScriptRoot ".." ".." "config" "profiles"),
     [string]$Dest = "",
     [switch]$Execute
 )

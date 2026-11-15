@@ -5,7 +5,7 @@
 set -u
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-VALIDATOR="$REPO_ROOT/tools/Validate-UsbConfig.py"
+VALIDATOR="$REPO_ROOT/scripts/tools/Validate-UsbConfig.py"
 SCHEMA="$REPO_ROOT/config/usb-config.schema.json"
 FIX="$REPO_ROOT/tests/config/fixtures"
 

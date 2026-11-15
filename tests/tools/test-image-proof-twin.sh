@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #===============================================================================
-# test-image-proof-twin.sh -- regression suite for tools/New-ImageProof.sh
-# (+ structural parity checks for the WinPE twin tools/New-ImageProof.ps1)
+# test-image-proof-twin.sh -- regression suite for scripts/tools/New-ImageProof.sh
+# (+ structural parity checks for the WinPE twin scripts/tools/New-ImageProof.ps1)
 #
 # The image-proof manifest is the artifact the nuke image-proof gate consumes
 # (runbook invariant 1: verified image or no wipe). A drift in keys, order,
@@ -15,8 +15,8 @@
 #===============================================================================
 set -uo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
-TOOL="$REPO/tools/New-ImageProof.sh"
-TWIN="$REPO/tools/New-ImageProof.ps1"
+TOOL="$REPO/scripts/tools/New-ImageProof.sh"
+TWIN="$REPO/scripts/tools/New-ImageProof.ps1"
 PASS=0; FAIL=0
 pass() { PASS=$((PASS+1)); echo "  PASS: $1"; }
 fail() { FAIL=$((FAIL+1)); echo "  FAIL: $1${2:+ -- $2}"; }

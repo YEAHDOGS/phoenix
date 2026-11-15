@@ -3,8 +3,7 @@
 # run-payload.sh -- one harness for the whole unified Phoenix payload line.
 #
 # Runs every payload test suite (Analyze / Backup / Nuke / Reinstall /
-# Restore + the chain-of-custody contract + the config-schema regression +
-# the answer-file suites) and reports per-suite pass/fail plus a grand total.
+# Restore + the chain-of-custody contract + the config-schema regression) and reports per-suite pass/fail plus a grand total.
 # Exit 0 = everything green; exit 1 = any suite red.
 #
 # Run from the repo root:  bash tests/run-payload.sh
@@ -28,7 +27,6 @@ SUITES=(
     "tests/tools/test-analyze.sh"
     "tests/tools/test-backup.sh"
     "tests/tools/test-nuke-interlock.sh"
-    "tests/tools/test-xml-smoke.sh"
 )
 
 grand_pass=0; grand_fail=0; red=0
@@ -58,23 +56,8 @@ for suite in "${SUITES[@]}"; do
     fi
 done
 
-# The XML generator e2e is python; run it separately (same contract).
-py="tests/tools/test-xml-gen-e2e.py"
-out="$(python3 "$REPO_ROOT/$py" 2>&1)"
-rc=$?
-p="$(printf '%s\n' "$out" | grep -cE '^\s*PASS: ')"
-f="$(printf '%s\n' "$out" | grep -cE '^\s*FAIL')"
-grand_pass=$((grand_pass + p))
-grand_fail=$((grand_fail + f))
-if [[ $rc -ne 0 || $f -ne 0 ]]; then
-    echo "RED   $py  (rc=$rc, $p pass / $f fail)"
-    red=1; red_suites+=("$py")
-else
-    echo "GREEN $py  ($p pass / $f fail)"
-fi
-
 echo "================================================================"
-echo "GRAND TOTAL: $grand_pass PASS / $grand_fail FAIL across $(( ${#SUITES[@]} + 1 )) suites"
+echo "GRAND TOTAL: $grand_pass PASS / $grand_fail FAIL across ${#SUITES[@]} suites"
 if [[ $red -ne 0 ]]; then
     echo "RED SUITES: ${red_suites[*]}"
     exit 1

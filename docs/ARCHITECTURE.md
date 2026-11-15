@@ -3,18 +3,36 @@
 One engine, one config, one app. Everything the app does goes through the
 PowerShell engine; the app never builds PowerShell strings itself.
 
+The repo root holds only six folders: `app/`, `config/`, `docs/`, `landing/`,
+`scripts/`, `tests/`. The USB kit (`<USB>\phoenix\`) and the installed kit
+(`C:\ProgramData\Phoenix\kit\`) use the same layout, so the engine finds
+everything relative to the kit root (`Get-PhxKitRoot`, two levels above
+`scripts\engine\`).
+
 ```
-app/                    Tauri 2 + Svelte 5 desktop app (Phoenix.exe)
-engine/
-  phoenix.ps1           CLI entry point (the only thing the app spawns)
-  lib/*.ps1             engine modules, dot-sourced by phoenix.ps1
-  runbook.json          the wipe-and-restore stages (manual + automated)
-  tests/Test-Engine.ps1 read-only self-test (safe on any machine)
-packs/*.json            shareable, composable hardening packs
-loadout/manifest.json   software the USB builder downloads + verifies
-config/phoenix.example.json   example user config (no secrets)
-unattend/               phoenix-unattend.exe: the Schneegans generator, wrapped
-third_party/unattend-generator/   vendored upstream library (MIT, pinned)
+app/
+  src/, src-tauri/        Tauri 2 + Svelte 5 desktop app (Phoenix.exe)
+  unattend/               phoenix-unattend.exe: the Schneegans generator, wrapped
+  third_party/unattend-generator/   vendored upstream library (MIT, pinned)
+config/
+  phoenix.example.json    example user config (no secrets)
+  packs/*.json            shareable, composable hardening packs
+  catalog/apps.json       offline app catalog for the Apps picker
+  loadout/manifest.json   software the USB builder downloads + verifies
+  profiles/*.json         per-app backup/restore profiles
+  remove/*.json           legacy removal lists (services, devices, features)
+docs/                     architecture, runbooks, win-install notes
+landing/                  the landing page (GitHub Pages)
+scripts/
+  engine/
+    phoenix.ps1           CLI entry point (the only thing the app spawns)
+    lib/*.ps1             engine modules, dot-sourced by phoenix.ps1
+    runbook.json          the wipe-and-restore stages (manual + automated)
+    tests/Test-Engine.ps1 read-only self-test (safe on any machine)
+  tools/                  disk tools: backup, analyze, nuke, reinstall, USB staging
+  qemu/                   test VMs
+  ...                     standalone utility scripts
+tests/                    shell/python regression suites for scripts/tools
 ```
 
 Target runtime: **Windows PowerShell 5.1** (a fresh install has no pwsh).
@@ -85,7 +103,7 @@ USB as `\phoenix\phoenix.config.json`.
 }
 ```
 
-## Packs (`packs/<id>.json`)
+## Packs (`config/packs/<id>.json`)
 
 ```json
 {
@@ -155,7 +173,7 @@ shown below), `why`, `risk`, `enabled`.
 ## Engine CLI
 
 ```
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File engine\phoenix.ps1 <command> [-ArgsPath <json>] [-LogPath <file>]
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\engine\phoenix.ps1 <command> [-ArgsPath <json>] [-LogPath <file>]
 ```
 
 `-ArgsPath` points at a JSON file with the command's arguments (the app writes
@@ -175,7 +193,7 @@ stdout the app can't see). Exit code 0 = success, 1 = failure, 2 = needs admin.
 | `scan` | - | `{ manufacturer, model, bios, cpu, gpus, ram, disks, nics, devices: [...], hidden, services, features, appx, autorunsCount }` |
 | `state` | - | `{ stages: { <stageId>: { status, at } } }` from `C:\ProgramData\Phoenix\state.json` |
 | `mark` | `{ stage, status }` | marks a runbook stage done/skipped |
-| `runbook` | - | `engine/runbook.json` merged with state |
+| `runbook` | - | `scripts/engine/runbook.json` merged with state |
 | `drives` | - | removable USB disks: `{ number, letter, label, sizeBytes, busType, fileSystem, isBoot, isSystem }` |
 | `unattend` | `{ configPath, secretsPath, outPath }` | writes answer file; deletes secrets file; returns `{ outPath, sha256 }` |
 | `loadout` | - | manifest items + cache status `{ id, name, cached, version, sha256, sizeBytes }` |
@@ -185,7 +203,7 @@ stdout the app can't see). Exit code 0 = success, 1 = failure, 2 = needs admin.
 | `choco-search` | `{ query }` | `[ { id, title, version, summary, downloads } ]` from the community feed |
 | `launch` | `{ loadout, args? }` | starts a loadout tool from the kit (e.g. AME Wizard with the playbook) |
 
-Shared helpers in `engine/lib/Util.ps1`: `Get-PhxDataRoot`, `Get-PhxCacheRoot`,
+Shared helpers in `scripts/engine/lib/Util.ps1`: `Get-PhxDataRoot`, `Get-PhxCacheRoot`,
 `Get-PhxKitRoot`, `Get-PhxPacksRoot`, `Resolve-PhxConfigPath`, `Get-PhxConfig`,
 `Read-PhxJson`, `Write-PhxJson`, `Assert-PhxAdmin`, `Read-PhxSecrets`, `Get-PhxSha`.
 `ConvertTo-PhxHashtable` and `Test-PhxIsAdmin` live in `phoenix.ps1`.
@@ -206,8 +224,8 @@ Exactly one `result` event ends every command (also on failure: `ok: false`,
 ## Answer file: Schneegans generator, wrapped
 
 The answer file is generated by [cschneegans/unattend-generator](https://github.com/cschneegans/unattend-generator)
-(MIT, the library behind schneegans.de), vendored at `third_party/unattend-generator`
-and wrapped by `unattend/` (a .NET console app, `phoenix-unattend.exe`). Every
+(MIT, the library behind schneegans.de), vendored at `app/third_party/unattend-generator`
+and wrapped by `app/unattend/` (a .NET console app, `phoenix-unattend.exe`). Every
 option the website offers is available, offline, and no password ever leaves
 the machine.
 
@@ -284,7 +302,10 @@ State lives on the machine, not the USB, so a write-locked (Rock) USB works.
   phoenix\
     phoenix.id              marker FirstLogon uses to find the drive
     Phoenix.exe             the app (portable)
-    engine\ packs\ phoenix.config.json
-    loadout\<id>\...        verified downloads (Sysinternals, AME Wizard, dogs-playbook.apbx, ...)
+    phoenix.config.json
+    scripts\engine\         the engine (same layout as the repo)
+    config\packs\ config\catalog\
+    config\loadout\manifest.json
+    config\loadout\<id>\... verified downloads (Sysinternals, AME Wizard, dogs-playbook.apbx, ...)
     SHA512SUMS
 ```

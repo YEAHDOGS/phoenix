@@ -1,7 +1,7 @@
 /**
  * Typed client for the Phoenix engine (docs/ARCHITECTURE.md).
  *
- * The Rust side spawns engine/phoenix.ps1 and forwards each NDJSON line as an
+ * The Rust side spawns scripts/engine/phoenix.ps1 and forwards each NDJSON line as an
  * `engine-event`; every run ends with `engine-exit`. Nothing here builds
  * PowerShell: commands are names from a fixed allowlist plus a JSON args object.
  */

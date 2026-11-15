@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #===============================================================================
-# test-phoenix-data-restore.sh -- regression suite for tools/New-PhoenixDataRestore.ps1
+# test-phoenix-data-restore.sh -- regression suite for scripts/tools/New-PhoenixDataRestore.ps1
 # (Phoenix REINSTALL phase, runbook Step 4.5: selective restore on the fresh install).
 #
 # pwsh is not available on the test host, so this suite tests the contract in two
 # ways (same pattern as tests/tools/test-app-install-twin.sh):
-#   A) fixture-driven: build a REAL backup with tools/phoenix-data-backup.sh,
+#   A) fixture-driven: build a REAL backup with scripts/tools/phoenix-data-backup.sh,
 #      then run a python3 reference port of the restore's selection/verification
 #      rules against that fixture and diff the expected restored/refused sets;
 #      the extension/system-profile lists are extracted from the .ps1 source so
@@ -23,8 +23,8 @@
 set -uo pipefail
 
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
-RESTORE="$REPO/tools/New-PhoenixDataRestore.ps1"
-BACKUP_SH="$REPO/tools/phoenix-data-backup.sh"
+RESTORE="$REPO/scripts/tools/New-PhoenixDataRestore.ps1"
+BACKUP_SH="$REPO/scripts/tools/phoenix-data-backup.sh"
 
 PASS=0; FAIL=0
 pass() { PASS=$((PASS+1)); echo "  PASS: $1"; }
@@ -36,9 +36,9 @@ trap 'rm -rf "$T"' EXIT
 echo "== preflight =="
 [[ -f "$RESTORE" ]] || { echo "FATAL: $RESTORE not found"; exit 1; }
 [[ -x "$BACKUP_SH" ]] || chmod +x "$BACKUP_SH"
-pass "tools/New-PhoenixDataRestore.ps1 exists"
+pass "scripts/tools/New-PhoenixDataRestore.ps1 exists"
 
-echo "== A1: fixture -- build a REAL backup with tools/phoenix-data-backup.sh =="
+echo "== A1: fixture -- build a REAL backup with scripts/tools/phoenix-data-backup.sh =="
 SRC="$T/fake-source"; OUT="$T/laptop-data"
 mkdir -p "$SRC/Users/user/Documents" "$SRC/Users/user/Downloads" "$SRC/Users/user/Desktop"
 echo "my manuscript" > "$SRC/Users/user/Documents/novel.txt"
@@ -131,7 +131,7 @@ grep -qx 'TAMPER Users/user/Documents/novel.txt' "$T/tamper.out" \
     && pass "ref: tampered file detected by hash re-verification" \
     || fail "ref: tampered file detected"
 
-echo "== B: static contract of tools/New-PhoenixDataRestore.ps1 =="
+echo "== B: static contract of scripts/tools/New-PhoenixDataRestore.ps1 =="
 has() { # has <grep-E pattern> <label>
     if grep -qE "$1" "$RESTORE"; then pass "$2"; else fail "$2"; fi
 }

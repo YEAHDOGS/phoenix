@@ -14,7 +14,7 @@ set -euo pipefail
 APP="all"
 DEST=""
 EXECUTE=0
-PROFILE_DIR="$(cd "$(dirname "$0")/../../profiles" && pwd)"
+PROFILE_DIR="$(cd "$(dirname "$0")/../../config/profiles" && pwd)"
 HOME_ROOT="${PHOENIX_HOME:-$HOME}"
 
 while [ $# -gt 0 ]; do

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Phoenix backup profile regression check.
-#  1) Validates every profiles/*.json against the phoenix-profile/v1 schema.
+#  1) Validates every config/profiles/*.json against the phoenix-profile/v1 schema.
 #  2) Builds a fixture home and runs backup-selective.sh in plan mode:
 #     data/config must be selected, cache/executable must be SKIPPED.
 #  3) Runs --execute against the fixture: only data + valid config land in
@@ -15,7 +15,7 @@ set -uo pipefail
 
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 ENGINE="$REPO/scripts/backup/backup-selective.sh"
-PROFILES="$REPO/profiles"
+PROFILES="$REPO/config/profiles"
 PASS=0; FAIL=0
 
 pass() { PASS=$((PASS+1)); echo "  ok: $1"; }

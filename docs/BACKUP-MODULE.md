@@ -1,4 +1,4 @@
-# Phoenix BACKUP module — `tools/Invoke-Backup.sh` (+ `.ps1` twin)
+# Phoenix BACKUP module — `scripts/tools/Invoke-Backup.sh` (+ `.ps1` twin)
 
 The Backup phase of the emergency runbook (`docs/EMERGENCY-RUNBOOK.md`, Phase 2):
 image the infected disk to a **direct-attached USB target**, air-gapped, before
@@ -10,7 +10,7 @@ identity machinery as the Nuke module.
 
 ## Two paths
 
-1. **Scripted path (this module, default):** `tools/Invoke-Backup.sh` on the
+1. **Scripted path (this module, default):** `scripts/tools/Invoke-Backup.sh` on the
    Linux rescue side. Headless, log-driven, emits the image-proof manifest in
    exactly the format `Invoke-Nuke.sh --image-proof` demands. Compressor
    auto-detects `pigz` → `zstd` → `gzip` → raw (no compression).
@@ -18,7 +18,7 @@ identity machinery as the Nuke module.
    Rescuezilla` from the Phoenix USB and do Backup → entire source disk →
    external USB drive with compression + post-backup integrity check. Minimum
    verification bar and the image-proof step are identical; record the proof
-   with `tools/New-ImageProof.sh --verified` by hand. Use this path when the
+   with `scripts/tools/New-ImageProof.sh --verified` by hand. Use this path when the
    scripted one is unavailable or the disk is failing badly enough that a
    human should watch the sectors go by.
 
@@ -63,7 +63,7 @@ instead of imaging.
    decompression for compressed images) must carry a recognizable disk
    signature (MBR `0x55AA` or GPT `EFI PART`) or `file(1)` must report a
    filesystem/partition-table — proof the image is a disk image, not garbage.
-4. `tools/New-ImageProof.sh --verified` is invoked with the **real** values
+4. `scripts/tools/New-ImageProof.sh --verified` is invoked with the **real** values
    (real sha256, real size, real `source_serial`); `--verified` is passed only
    because steps 1–3 passed. The `.proof` lands on the Phoenix USB next to the
    backup log, ready for `Invoke-Nuke.sh --image-proof`. With
@@ -88,7 +88,7 @@ the env var set. See `tests/tools/test-backup-interlocks.sh`.
 
 ## Windows twin
 
-`tools/Invoke-Backup.ps1` implements the same gates where Windows can: config
+`scripts/tools/Invoke-Backup.ps1` implements the same gates where Windows can: config
 validation (via `python3 Read-UsbConfig.py`), serial resolution (`Get-Disk`),
 air-gap check (`Get-NetAdapter`), and `--dry-run` planning. The actual image
 write is refused on Windows — the scripted dd path exists only in the Linux

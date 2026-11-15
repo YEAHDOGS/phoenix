@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #===============================================================================
-# test-backup-interlocks.sh -- regression harness for tools/Invoke-Backup.sh
+# test-backup-interlocks.sh -- regression harness for scripts/tools/Invoke-Backup.sh
 #
 # Tests the BACKUP safety interlocks. Backup is non-destructive (it only READS
 # the source), but it is identity-critical: the Nuke phase's image-proof gate
@@ -13,7 +13,7 @@
 #   - --dry-run walks the flow and writes NOTHING
 #   - armed run in PHOENIX_BACKUP_TEST=1 (file-backed fake source: zero
 #     destructive potential) images, re-hashes, smoke-checks, and emits a
-#     proof via the REAL tools/New-ImageProof.sh with verified=YES and the
+#     proof via the REAL scripts/tools/New-ImageProof.sh with verified=YES and the
 #     source_serial bound -- the exact artifact Invoke-Nuke.sh --image-proof
 #     demands
 #
@@ -29,7 +29,7 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
-BACKUP="$REPO/tools/Invoke-Backup.sh"
+BACKUP="$REPO/scripts/tools/Invoke-Backup.sh"
 FIX="$REPO/tests/config/fixtures"
 T="$(mktemp -d /tmp/phoenix-backup-test.XXXXXX)"
 MOCKBIN="$T/mockbin"
@@ -41,7 +41,7 @@ PASS=0; FAIL=0; FAILED_CASES=()
 pass() { PASS=$((PASS+1)); echo "  PASS: $1"; }
 fail() { FAIL=$((FAIL+1)); FAILED_CASES+=("$1"); echo "  FAIL: $1${2:+ -- $2}"; }
 
-export PHOENIX_TOOLS_DIR="$REPO/tools"
+export PHOENIX_TOOLS_DIR="$REPO/scripts/tools"
 
 #--- preflight -----------------------------------------------------------------
 echo "== preflight =="

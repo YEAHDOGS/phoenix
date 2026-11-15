@@ -2,15 +2,15 @@
 # test-nuke-interlock.sh — regression suite for the Phoenix nuke interlocks.
 # Covers: Get-DiskInventory.sh enumeration (mocked lsblk), the typed
 # confirmation gate, the Analyze fingerprint gate, and the config allowlist
-# gate in tools/lib/nuke-interlock.sh.
+# gate in scripts/tools/lib/nuke-interlock.sh.
 # Run from the repo root:  bash tests/tools/test-nuke-interlock.sh
 # Exit 0 = all pass; exit 1 = any failure. No network, no real disks touched:
 # enumeration is driven by PHOENIX_MOCK_LSBLK, confirmation by a pty (script).
 set -u
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-ENUM="$REPO_ROOT/tools/Get-DiskInventory.sh"
-LIB="$REPO_ROOT/tools/lib/nuke-interlock.sh"
+ENUM="$REPO_ROOT/scripts/tools/Get-DiskInventory.sh"
+LIB="$REPO_ROOT/scripts/tools/lib/nuke-interlock.sh"
 FIX="$REPO_ROOT/tests/tools/fixtures"
 
 pass=0; fail=0

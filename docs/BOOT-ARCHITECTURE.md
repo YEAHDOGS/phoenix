@@ -44,7 +44,7 @@ VENTOY-USB (exFAT data partition)
 │
 └─ phoenix/
     ├─ scripts/                 # version-pinned copy of this repo's PowerShell toolbox
-    ├─ tools/
+    ├─ scripts/tools/
     │   └─ Explorer++.zip       # portable file explorer, extracted into the WinPE WIM
     ├─ WinPE/                   # build notes + staging for phoenix-winpe.iso
     ├─ $OEM$/                   # answer-file hooks (Specialize.ps1 / DefaultUser.ps1 — VISION Phase 3)
@@ -54,7 +54,7 @@ VENTOY-USB (exFAT data partition)
     └─ manifest.json            # SHA-256 of everything above; stager fails if anything is missing
 ```
 
-> Supersedes the "Air-gap staging spec" root layout in `VISION.md` (written
+> Supersedes the "Air-gap staging spec" root layout in `docs/VISION.md` (written
 > before Ventoy): everything now nests under `phoenix/` on the Ventoy exFAT
 > partition instead of the USB root, except `phoenix-config.json` and
 > `autounattend.xml`, which stay at root by convention (the config GUI and
@@ -72,7 +72,7 @@ menu reads exactly like the founder's flow:
 
 | Boot menu entry | ISO | Founder phase |
 |---|---|---|
-| `[1] ANALYZE — SystemRescue` | `systemrescue-<ver>-amd64.iso` | Analyze: inspect the suspect machine without booting its OS (file manager, terminal, disk tools; bootable AV rescue ISOs can be added here later). The headless triage payload is `tools/Invoke-Analyze.sh` (read-only disk enumeration + hardware inventory + JSON report; WinPE twin `tools/Invoke-Analyze.ps1`) — see `docs/ANALYZE-MODULE.md`; the operator-driven forensics kit is `docs/ANALYSIS-TOOLKIT.md` |
+| `[1] ANALYZE — SystemRescue` | `systemrescue-<ver>-amd64.iso` | Analyze: inspect the suspect machine without booting its OS (file manager, terminal, disk tools; bootable AV rescue ISOs can be added here later). The headless triage payload is `scripts/tools/Invoke-Analyze.sh` (read-only disk enumeration + hardware inventory + JSON report; WinPE twin `scripts/tools/Invoke-Analyze.ps1`) — see `docs/ANALYZE-MODULE.md`; the operator-driven forensics kit is `docs/ANALYSIS-TOOLKIT.md` |
 | `[2] BACKUP — Rescuezilla` | `rescuezilla-<ver>-64bit.iso` | Backup: full-disk image to direct-attached USB, verified, before anything destructive |
 | `[3] NUKE — ShredOS` | `ShredOS-<ver>_x86_64.iso` | Nuke: method-per-media sanitization (§8) |
 | `[4] REINSTALL — Windows 11 (unattended)` | `Win11_24H2_English_x64.iso` + Ventoy `auto_install` → `/autounattend.xml` | Reinstall: unattended install driven by the generated answer file |
@@ -80,12 +80,12 @@ menu reads exactly like the founder's flow:
 
 Ventoy's `auto_install` plugin points the Windows ISO at the answer file on
 the data partition — no manual XML placement inside the ISO, no reburning.
-(The `ventoy.json` for this is written by `tools/Build-PhoenixUsb.ps1`.)
+(The `ventoy.json` for this is written by `scripts/tools/Build-PhoenixUsb.ps1`.)
 
 ### Payload wiring (unified line)
 
 Every phase runs through the same two structural contracts — the
-**USB-config stick policy** (`tools/Read-UsbConfig.py` fully validates
+**USB-config stick policy** (`scripts/tools/Read-UsbConfig.py` fully validates
 `phoenix-config.json` and emits `CFG_*` policy vars; fail closed on anything
 invalid) and the **chain-of-custody ordering** (Backup emits the image proof
 → Nuke requires it and writes a completion record → Reinstall consumes both →
@@ -93,10 +93,10 @@ Restore runs after the new machine is built):
 
 | Phase | Boot entry | Payload | Config gate | Chain record produced | Chain record consumed |
 |---|---|---|---|---|---|
-| Analyze | `[1] ANALYZE` | `tools/Invoke-Analyze.sh` (twin `.ps1`) | `CFG_ANALYZE_ENABLED` | analysis report JSON | — |
-| Backup | `[2] BACKUP` | `tools/Invoke-Backup.sh` (twin `.ps1`) | `CFG_BACKUP_ENABLED/KIND/SMB_PATH` | `backup-image-proof.json` (schema `phoenix-image-proof/1`, via `New-ImageProof.sh --json-out`) + `.proof` for the Nuke gate | — |
-| Nuke | `[3] NUKE` | `tools/Invoke-Nuke.sh` | stick policy: `CFG_NUKE_ENABLED`, allowlist, skip-gate compiled out, countdown | `nuke-completed.json` (schema `phoenix-nuke-completion/1`, written on successful wipe only) | `.proof` file (`--image-proof`; verified, 64-hex sha256, bound to the target serial) |
-| Reinstall | `[4] REINSTALL` | `tools/Reinstall-Windows.sh` (twin `.ps1`) | `CFG_REINSTALL_ENABLED` + platform; full schema validation before any other gate | — (arms the install; never launches Setup) | verified `backup-image-proof.json` **and** `nuke-completed.json` for the exact serial |
+| Analyze | `[1] ANALYZE` | `scripts/tools/Invoke-Analyze.sh` (twin `.ps1`) | `CFG_ANALYZE_ENABLED` | analysis report JSON | — |
+| Backup | `[2] BACKUP` | `scripts/tools/Invoke-Backup.sh` (twin `.ps1`) | `CFG_BACKUP_ENABLED/KIND/SMB_PATH` | `backup-image-proof.json` (schema `phoenix-image-proof/1`, via `New-ImageProof.sh --json-out`) + `.proof` for the Nuke gate | — |
+| Nuke | `[3] NUKE` | `scripts/tools/Invoke-Nuke.sh` | stick policy: `CFG_NUKE_ENABLED`, allowlist, skip-gate compiled out, countdown | `nuke-completed.json` (schema `phoenix-nuke-completion/1`, written on successful wipe only) | `.proof` file (`--image-proof`; verified, 64-hex sha256, bound to the target serial) |
+| Reinstall | `[4] REINSTALL` | `scripts/tools/Reinstall-Windows.sh` (twin `.ps1`) | `CFG_REINSTALL_ENABLED` + platform; full schema validation before any other gate | — (arms the install; never launches Setup) | verified `backup-image-proof.json` **and** `nuke-completed.json` for the exact serial |
 | Restore | (post-reinstall, on the new machine) | `scripts/backup/restore-selective.sh` (twin `.ps1`) | opt-in `--config`: stick Backup lane must be enabled | — | opt-in `--chain <state-dir>`: verified backup proof + nuke record on record (ordering proof; serial binding stays with the restore interlocks) |
 
 The producer→consumer handshakes are pinned by
@@ -144,7 +144,7 @@ assumptions baked into the top-level keys. Platform-specific bits nest under
 
 The normative spec is `docs/CONFIG-SCHEMA.md`, the machine-readable schema is
 `config/usb-config.schema.json`, and the dependency-free validator is
-`tools/Validate-UsbConfig.py` — this section is an overview only and must not
+`scripts/tools/Validate-UsbConfig.py` — this section is an overview only and must not
 contradict them. (A stale draft of this section once showed a different shape
 with `machine`/`credentials`/`os`/`apps` keys — that shape was superseded by
 the v1 schema below; the single source of truth is the schema file.)
@@ -180,13 +180,13 @@ that flow into the *generated artifacts on the stick*, never into the config:
   real passwords (the unattend format requires them — even the "obscured"
   form is reversible), so it is never committed and never lives in
   `phoenix-config.json`.
-- **App selection** → the app's Chocolatey picker (`catalog/apps.json` +
+- **App selection** → the app's Chocolatey picker (`config/catalog/apps.json` +
   live search), stored as `apps` in `phoenix.config.json` and installed by the
   engine's `choco` step in phase `user-online`. The OS-agnostic config does not
   name apps.
 - **Disk allowlist serials** → the GUI copies them verbatim from a disk
   enumeration (never hand-typed from memory) into `target_disks`; the boot
-  side's `tools/Invoke-Nuke.sh --config` enforces them (NUKE-SAFETY
+  side's `scripts/tools/Invoke-Nuke.sh --config` enforces them (NUKE-SAFETY
   interlock 12).
 
 **Security note (non-negotiable):** unattend requires the password in a
@@ -234,7 +234,7 @@ Per NIST 800-88 Purge, the nuke step must pick the method by media type:
 - **Unknown / can't confirm media type:** treat as SSD. The destructive
   path must fail closed toward the stronger method.
 
-The nuke module has landed as `tools/Invoke-Nuke.sh` (bash, Linux boot env —
+The nuke module has landed as `scripts/tools/Invoke-Nuke.sh` (bash, Linux boot env —
 deliberate: nwipe/hdparm/nvme-cli are Linux-only, and the destruction
 interlocks must live where the destruction happens; see docs/NUKE-SAFETY.md).
 It already encodes this: detects media type, refuses nwipe-only on SSDs, and
@@ -247,7 +247,7 @@ Three halves, split by design:
 1. **Config GUI — Svelte 5 + Tauri 2 app (sibling worker owns it):** form-driven
    `phoenix-config.json` + `autounattend.xml` generation, machine profiles, app
    picker. Writes to the Ventoy stick's exFAT partition, which is plain-readable.
-2. **`tools/Build-PhoenixUsb.ps1` (this repo):** stages a Ventoy-prepared
+2. **`scripts/tools/Build-PhoenixUsb.ps1` (this repo):** stages a Ventoy-prepared
    USB — verifies Ventoy is present, copies the ISO set with hash checks,
    writes `ventoy/ventoy.json` (menu aliases + auto-install), writes
    `phoenix-config.json` from parameters, stages scripts/tools, writes
@@ -255,7 +255,7 @@ Three halves, split by design:
    before it touches a real stick.
 3. **Bash twins (new workstream, tracked separately):** every Phoenix
    PowerShell script gets a bash equivalent for the Linux rescue side —
-   `tools/<name>.ps1` ↔ `tools/<name>.sh`, same behavior, two implementations.
+   `scripts/tools/<name>.ps1` ↔ `scripts/tools/<name>.sh`, same behavior, two implementations.
    Windows-side stays PowerShell, Linux-side is bash. This is mechanical parity
    work, not a rewrite of the Windows side: port behavior, keep the contract
    (inputs, outputs, exit codes) identical so the config and runbook work
@@ -298,16 +298,16 @@ schema is the down payment). The honest constraints, stated plainly:
   test against the generated `autounattend.xml`.
 - Bootable AV rescue ISO for the ANALYZE entry is the forensics worker's
   call — the menu has room for it whenever it lands.
-- Bash twins (§9.3) are underway: `tools/Build-PhoenixUsb.sh` (Linux USB
-  stager, parity with `Build-PhoenixUsb.ps1`) and `tools/New-ImageProof.sh`
+- Bash twins (§9.3) are underway: `scripts/tools/Build-PhoenixUsb.sh` (Linux USB
+  stager, parity with `Build-PhoenixUsb.ps1`) and `scripts/tools/New-ImageProof.sh`
   (backup-phase image-proof writer; bash-native, the Linux boot side is the
   only side that needs it) have landed. Remaining parity ports per script,
-  `tools/<name>.ps1` ↔ `tools/<name>.sh`, contract-identical behavior —
+  `scripts/tools/<name>.ps1` ↔ `scripts/tools/<name>.sh`, contract-identical behavior —
   tracked as its own workstream. The image-proof minter pair is complete:
-  `tools/New-ImageProof.sh` (Linux backup side) + `tools/New-ImageProof.ps1`
+  `scripts/tools/New-ImageProof.sh` (Linux backup side) + `scripts/tools/New-ImageProof.ps1`
   (Windows/WinPE side) emit byte-compatible `phoenix-image-proof/1`
   manifests; the nuke gate accepts either. The data-backup pair is complete:
-  `tools/phoenix-data-backup.sh` (Linux backup side) + `tools/New-PhoenixDataBackup.ps1`
+  `scripts/tools/phoenix-data-backup.sh` (Linux backup side) + `scripts/tools/New-PhoenixDataBackup.ps1`
   (WinPE side) emit the same `phoenix-data-backup/1` manifest with the same
   dirty-data contract (executables skipped unless opted in, per-file SHA-256,
   scan-before-restore marker).

@@ -1,4 +1,4 @@
-# Phoenix ANALYZE module — `tools/Invoke-Analyze.sh` (+ `.ps1` twin)
+# Phoenix ANALYZE module — `scripts/tools/Invoke-Analyze.sh` (+ `.ps1` twin)
 
 The Analyze phase of the Phoenix Ventoy USB (boot menu entry `[1] ANALYZE —
 SystemRescue`, see `docs/BOOT-ARCHITECTURE.md` §3): collect disk enumeration +
@@ -17,7 +17,7 @@ Backup modules.
 This module is the *payload* of the Analyze menu entry. The *toolkit* staged
 onto the USB for deeper work (Kaspersky Rescue Disk, Sysinternals, Emsisoft,
 FTK Imager, Autopsy) is a separate concern — see `docs/ANALYSIS-TOOLKIT.md`
-and `tools/Stage-AnalysisTools.ps1`. Relationship between the two:
+and `scripts/tools/Stage-AnalysisTools.ps1`. Relationship between the two:
 
 - **Payload (this doc):** runs headless at boot, read-only, produces the
   triage report. Answers *"what hardware is here?"*
@@ -28,11 +28,11 @@ and `tools/Stage-AnalysisTools.ps1`. Relationship between the two:
 
 ## Two implementations, one contract
 
-1. **Linux payload (this module's record):** `tools/Invoke-Analyze.sh` runs
+1. **Linux payload (this module's record):** `scripts/tools/Invoke-Analyze.sh` runs
    in the Phoenix Linux boot environment (SystemRescue). Disk enumeration via
    `lsblk -J`, with a `/sys/block` fallback when `lsblk` is unavailable;
    hardware via `lscpu`/`dmidecode` with `/proc`+`/sys/class/dmi` fallbacks.
-2. **Windows twin:** `tools/Invoke-Analyze.ps1` for the WinPE side (USB menu
+2. **Windows twin:** `scripts/tools/Invoke-Analyze.ps1` for the WinPE side (USB menu
    entry `[5] TOOLKIT — Phoenix WinPE`) and clean staging machines. Same
    report schema, same identity rules, same atomic write. Enumerates via
    `Get-Disk` / CIM only — it contains **no destructive cmdlets** (verified
@@ -94,7 +94,7 @@ Both emit `phoenix-analyze-report` / `report_version` **1**:
    given it must validate (`Validate-UsbConfig.py`) and
    `boot_entries.analyze` must be true, else the script refuses — the stick
    must not offer Analyze unless the builder enabled it. The reader is
-   `tools/Read-UsbConfig.py` (`CFG_ANALYZE_ENABLED`).
+   `scripts/tools/Read-UsbConfig.py` (`CFG_ANALYZE_ENABLED`).
 7. **Image-proof is a hint, never a gate.** `--image-proof <file>` records
    whether a structurally valid proof exists (same field rules as
    `Invoke-Nuke.sh check_image_proof` — format, `verified=YES`, 64-hex

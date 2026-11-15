@@ -5,7 +5,7 @@ says *what* the five entries are; this spec pins down *how each entry boots,
 what it consumes, and what it must refuse* — the contract any menu
 implementation (Ventoy today, something else tomorrow) must satisfy.
 
-The menu is produced by `tools/Build-PhoenixUsb.ps1` (§2: `ventoy/ventoy.json`
+The menu is produced by `scripts/tools/Build-PhoenixUsb.ps1` (§2: `ventoy/ventoy.json`
 with `menu_alias` + `auto_install`). `phoenix-config.json` (schema v1) at the
 USB root is the only headless input the boot side reads — see the
 "Injections" column per entry.
@@ -14,7 +14,7 @@ USB root is the only headless input the boot side reads — see the
 
 1. **No entry destroys data except `[3] NUKE`** — and NUKE never arms from
    the menu itself; it drops to the sanitization shell where
-   `tools/Invoke-Nuke.sh` enforces its interlocks (dry-run default, typed
+   `scripts/tools/Invoke-Nuke.sh` enforces its interlocks (dry-run default, typed
    serial+size on a real TTY, structural boot-USB/mount refusals).
 2. **Every entry must boot read-only with respect to the internal disk.**
    Imaging/analysis tools mount the suspect disk read-only unless the
@@ -55,7 +55,7 @@ USB root is the only headless input the boot side reads — see the
 
 | Field | Spec |
 |---|---|
-| Image | `ShredOS-<ver>_x86_64.iso` in `/ISOs/` (Ventoy `menu_alias`) as the firmware-purge vehicle; `tools/Invoke-Nuke.sh` is the Phoenix-native path (runs in any Linux boot env with nwipe/hdparm/nvme-cli). |
+| Image | `ShredOS-<ver>_x86_64.iso` in `/ISOs/` (Ventoy `menu_alias`) as the firmware-purge vehicle; `scripts/tools/Invoke-Nuke.sh` is the Phoenix-native path (runs in any Linux boot env with nwipe/hdparm/nvme-cli). |
 | Injections | None. The nuke module deliberately takes no config — target selection is always explicit and interactive. |
 | Operator flow | Boot → `Invoke-Nuke.sh` enumerates (dry-run, exit 0) → operator picks a row → **two-factor typed confirmation** (serial + displayed size, real TTY only) → 5s abort window → serial re-verified → method-per-media (NIST 800-88: HDD→nwipe DoD 5220.22-M, SATA SSD→ATA Secure Erase, NVMe→`nvme format --ses=1`). Full log to the USB. |
 | Fallback | None — there is no "softer" nuke. If the purge method is unsupported for the media, `Invoke-Nuke.sh` falls back to nwipe and logs the downgrade as a warning. |
@@ -89,7 +89,7 @@ USB root is the only headless input the boot side reads — see the
 - [ ] `ventoy/ventoy.json` written: 5 `menu_alias` entries + 1 `auto_install` (REINSTALL only).
 - [ ] `/autounattend.xml` present at the USB root when REINSTALL is staged (else no `auto_install` entry).
 - [ ] `phoenix-config.json` (schema v1) at the USB root; no real credentials committed to the repo.
-- [ ] `phoenix/scripts/` (incl. `.sh` bash twins) + `phoenix/tools/` staged for `[5]` and the Linux entries.
+- [ ] `phoenix/scripts/` (incl. `scripts/tools/` and the `.sh` bash twins) staged for `[5]` and the Linux entries.
 
 ## Open items
 

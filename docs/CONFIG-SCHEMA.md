@@ -14,7 +14,7 @@ environment, ever. See `docs/BOOT-ARCHITECTURE.md` §2 for the USB layout
 | File | Role |
 |---|---|
 | `config/usb-config.schema.json` | Machine-readable JSON Schema (draft 2020-12). Single source of truth for shapes, enums, patterns, defaults. |
-| `tools/Validate-UsbConfig.py` | Dependency-free (python3 stdlib) validator. Enforces the schema *plus* the structural safety rules in §6 that JSON Schema can't express. |
+| `scripts/tools/Validate-UsbConfig.py` | Dependency-free (python3 stdlib) validator. Enforces the schema *plus* the structural safety rules in §6 that JSON Schema can't express. |
 | `tests/config/test-schema.sh` | Regression suite: 10 cases, all green. Run before every commit touching config. |
 
 The GUI is the *writer*, the boot tools are the *readers*. Both sides must
@@ -67,9 +67,9 @@ authenticate — or should images stay direct-USB-only until phase 2?
   `Validate-UsbConfig.py` before copying it to the stick. TODO once the
   worker branches land on master: generate the Svelte form's field list /
   TS types from `usb-config.schema.json` so the form and schema can't drift.
-- **USB stager (writer):** `tools/Build-PhoenixUsb.*` — should refuse to stage
+- **USB stager (writer):** `scripts/tools/Build-PhoenixUsb.*` — should refuse to stage
   a stick whose `phoenix-config.json` fails validation.
-- **Nuke (reader):** `tools/Invoke-Nuke.sh` — must enforce `target_disks`
+- **Nuke (reader):** `scripts/tools/Invoke-Nuke.sh` — must enforce `target_disks`
   allowlist + `safety.require_image_proof` / `safety.allow_skip_image_gate`
   (see §6). The image-proof gate itself (`NUKE-SAFETY.md` interlock 11) stays
   the runtime enforcement; the config controls whether the stick permits it.
