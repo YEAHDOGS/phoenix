@@ -18,6 +18,8 @@ config/
   phoenix.example.json    example user config (no secrets)
   packs/*.json            shareable, composable hardening packs
   catalog/apps.json       offline app catalog for the Apps picker
+  clean/*.json            the cleaner's rules, one file per rule set
+  sources/*.json          pinned third-party scripts (the hardening source)
   loadout/manifest.json   software the USB builder downloads + verifies
   profiles/*.json         per-app backup/restore profiles
   remove/*.json           legacy removal lists (services, devices, features)
@@ -202,6 +204,12 @@ stdout the app can't see). Exit code 0 = success, 1 = failure, 2 = needs admin.
 | `usb-verify` | `{ driveLetter }` | re-hashes against `SHA512SUMS` |
 | `choco-search` | `{ query }` | `[ { id, title, version, summary, downloads } ]` from the community feed |
 | `launch` | `{ loadout, args? }` | starts a loadout tool from the kit (e.g. AME Wizard with the playbook) |
+| `clean-rules` | `{ platform? }` | the cleaner's rules, no scanning (docs/CLEANER.md) |
+| `clean-scan` | `{ platform?, ids?, top?, serial? }` | read-only: per rule, bytes, files, biggest files, refusals |
+| `clean-run` | `{ platform?, ids, serial? }` | deletes what the named rules cover; freed bytes per rule |
+| `clean-devices` | `{ adbPath? }` | Android devices on USB |
+| `setup-script` | `{ apps, harden?, reportUrl?, outPath? }` or `{ configPath }` | the first-boot script: Chocolatey, apps, optional hardening (docs/FIRST-BOOT.md) |
+| `harden-options` | - | the pinned hardening source and its options |
 
 Shared helpers in `scripts/engine/lib/Util.ps1`: `Get-PhxDataRoot`, `Get-PhxCacheRoot`,
 `Get-PhxKitRoot`, `Get-PhxPacksRoot`, `Resolve-PhxConfigPath`, `Get-PhxConfig`,

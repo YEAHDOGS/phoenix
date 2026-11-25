@@ -99,6 +99,12 @@ $PhxCommands = [ordered]@{
     'usb-verify'   = 'Invoke-PhxUsbVerify'
     'choco-search' = 'Invoke-PhxChocoSearch'
     'launch'       = 'Invoke-PhxLaunch'
+    'clean-rules'  = 'Invoke-PhxCleanRules'
+    'clean-devices' = 'Invoke-PhxCleanDevices'
+    'clean-scan'   = 'Invoke-PhxCleanScan'
+    'clean-run'    = 'Invoke-PhxCleanRun'
+    'setup-script' = 'Invoke-PhxSetupScript'
+    'harden-options' = 'Invoke-PhxHardenOptions'
 }
 
 function Invoke-PhxVersion([hashtable]$A) {

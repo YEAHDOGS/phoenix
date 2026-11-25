@@ -229,6 +229,16 @@ function Get-PhxUnattendDto([hashtable]$Config, [System.Collections.Generic.List
     if (-not (Test-PhxHasHandoff $scripts)) {
         $scripts += @{ Content = (Get-PhxHandoffScript); Phase = 'FirstLogon'; Type = 'Ps1' }
     }
+    # First-boot setup (Chocolatey, apps, optional hardening), when the config asks for it.
+    $plan = Get-PhxFirstBootPlan $Config
+    $scripts = @($scripts | Where-Object { -not ((Get-PhxDtoValue $_ 'Content') -and (Get-PhxDtoValue $_ 'Content').Contains($script:PhxFirstBootMarker)) })
+    if ($plan.enabled) {
+        if ($plan.apps.Count -eq 0 -and -not (Resolve-PhxHardenChoices $plan.harden)) {
+            $Warnings.Add('firstBoot is on but there are no apps and no hardening chosen, so it has nothing to do.')
+        } else {
+            $scripts += @{ Content = (New-PhxFirstBootScript $plan.apps $plan.harden $plan.waitMinutes $plan.reportUrl); Phase = 'FirstLogon'; Type = 'Ps1' }
+        }
+    }
     Set-PhxDtoValue $ss 'Scripts' @($scripts)
 
     $auto = Get-PhxDtoValue (Get-PhxDtoValue $dto 'AccountSettings') 'AutoLogonSettings'
@@ -287,6 +297,7 @@ function Invoke-PhxUnattend([hashtable]$A) {
             sha256   = (Get-PhxSha $outFull 'SHA256')
             bytes    = (Get-Item -LiteralPath $outFull).Length
             accounts = @($r.accounts | ForEach-Object { $_.name })
+            firstBootApps = @($(if ((Get-PhxFirstBootPlan $config).enabled) { (Get-PhxFirstBootPlan $config).apps } else { @() }))
             warnings = @($warnings)
         }
     } finally {

@@ -1,0 +1,63 @@
+{
+  "id": "android",
+  "name": "Android",
+  "platform": "android",
+  "description": "What a phone can be cleaned of over USB without rooting it. Photos, messages and app data are not touched.",
+  "version": 1,
+  "rules": [
+    {
+      "id": "android.app-caches",
+      "group": "Apps",
+      "name": "App caches, every app",
+      "why": "What apps keep to load faster: pictures, video segments, web pages. Android clears all of them at once; without root it cannot do one app at a time. Sign-ins and app data stay.",
+      "risk": "safe",
+      "default": true,
+      "special": "android-app-caches"
+    },
+    {
+      "id": "android.thumbnails",
+      "group": "Storage",
+      "name": "Gallery thumbnails",
+      "why": "Small previews of your photos and videos. The gallery draws them again. The photos themselves are not touched.",
+      "risk": "safe",
+      "default": true,
+      "targets": [
+        { "path": "/sdcard/DCIM/.thumbnails" },
+        { "path": "/sdcard/Pictures/.thumbnails" },
+        { "path": "/sdcard/Movies/.thumbnails" }
+      ]
+    },
+    {
+      "id": "android.shared-caches",
+      "group": "Storage",
+      "name": "App caches on shared storage",
+      "why": "Cache folders apps keep outside their private space. Newer Android versions hide these from USB, so this may find nothing.",
+      "risk": "safe",
+      "default": true,
+      "targets": [{ "path": "/sdcard/Android/data/*/cache" }]
+    },
+    {
+      "id": "android.trashed",
+      "group": "Storage",
+      "name": "Photos and files already in the trash",
+      "why": "Things you deleted in the gallery or the Files app, which Android keeps for 30 days. Removing them here is final.",
+      "risk": "caution",
+      "default": false,
+      "targets": [
+        { "path": "/sdcard/DCIM", "match": ".trashed-*" },
+        { "path": "/sdcard/Pictures", "match": ".trashed-*" },
+        { "path": "/sdcard/Movies", "match": ".trashed-*" },
+        { "path": "/sdcard/Download", "match": ".trashed-*" }
+      ]
+    },
+    {
+      "id": "android.apk-downloads",
+      "group": "Storage",
+      "name": "App installers in Downloads",
+      "why": "The .apk files left in Downloads after you installed an app from them. The installed apps stay.",
+      "risk": "caution",
+      "default": false,
+      "targets": [{ "path": "/sdcard/Download", "match": ["*.apk", "*.xapk", "*.apks"], "recurse": false }]
+    }
+  ]
+}

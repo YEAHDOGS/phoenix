@@ -227,6 +227,103 @@ if ($Online) {
     Check ($hits.Count -gt 0 -and $hits[0].source -eq 'online') "choco-search online: $($hits.Count) hits, first $($hits[0].id) $($hits[0].version)"
 }
 
+# cleaner: shipped rules (read-only), then a real delete inside a sandbox folder
+$r = Invoke-Phx 'clean-rules'
+Assert-Contract $r
+Check (@($r.result.data.rules).Count -ge 20) "clean-rules: $(@($r.result.data.rules).Count) Windows rules"
+$r = Invoke-Phx 'clean-rules' @{ platform = 'android' }
+Assert-Contract $r
+Check (@($r.result.data.rules).Count -ge 3) "clean-rules: $(@($r.result.data.rules).Count) Android rules"
+$r = Invoke-Phx 'clean-scan'
+Assert-Contract $r
+$refused = @($r.result.data.items | Where-Object { @($_.notes).Count -gt 0 })
+Check ($refused.Count -eq 0) "clean-scan: no shipped rule names a protected folder$(if ($refused.Count) { ' (' + $refused[0].id + ': ' + $refused[0].notes[0] + ')' })"
+Write-Host ("    this PC: {0:N1} GB could be freed, {1:N1} GB free" -f ($r.result.data.totalBytes / 1GB), ($r.result.data.freeBytes / 1GB))
+$r = Invoke-Phx 'clean-run' @{ ids = @() }
+Assert-Contract $r $false
+
+$box = Join-Path $tmp 'sandbox'
+$mk = { param($rel, $bytes) $f = Join-Path $box $rel; New-Item -ItemType Directory -Force -Path (Split-Path -Parent $f) | Out-Null; [IO.File]::WriteAllBytes($f, (New-Object byte[] $bytes)); $f }
+[void](& $mk 'cache\a.bin' 1000)
+$ro = & $mk 'cache\sub\b.bin' 500
+[IO.File]::SetAttributes($ro, [IO.FileAttributes]::ReadOnly)
+[void](& $mk 'precious\keep.txt' 10)
+cmd.exe /c mklink /J "$box\cache\link" "$box\precious" | Out-Null
+$old = & $mk 'app\old.log' 300
+(Get-Item $old).LastWriteTime = (Get-Date).AddDays(-3)
+[void](& $mk 'app\new.log' 300)
+[void](& $mk 'app\data.db' 50)
+[void](& $mk 'profiles\p1\Cache\x' 200)
+[void](& $mk 'profiles\p2\Cache\y' 200)
+[void](& $mk 'profiles\p1\keep.txt' 10)
+$rulesDir = Join-Path $tmp 'clean-rules'
+New-Item -ItemType Directory -Force -Path $rulesDir | Out-Null
+$docs = [Environment]::GetFolderPath('MyDocuments')
+$set = @{ id = 't'; platform = 'windows'; rules = @(
+        @{ id = 't.cache'; group = 'T'; name = 'cache'; targets = @(@{ path = (Join-Path $box 'cache') }) }
+        @{ id = 't.logs'; group = 'T'; name = 'logs'; targets = @(@{ path = (Join-Path $box 'app'); match = '*.log'; olderThanHours = 1 }) }
+        @{ id = 't.wild'; group = 'T'; name = 'wild'; targets = @(@{ path = (Join-Path $box 'profiles\*\Cache') }) }
+        @{ id = 't.docs'; group = 'T'; name = 'docs'; targets = @(@{ path = $docs }, @{ path = (Join-Path $docs 'Anything') }, @{ path = $env:USERPROFILE }, @{ path = (Join-Path $env:SystemRoot 'System32\drivers') }); files = @((Join-Path $env:SystemRoot 'explorer.exe')) }
+    )
+}
+[IO.File]::WriteAllText((Join-Path $rulesDir 't.json'), (ConvertTo-Json -InputObject $set -Depth 8), [Text.UTF8Encoding]::new($false))
+$env:PHOENIX_CLEAN_RULES = $rulesDir
+$r = Invoke-Phx 'clean-scan'
+Assert-Contract $r
+$by = @{}; foreach ($i in @($r.result.data.items)) { $by[$i.id] = $i }
+Check ($by['t.cache'].bytes -eq 1500 -and $by['t.cache'].files -eq 2) "clean-scan sandbox: cache is 2 files, 1500 bytes, the linked folder not counted (got $($by['t.cache'].files), $($by['t.cache'].bytes))"
+Check ($by['t.logs'].files -eq 1) "clean-scan sandbox: only the old log matches (got $($by['t.logs'].files))"
+Check ($by['t.wild'].files -eq 2) "clean-scan sandbox: wildcard folders (got $($by['t.wild'].files))"
+Check ($by['t.docs'].files -eq 0 -and @($by['t.docs'].notes).Count -ge 4) "clean-scan sandbox: Documents, the profile, System32 and an .exe are refused ($(@($by['t.docs'].notes).Count) refusals)"
+Check ((Test-Path (Join-Path $box 'cache\a.bin')) -and (Test-Path $old)) 'clean-scan sandbox: a scan deletes nothing'
+$r = Invoke-Phx 'clean-run' @{ ids = @('t.cache', 't.logs', 't.wild', 't.docs') }
+Assert-Contract $r
+Check ($r.result.data.freedBytes -eq 2200 -and $r.result.data.files -eq 5 -and $r.result.data.failed -eq 0) "clean-run sandbox: freed 2200 bytes in 5 files (got $($r.result.data.freedBytes), $($r.result.data.files), $($r.result.data.failed) failed)"
+Check (Test-Path (Join-Path $box 'precious\keep.txt')) 'clean-run sandbox: the folder behind a junction is untouched'
+Check (Test-Path (Join-Path $box 'cache\link')) 'clean-run sandbox: the junction itself is left'
+Check ((Test-Path (Join-Path $box 'cache')) -and -not (Test-Path (Join-Path $box 'cache\sub'))) 'clean-run sandbox: the folder stays, its emptied subfolder goes'
+Check ((Test-Path (Join-Path $box 'app\new.log')) -and (Test-Path (Join-Path $box 'app\data.db')) -and -not (Test-Path $old)) 'clean-run sandbox: only the old log went'
+Check (Test-Path (Join-Path $box 'profiles\p1\keep.txt')) 'clean-run sandbox: files beside a cache folder are kept'
+Check (Test-Path (Join-Path $env:SystemRoot 'explorer.exe')) 'clean-run sandbox: explorer.exe is still there'
+$r = Invoke-Phx 'clean-run' @{ ids = @('no.such.rule') }
+Assert-Contract $r $false
+cmd.exe /c rmdir "$box\cache\link" | Out-Null
+Remove-Item Env:\PHOENIX_CLEAN_RULES
+
+# cleaner: what an Android rule may name
+. (Join-Path (Split-Path -Parent $here) 'lib\Clean.ps1')
+Check ($null -eq (Test-PhxAndroidPath '/sdcard/DCIM/.thumbnails' $null)) 'android path: a thumbnail folder is allowed'
+Check ($null -eq (Test-PhxAndroidPath '/sdcard/Download' @('*.apk'))) 'android path: Downloads with a pattern is allowed'
+Check ($null -ne (Test-PhxAndroidPath '/sdcard/DCIM' $null)) 'android path: all of DCIM is refused'
+Check ($null -ne (Test-PhxAndroidPath '/sdcard/DCIM/Camera' $null)) 'android path: the camera roll is refused'
+Check ($null -ne (Test-PhxAndroidPath '/sdcard/Download' @('*'))) 'android path: everything in Downloads is refused'
+Check ($null -ne (Test-PhxAndroidPath '/data/data/x' $null)) 'android path: outside shared storage is refused'
+Check ($null -ne (Test-PhxAndroidPath '/sdcard/a/$(reboot)' $null)) 'android path: shell characters are refused'
+Check ($null -ne (Test-PhxAndroidPath '/sdcard/Download' @("x'; rm -rf /sdcard; '"))) 'android path: shell characters in a pattern are refused'
+
+# first-boot script
+$r = Invoke-Phx 'setup-script' @{ apps = @('powertoys', 'powershell-core'); reportUrl = 'http://10.0.2.2:8787/x' }
+Assert-Contract $r
+$fb = [string]$r.result.data.script
+$perr = $null
+[void][System.Management.Automation.Language.Parser]::ParseInput($fb, [ref]$null, [ref]$perr)
+Check ($fb.StartsWith('# phoenix-firstboot v1') -and $fb.Contains("'powertoys', 'powershell-core'") -and @($perr).Count -eq 0) "setup-script: lists the apps and parses ($(@($perr).Count) syntax errors)"
+Check ($fb.Contains('$harden = $null')) 'setup-script: no hardening unless asked'
+$r = Invoke-Phx 'setup-script' @{ apps = @('7zip; Remove-Item C:\') }
+Assert-Contract $r $false
+$r = Invoke-Phx 'setup-script' @{ apps = @('7zip'); reportUrl = "http://x/'; calc" }
+Assert-Contract $r $false
+$r = Invoke-Phx 'harden-options'
+Assert-Contract $r
+$opts = @($r.result.data.options)
+Check ($opts.Count -eq 32 -and -not ($opts | Where-Object { $_.risk -eq 'danger' -and $_.default })) "harden-options: $($opts.Count) options, nothing dangerous on by default"
+$r = Invoke-Phx 'setup-script' @{ apps = @(); harden = @{ enabled = $true; options = @{ windows = $false; sysmon = $true } } }
+Assert-Contract $r
+$fb = [string]$r.result.data.script
+$perr = $null
+[void][System.Management.Automation.Language.Parser]::ParseInput($fb, [ref]$null, [ref]$perr)
+Check ($fb.Contains("Commit = '$($r.result.data.harden.Count)") -or ($fb -match "Commit = '[0-9a-f]{40}'" -and $fb -match 'ZipSha256 = ''[0-9a-f]{64}''')) 'setup-script: hardening is pinned to a commit and a hash'
+Check ($fb -match 'sysmon = \$true' -and $fb -match 'windows = \$false' -and $fb -match 'cleargpos = \$false' -and @($perr).Count -eq 0) 'setup-script: every hardening option is spelled out, chosen ones on'
 Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
 Write-Host ''
 $color = if ($script:fail) { 'Red' } else { 'Green' }

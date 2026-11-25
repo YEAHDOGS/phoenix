@@ -74,7 +74,8 @@
     "id": "powertoys",
     "name": "powertoys",
     "category": "Utilities",
-    "description": "The Windows power tools Microsoft forgot to include — FancyZones, PowerRename, always-on-top"
+    "description": "The Windows power tools Microsoft forgot to include — FancyZones, PowerRename, always-on-top",
+    "default": true
   },
   {
     "id": "filezilla",
