@@ -1,0 +1,339 @@
+{
+  "id": "windows",
+  "name": "Windows",
+  "platform": "windows",
+  "description": "Caches, temporary files and leftovers on a Windows PC. Nothing here is a document, a password, a cookie or browsing history.",
+  "version": 1,
+  "rules": [
+    {
+      "id": "win.temp.user",
+      "group": "Windows",
+      "name": "Your temporary files",
+      "why": "Programs leave working files in your Temp folder and rarely tidy up. Files touched in the last day are kept, since a running program may still want them.",
+      "risk": "safe",
+      "default": true,
+      "targets": [{ "path": "%TEMP%", "olderThanHours": 24 }]
+    },
+    {
+      "id": "win.temp.system",
+      "group": "Windows",
+      "name": "Windows temporary files",
+      "why": "The same thing for Windows itself and for installers. Files touched in the last day are kept.",
+      "risk": "safe",
+      "default": true,
+      "admin": true,
+      "targets": [{ "path": "%SystemRoot%\\Temp", "olderThanHours": 24 }]
+    },
+    {
+      "id": "win.update.downloads",
+      "group": "Windows",
+      "name": "Windows Update downloads",
+      "why": "Update packages that are already installed. Windows downloads them again if it ever needs one.",
+      "risk": "safe",
+      "default": true,
+      "admin": true,
+      "targets": [{ "path": "%SystemRoot%\\SoftwareDistribution\\Download" }]
+    },
+    {
+      "id": "win.delivery",
+      "group": "Windows",
+      "name": "Delivery Optimization cache",
+      "why": "Copies of updates Windows keeps to hand out to other PCs.",
+      "risk": "safe",
+      "default": true,
+      "admin": true,
+      "targets": [
+        { "path": "%SystemRoot%\\ServiceProfiles\\NetworkService\\AppData\\Local\\Microsoft\\Windows\\DeliveryOptimization\\Cache" }
+      ]
+    },
+    {
+      "id": "win.thumbnails",
+      "group": "Windows",
+      "name": "Thumbnail and icon caches",
+      "why": "Small previews File Explorer draws once and keeps. It draws them again as you browse.",
+      "risk": "safe",
+      "default": true,
+      "targets": [
+        { "path": "%LOCALAPPDATA%\\Microsoft\\Windows\\Explorer", "match": ["thumbcache_*.db", "iconcache_*.db"], "recurse": false }
+      ]
+    },
+    {
+      "id": "win.errors.user",
+      "group": "Windows",
+      "name": "Your error reports and crash dumps",
+      "why": "Reports queued for Microsoft and memory dumps of programs that crashed.",
+      "risk": "safe",
+      "default": true,
+      "targets": [
+        { "path": "%LOCALAPPDATA%\\Microsoft\\Windows\\WER" },
+        { "path": "%LOCALAPPDATA%\\CrashDumps" }
+      ]
+    },
+    {
+      "id": "win.errors.system",
+      "group": "Windows",
+      "name": "Windows error reports and memory dumps",
+      "why": "The same for the whole PC, including the full memory dump from a blue screen, which can be several GB.",
+      "risk": "safe",
+      "default": true,
+      "admin": true,
+      "targets": [
+        { "path": "%ProgramData%\\Microsoft\\Windows\\WER\\ReportArchive" },
+        { "path": "%ProgramData%\\Microsoft\\Windows\\WER\\ReportQueue" },
+        { "path": "%ProgramData%\\Microsoft\\Windows\\WER\\Temp" },
+        { "path": "%SystemRoot%\\Minidump" },
+        { "path": "%SystemRoot%\\LiveKernelReports", "match": "*.dmp" }
+      ],
+      "files": ["%SystemRoot%\\MEMORY.DMP"]
+    },
+    {
+      "id": "win.shaders",
+      "group": "Windows",
+      "name": "Graphics shader caches",
+      "why": "Compiled shaders from games and apps. They are rebuilt the next time each one starts, which can make its first launch slower.",
+      "risk": "safe",
+      "default": true,
+      "targets": [
+        { "path": "%LOCALAPPDATA%\\D3DSCache" },
+        { "path": "%LOCALAPPDATA%\\NVIDIA\\DXCache" },
+        { "path": "%LOCALAPPDATA%\\NVIDIA\\GLCache" },
+        { "path": "%LOCALAPPDATA%\\AMD\\DxCache" },
+        { "path": "%LOCALAPPDATA%\\AMD\\DxcCache" },
+        { "path": "%LOCALAPPDATA%\\AMD\\GLCache" },
+        { "path": "%LOCALAPPDATA%\\Intel\\ShaderCache" }
+      ]
+    },
+    {
+      "id": "win.logs",
+      "group": "Windows",
+      "name": "Windows servicing logs",
+      "why": "Logs from updates and repairs. Only useful when you are chasing an update that failed.",
+      "risk": "caution",
+      "default": false,
+      "admin": true,
+      "targets": [
+        { "path": "%SystemRoot%\\Logs\\CBS", "match": ["*.log", "*.cab"] },
+        { "path": "%SystemRoot%\\Logs\\DISM", "match": "*.log" },
+        { "path": "%SystemRoot%\\Logs\\WindowsUpdate", "match": "*.etl" }
+      ]
+    },
+    {
+      "id": "win.recyclebin",
+      "group": "Windows",
+      "name": "Recycle Bin",
+      "why": "Everything you have deleted and could still put back. Emptying it is final.",
+      "risk": "caution",
+      "default": false,
+      "special": "recycle-bin"
+    },
+    {
+      "id": "browser.chrome",
+      "group": "Browsers",
+      "name": "Chrome cache",
+      "why": "Copies of pages, pictures and scripts. Your history, cookies, passwords and open tabs are not touched. Close Chrome first, or the files it has open are skipped.",
+      "risk": "safe",
+      "default": true,
+      "closeFirst": ["chrome"],
+      "targets": [
+        { "path": "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\*\\Cache" },
+        { "path": "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\*\\Code Cache" },
+        { "path": "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\*\\GPUCache" },
+        { "path": "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\*\\DawnGraphiteCache" },
+        { "path": "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\*\\DawnWebGPUCache" },
+        { "path": "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\*\\Service Worker\\CacheStorage" },
+        { "path": "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\ShaderCache" },
+        { "path": "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\GrShaderCache" },
+        { "path": "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\GraphiteDawnCache" }
+      ]
+    },
+    {
+      "id": "browser.edge",
+      "group": "Browsers",
+      "name": "Edge cache",
+      "why": "Copies of pages, pictures and scripts. Your history, cookies, passwords and open tabs are not touched. Close Edge first, or the files it has open are skipped.",
+      "risk": "safe",
+      "default": true,
+      "closeFirst": ["msedge"],
+      "targets": [
+        { "path": "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\*\\Cache" },
+        { "path": "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\*\\Code Cache" },
+        { "path": "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\*\\GPUCache" },
+        { "path": "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\*\\DawnGraphiteCache" },
+        { "path": "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\*\\DawnWebGPUCache" },
+        { "path": "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\*\\Service Worker\\CacheStorage" },
+        { "path": "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\ShaderCache" },
+        { "path": "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\GrShaderCache" },
+        { "path": "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\GraphiteDawnCache" }
+      ]
+    },
+    {
+      "id": "browser.brave",
+      "group": "Browsers",
+      "name": "Brave cache",
+      "why": "Copies of pages, pictures and scripts. Your history, cookies, passwords and open tabs are not touched. Close Brave first, or the files it has open are skipped.",
+      "risk": "safe",
+      "default": true,
+      "closeFirst": ["brave"],
+      "targets": [
+        { "path": "%LOCALAPPDATA%\\BraveSoftware\\Brave-Browser\\User Data\\*\\Cache" },
+        { "path": "%LOCALAPPDATA%\\BraveSoftware\\Brave-Browser\\User Data\\*\\Code Cache" },
+        { "path": "%LOCALAPPDATA%\\BraveSoftware\\Brave-Browser\\User Data\\*\\GPUCache" },
+        { "path": "%LOCALAPPDATA%\\BraveSoftware\\Brave-Browser\\User Data\\*\\Service Worker\\CacheStorage" },
+        { "path": "%LOCALAPPDATA%\\BraveSoftware\\Brave-Browser\\User Data\\ShaderCache" },
+        { "path": "%LOCALAPPDATA%\\BraveSoftware\\Brave-Browser\\User Data\\GrShaderCache" }
+      ]
+    },
+    {
+      "id": "browser.firefox",
+      "group": "Browsers",
+      "name": "Firefox cache",
+      "why": "Copies of pages, pictures and scripts. Your history, cookies, passwords and open tabs are not touched. Close Firefox first, or the files it has open are skipped.",
+      "risk": "safe",
+      "default": true,
+      "closeFirst": ["firefox"],
+      "targets": [
+        { "path": "%LOCALAPPDATA%\\Mozilla\\Firefox\\Profiles\\*\\cache2" },
+        { "path": "%LOCALAPPDATA%\\Mozilla\\Firefox\\Profiles\\*\\startupCache" },
+        { "path": "%LOCALAPPDATA%\\Mozilla\\Firefox\\Profiles\\*\\thumbnails" },
+        { "path": "%LOCALAPPDATA%\\Mozilla\\Firefox\\Profiles\\*\\jumpListCache" }
+      ]
+    },
+    {
+      "id": "app.discord",
+      "group": "Apps",
+      "name": "Discord cache",
+      "why": "Pictures and videos Discord has shown you. Your account and messages live on Discord's servers.",
+      "risk": "safe",
+      "default": true,
+      "closeFirst": ["Discord"],
+      "targets": [
+        { "path": "%APPDATA%\\discord\\Cache" },
+        { "path": "%APPDATA%\\discord\\Code Cache" },
+        { "path": "%APPDATA%\\discord\\GPUCache" }
+      ]
+    },
+    {
+      "id": "app.spotify",
+      "group": "Apps",
+      "name": "Spotify cache",
+      "why": "Songs Spotify has streamed, kept so they start faster. Songs you downloaded for offline use are kept in the same place and go too.",
+      "risk": "caution",
+      "default": false,
+      "closeFirst": ["Spotify"],
+      "targets": [
+        { "path": "%LOCALAPPDATA%\\Spotify\\Storage" },
+        { "path": "%LOCALAPPDATA%\\Spotify\\Data" },
+        { "path": "%LOCALAPPDATA%\\Spotify\\Browser\\Cache" }
+      ]
+    },
+    {
+      "id": "app.slack",
+      "group": "Apps",
+      "name": "Slack cache",
+      "why": "Files and pictures Slack has shown you. Nothing you posted is lost.",
+      "risk": "safe",
+      "default": true,
+      "closeFirst": ["slack"],
+      "targets": [
+        { "path": "%APPDATA%\\Slack\\Cache" },
+        { "path": "%APPDATA%\\Slack\\Code Cache" },
+        { "path": "%APPDATA%\\Slack\\GPUCache" },
+        { "path": "%APPDATA%\\Slack\\Service Worker\\CacheStorage" }
+      ]
+    },
+    {
+      "id": "app.teams",
+      "group": "Apps",
+      "name": "Teams cache",
+      "why": "Files and pictures Teams has shown you. It signs you in again and rebuilds them.",
+      "risk": "safe",
+      "default": true,
+      "closeFirst": ["ms-teams", "Teams"],
+      "targets": [
+        { "path": "%APPDATA%\\Microsoft\\Teams\\Cache" },
+        { "path": "%APPDATA%\\Microsoft\\Teams\\Code Cache" },
+        { "path": "%APPDATA%\\Microsoft\\Teams\\GPUCache" },
+        { "path": "%APPDATA%\\Microsoft\\Teams\\Service Worker\\CacheStorage" }
+      ]
+    },
+    {
+      "id": "app.vscode",
+      "group": "Apps",
+      "name": "VS Code cache and logs",
+      "why": "Compiled copies of extensions, web caches and old logs. Your settings, extensions and open folders are kept.",
+      "risk": "safe",
+      "default": true,
+      "closeFirst": ["Code"],
+      "targets": [
+        { "path": "%APPDATA%\\Code\\Cache" },
+        { "path": "%APPDATA%\\Code\\CachedData" },
+        { "path": "%APPDATA%\\Code\\Code Cache" },
+        { "path": "%APPDATA%\\Code\\GPUCache" },
+        { "path": "%APPDATA%\\Code\\logs", "olderThanHours": 24 }
+      ]
+    },
+    {
+      "id": "app.steam",
+      "group": "Apps",
+      "name": "Steam web cache",
+      "why": "The store and library pages Steam has loaded. Games, saves and downloads are not touched.",
+      "risk": "safe",
+      "default": true,
+      "closeFirst": ["steam"],
+      "targets": [
+        { "path": "%LOCALAPPDATA%\\Steam\\htmlcache\\Cache" },
+        { "path": "%LOCALAPPDATA%\\Steam\\htmlcache\\Code Cache" },
+        { "path": "%LOCALAPPDATA%\\Steam\\htmlcache\\GPUCache" }
+      ]
+    },
+    {
+      "id": "dev.npm",
+      "group": "Developer",
+      "name": "npm download cache",
+      "why": "Every package npm has downloaded. The next install fetches what it needs again.",
+      "risk": "caution",
+      "default": false,
+      "targets": [{ "path": "%LOCALAPPDATA%\\npm-cache\\_cacache" }, { "path": "%LOCALAPPDATA%\\npm-cache\\_logs" }]
+    },
+    {
+      "id": "dev.pip",
+      "group": "Developer",
+      "name": "pip download cache",
+      "why": "Every Python package pip has downloaded or built. The next install fetches what it needs again.",
+      "risk": "caution",
+      "default": false,
+      "targets": [{ "path": "%LOCALAPPDATA%\\pip\\Cache" }]
+    },
+    {
+      "id": "dev.nuget",
+      "group": "Developer",
+      "name": "NuGet package cache",
+      "why": "Every .NET package any project has restored. The next build restores what it needs again, which needs the internet.",
+      "risk": "caution",
+      "default": false,
+      "targets": [
+        { "path": "%USERPROFILE%\\.nuget\\packages" },
+        { "path": "%LOCALAPPDATA%\\NuGet\\v3-cache" },
+        { "path": "%LOCALAPPDATA%\\NuGet\\plugins-cache" }
+      ]
+    },
+    {
+      "id": "dev.cargo",
+      "group": "Developer",
+      "name": "Cargo download cache",
+      "why": "Rust crates as downloaded and unpacked. The next build fetches what it needs again, which needs the internet.",
+      "risk": "caution",
+      "default": false,
+      "targets": [{ "path": "%USERPROFILE%\\.cargo\\registry\\cache" }, { "path": "%USERPROFILE%\\.cargo\\registry\\src" }]
+    },
+    {
+      "id": "dev.gradle",
+      "group": "Developer",
+      "name": "Gradle caches",
+      "why": "Libraries and build outputs Gradle keeps for Android and Java projects. The next build downloads and rebuilds them, which is slow once.",
+      "risk": "caution",
+      "default": false,
+      "targets": [{ "path": "%USERPROFILE%\\.gradle\\caches" }, { "path": "%USERPROFILE%\\.gradle\\daemon", "match": "*.log" }]
+    }
+  ]
+}

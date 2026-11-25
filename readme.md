@@ -88,6 +88,8 @@ Android does not feature any answerfile automation system for re-installs, so I 
 - **Packs** - every device, service, task, feature, app, autorun, firewall and registry change, with risk levels, toggleable per item
 - **Scan and Plan** - inventory this machine and preview exactly what each phase would change (read-only)
 - **Apps** - searchable Chocolatey picker
+- **Cleaner** (engine only for now, see [docs/CLEANER.md](docs/CLEANER.md)) - preview, then delete: temp files, caches, crash dumps, on Windows and on an Android phone over USB
+- **First boot** (see [docs/FIRST-BOOT.md](docs/FIRST-BOOT.md)) - one script, or the answer file itself, installs Chocolatey and your apps on a fresh machine
 - **USB** - download and verify the loadout, write the answer file and the Phoenix kit to a USB drive
 
 ```powershell
