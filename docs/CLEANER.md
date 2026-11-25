@@ -83,12 +83,16 @@ Over USB with debugging on, no root. `adb` is found in the loadout
 
 - **App caches** come from Android's own bookkeeping (`dumpsys diskstats`) and
   are cleared with `pm trim-caches`. Without root Android clears every app's
-  cache at once; it cannot do one app.
+  cache at once; it cannot do one app. Android fills in the per-app sizes only
+  now and then; without them the scan says `sizeUnknown` and the run reports
+  what it freed from free space before and after.
 - **File rules** may only name folders under `/sdcard`, using letters, digits,
   dots, dashes and `*`. A folder that holds your own files (DCIM, Pictures,
   Download, ...) needs a file-name pattern.
 
-Not tested on a physical phone yet.
+Tested against the Android 15 emulator: it removed the planted thumbnails, trashed
+photo and .apk and left the photo and document beside them. Not tried on a physical
+phone yet, and the emulator had no app caches to prove how much `pm trim-caches` frees.
 
 ## iOS
 

@@ -441,7 +441,8 @@ function Get-PhxAndroidFindCommand($Target, [string]$Tail) {
         $nameExpr = '\( ' + ((@($names | ForEach-Object { "-name '$_'" })) -join ' -o ') + ' \) '
     }
     $age = if ($Target['olderThanHours']) { '-mmin +' + [int]([double]$Target['olderThanHours'] * 60) + ' ' } else { '' }
-    "find $path/ $depth-type f $nameExpr$age$Tail 2>/dev/null"
+    # Android's own markers inside media folders are never leftovers.
+    "find $path/ $depth-type f ! -name .nomedia ! -name .database_uuid $nameExpr$age$Tail 2>/dev/null"
 }
 
 # App cache sizes from the system's own bookkeeping (dumpsys diskstats).
@@ -487,6 +488,9 @@ function Get-PhxCleanAndroidItem([string]$Adb, [string]$Serial, $Rule, [int]$Top
     $item['folders'] = @($Rule['targets'] | Where-Object { $_ } | ForEach-Object { [string]$_['path'] })
     $item['running'] = @()
     $item['blocked'] = $null
+    # Android only fills in per-app sizes now and then (idle, on the charger). Without
+    # them the caches can still be cleared; the size is known once it is done.
+    $item['sizeUnknown'] = [bool]($Rule['special'] -eq 'android-app-caches' -and $files.Count -eq 0)
     $item['notes'] = @($problems.ToArray())
     $item
 }
@@ -503,12 +507,16 @@ function Get-PhxAndroidFreeBytes([string]$Adb, [string]$Serial) {
 function Remove-PhxCleanAndroidRule([string]$Adb, [string]$Serial, $Rule) {
     $problems = New-Object System.Collections.ArrayList
     if ($Rule['special'] -eq 'android-app-caches') {
-        $before = [int64]0
-        foreach ($f in (Get-PhxAndroidAppCaches $Adb $Serial)) { $before += $f.bytes }
+        # What it freed is the phone's free space after, less before: Android's own
+        # per-app numbers are often missing or stale.
+        $before = Get-PhxAndroidFreeBytes $Adb $Serial
         # Asks Android to free "this much", more than any phone has, so it drops every app's cache.
         $r = Invoke-PhxAdb $Adb @('-s', $Serial, 'shell', 'pm trim-caches 999999999999') 300
-        $err = if ($r.code -ne 0) { ($r.out + $r.err).Trim() } else { $null }
-        return [ordered]@{ id = [string]$Rule['id']; freedBytes = $(if ($err) { [int64]0 } else { $before }); files = 0; failed = 0; error = $err; estimated = $true }
+        $said = ($r.out + $r.err).Trim()
+        $err = if ($r.code -ne 0 -or $said -match '(?i)exception|error|denied') { $said } else { $null }
+        $after = Get-PhxAndroidFreeBytes $Adb $Serial
+        $freed = if ($null -ne $before -and $null -ne $after) { [Math]::Max([int64]0, [int64]$after - [int64]$before) } else { [int64]0 }
+        return [ordered]@{ id = [string]$Rule['id']; freedBytes = $freed; files = 0; failed = 0; error = $err }
     }
     $before = Get-PhxAndroidFiles $Adb $Serial $Rule $problems
     foreach ($t in @($Rule['targets'])) {
